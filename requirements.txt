@@ -1,3 +1,4 @@
 # python requirements
 cairo-lang==0.8.1
 cairo-nile==0.6.1
+scipy==1.8.0
