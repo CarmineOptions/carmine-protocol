@@ -1,5 +1,12 @@
 # Carmine Protocol
+
 Carmine options protocol
+
+Options AMM that allows any user to buy and sell options at a fair price.
+
+For crypto funds, traders and investors who need to hedge their portfolios or trade options, this
+options AMM will provide a possibility to do so. Different from competitors, this AMM allows for
+selling specific options directly.
 
 
 ## Set up
