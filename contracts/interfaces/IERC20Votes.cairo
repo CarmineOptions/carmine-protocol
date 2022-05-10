@@ -4,9 +4,10 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
+from contracts.library.votable import Votable_checkpoint
 
 @contract_interface
-namespace IERC20:
+namespace IERC20Votes:
     func name() -> (name: felt):
     end
 

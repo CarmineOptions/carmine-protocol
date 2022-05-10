@@ -41,6 +41,7 @@ from library.votable import(
     Votable_getLastTotalSupplyPos,
     Votable_afterTransferFrom,
     Votable_afterTransfer,
+    Votable_checkpoint
 )
 
 @constructor
