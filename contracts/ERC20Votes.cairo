@@ -41,7 +41,7 @@ from library.votable import(
     Votable_getLastTotalSupplyPos,
     Votable_afterTransferFrom,
     Votable_afterTransfer,
-    Votable_checkpoint
+    Votable_getPastVotes
 )
 
 @constructor
@@ -164,6 +164,17 @@ func getVotes{
     return (votes)
 end
 
+#Gets the past votes balance for `account`
+@view
+func getPastVotes{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(account:felt,block_number:felt)->(votes:Uint256):
+
+    let(votes)=Votable_getPastVotes(account,block_number)
+    return (votes)
+end
 
 #Gets the totalvotes for given pos
 @view
@@ -171,9 +182,9 @@ func getPastTotalSupply{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(pos:felt)->(votes:Uint256):
+    }(block_number:felt)->(votes:Uint256):
 
-    let(votes)=Votable_getPastTotalSupply(pos)
+    let(votes)=Votable_getPastTotalSupply(block_number)
     return (votes)
 end
 
