@@ -35,9 +35,12 @@ namespace IERC20Votes:
     func getVotes(account:felt)->(votes:Uint256):
     end
 
-    func getPastTotalSupply(pos:felt)->(votes:Uint256):
+    func getPastVotes(account:felt,block_number:felt)->(votes:Uint256):
     end
 
+    func getPastTotalSupply(pos:felt)->(votes:Uint256):
+    end
+    
     func getLastTotalSupplyPos()->(pos:felt):
     end
 

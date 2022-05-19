@@ -417,6 +417,25 @@
         "type": "event"
     },
     {
+        "data": [
+            {
+                "name": "proposal_id",
+                "type": "Uint256"
+            },
+            {
+                "name": "vote_start",
+                "type": "felt"
+            },
+            {
+                "name": "vote_end",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "proposal_executed",
+        "type": "event"
+    },
+    {
         "inputs": [
             {
                 "name": "proposal_id",
@@ -438,6 +457,10 @@
             {
                 "name": "account",
                 "type": "felt"
+            },
+            {
+                "name": "block_number",
+                "type": "felt"
             }
         ],
         "name": "get_votes",
@@ -457,6 +480,23 @@
             {
                 "name": "quorum",
                 "type": "Uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "proposal_id",
+                "type": "Uint256"
+            }
+        ],
+        "name": "quorum_reached",
+        "outputs": [
+            {
+                "name": "result",
+                "type": "felt"
             }
         ],
         "stateMutability": "view",
@@ -525,6 +565,57 @@
         ],
         "name": "propose",
         "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "proposal_id",
+                "type": "Uint256"
+            },
+            {
+                "name": "support",
+                "type": "felt"
+            }
+        ],
+        "name": "cast_vote",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "targets_len",
+                "type": "felt"
+            },
+            {
+                "name": "targets",
+                "type": "felt*"
+            },
+            {
+                "name": "values_len",
+                "type": "felt"
+            },
+            {
+                "name": "values",
+                "type": "felt*"
+            },
+            {
+                "name": "calldata_len",
+                "type": "felt"
+            },
+            {
+                "name": "calldata",
+                "type": "felt*"
+            }
+        ],
+        "name": "execute",
+        "outputs": [
+            {
+                "name": "result",
+                "type": "felt"
+            }
+        ],
         "type": "function"
     }
 ]

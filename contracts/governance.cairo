@@ -7,12 +7,12 @@ from starkware.cairo.common.alloc import alloc
 from contracts.interfaces.IERC20Votes import IERC20Votes
 from starkware.cairo.common.uint256 import (Uint256,uint256_le,uint256_lt)
 from starkware.cairo.common.math import assert_le, assert_lt, unsigned_div_rem, assert_not_equal
+from starkware.cairo.common.math_cmp import is_le, is_le_felt
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.cairo_keccak.keccak import (keccak_felts,finalize_keccak)
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from starkware.starknet.common.syscalls import get_block_number, get_block_timestamp
 from contracts.library.array_manipulation import get_new_array, copy_from_to, join
-
 from contracts.array_utils import (
     assert_index_in_array_length,
     assert_check_array_not_empty,
@@ -27,6 +27,8 @@ from openzeppelin.security.safemath import (
     uint256_checked_div_rem,
 )
 
+const TRUE = 1
+const FALSE = 0
 
 #
 struct proposal_core:
@@ -59,7 +61,7 @@ end
 func proposals_storage(id : Uint256) -> (proposal : proposal_core):
 end
 
-@storage
+@storage_var
 func proposal_vote_count_storage(id : Uint256)->(total_vote_weight:Uint256):
 end
 
@@ -96,6 +98,7 @@ func state{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 ) -> (state : felt):
     alloc_locals
     let (proposal) = proposals_storage.read(proposal_id)
+    let (current_block)=get_block_number()
     if proposal.executed == 1:
         # executed state=0
         return (0)
@@ -104,8 +107,35 @@ func state{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         if proposal.canceled == 1:
             return (1)
         else:
-            # proposal active
-            return (3)
+            let (proposal)=proposals_storage.read(proposal_id)
+
+            with_attr error_message("Governor: unknown proposal id"):
+                assert_not_equal(0,proposal.vote_start)
+            end
+            let (is_vote_start_bigger_than_current_block)=is_le(current_block,proposal.vote_start)
+            if is_vote_start_bigger_than_current_block==1:
+                # pending state
+                return(3)
+            else:
+                let (is_vote_end_bigger_than_current_block)=is_le(current_block,proposal.vote_end)
+                if is_vote_end_bigger_than_current_block==1:
+                    # active state
+                    return(4)
+                else:
+                    let (is_qurom_reached)=quorum_reached(proposal_id)
+                    
+                    # TODO add no state for votes
+                    #let (is_vote_succeeded)=_vote_succeeded(proposal_id)
+                    let is_proposal_succeeded=is_qurom_reached
+                    if is_proposal_succeeded==TRUE:
+                        #success state
+                        return(5)
+                    else:
+                        #fail state
+                        return(6)
+                    end    
+                end
+            end
         end
     end
 end
@@ -139,6 +169,19 @@ func quorum{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}()
     return (quorum)
 end
 
+@view
+func quorum_reached {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    proposal_id:Uint256)->(result:felt): 
+    alloc_locals
+    let (local total_vote)=proposal_vote_count_storage.read(proposal_id)
+    let (quorum_limit)=quorum()
+    let (is_total_vote_bigger_than_quorum_limit)=uint256_le(quorum_limit,total_vote)
+    if is_total_vote_bigger_than_quorum_limit==1:
+        return(TRUE)
+    else:
+        return(FALSE)
+    end
+end
 
 # Proposal create block (vote start)
 @view
@@ -162,7 +205,7 @@ end
 
 
 ########################################
-# End fucntions
+# External fucntions
 ########################################
 
 # TODO check for call data
@@ -190,15 +233,10 @@ func propose{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     end
     with_attr error_message("invalid proposal lenght"):
         assert targets_len = values_len
-    end
-
-    with_attr error_message("invalid proposal lenght"):
         assert targets_len = calldata_len
-    end
-
-    with_attr error_message("invalid proposal lenght"):
         assert_lt(0, targets_len)
     end
+
 
     let (proposal_id) = _hash_proposal(
         targets_len, targets, values_len, values, calldata_len, calldata
@@ -221,16 +259,34 @@ func cast_vote {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     proposal_id:Uint256, support:felt
 ):  
     let (caller)=get_caller_address()
-    _casty_vote(proposal_id,caller,support)
+    _cast_vote(proposal_id,caller,support)
+    return()
 end
 
 
-# Executed a proposal with  sufficient number of votes
+# Execute a proposal with  sufficient number of votes
 @external
 func execute {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-):  
+    targets_len : felt,
+    targets : felt*,
+    values_len : felt,
+    values : felt*,
+    calldata_len : felt,
+    calldata : felt*,
+)->(result:felt):  
+    alloc_locals
+    let (local proposal_id) = _hash_proposal(
+            targets_len, targets, values_len, values, calldata_len, calldata
+        )
+    let (proposal_state)= state(proposal_id)
 
+    with_attr error_message("Governance:: Proposal not succeeded"):
+        assert proposal_state=5
+    end
 
+    return(TRUE)
+
+end
 
 ########################################
 # Internal functions
@@ -289,18 +345,20 @@ end
 
 func _cast_vote {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     proposal_id:Uint256,voter:felt, support:felt
-):  
-    let(proposal:proposal_core)=proposals_storage.read(proposal_id)
+)->(result:felt):  
+    alloc_locals
+    let(local proposal:proposal_core)=proposals_storage.read(proposal_id)
     let (proposal_state)=state(proposal_id)
 
     with_attr error_message("Governance: proposal not active"):
-        assert proposal_state=3
+        assert proposal_state=4
     end
 
     let (voter_weight)= get_votes(voter, proposal.vote_start)
 
     let(total_weight_before)=proposal_vote_count_storage.read(proposal_id)
     let(new_total)=uint256_checked_add(total_weight_before,voter_weight)
-    let(total_weight_after)=proposal_vote_count_storage.write(proposal_id,new_total)
-
+    proposal_vote_count_storage.write(proposal_id,new_total)
+    return(TRUE)
 end
+
