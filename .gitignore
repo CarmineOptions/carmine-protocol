@@ -136,3 +136,4 @@ dmypy.json
 
 # PyCharm stuff
 .idea
+contracts/GaugeController.cairo

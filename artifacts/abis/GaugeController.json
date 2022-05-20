@@ -1,0 +1,94 @@
+[
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "commit_ownership",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "apply_ownership",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "add_type",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "new_type_weight",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "new_gauge_weight",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "vote_for_gauege",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "admin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "new_gauge",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_token",
+                "type": "felt"
+            },
+            {
+                "name": "_voting_escrow",
+                "type": "felt"
+            }
+        ],
+        "name": "constructor",
+        "outputs": [],
+        "type": "constructor"
+    }
+]

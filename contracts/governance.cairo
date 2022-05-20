@@ -5,13 +5,14 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.alloc import alloc
 from contracts.interfaces.IERC20Votes import IERC20Votes
-from starkware.cairo.common.uint256 import (Uint256,uint256_le,uint256_lt)
-from starkware.cairo.common.math import assert_le, assert_lt, unsigned_div_rem, assert_not_equal
+from starkware.cairo.common.uint256 import (Uint256,uint256_le,uint256_lt,uint256_eq)
+from starkware.cairo.common.math import assert_le, assert_lt, unsigned_div_rem, assert_not_equal,assert_not_zero
 from starkware.cairo.common.math_cmp import is_le, is_le_felt
 from starkware.cairo.common.memcpy import memcpy
 from starkware.cairo.common.cairo_keccak.keccak import (keccak_felts,finalize_keccak)
-from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
+from starkware.cairo.common.registers import get_fp_and_pc
 from starkware.starknet.common.syscalls import get_block_number, get_block_timestamp
+from starkware.starknet.common.syscalls import call_contract,get_contract_address, get_caller_address, get_tx_info
 from contracts.library.array_manipulation import get_new_array, copy_from_to, join
 from contracts.array_utils import (
     assert_index_in_array_length,
@@ -38,6 +39,12 @@ struct proposal_core:
     member canceled : felt
 end
 
+struct Call:
+    member to: felt
+    member selector: felt
+    member calldata_len: felt
+    member calldata: felt*
+end
 ########################################
 # events
 ########################################
@@ -65,6 +72,10 @@ end
 func proposal_vote_count_storage(id : Uint256)->(total_vote_weight:Uint256):
 end
 
+@storage_var
+func proposal_account_votes(account : felt)->(vote:Uint256):
+end
+
 # Governance adress 
 @storage_var
 func governance_storage() -> (governance_address : felt):
@@ -72,7 +83,7 @@ end
 
 # Governance token for calculating users voting power
 @storage_var
-func governancee_token_address_storage() -> (token_address : felt):
+func governance_token_address_storage() -> (token_address : felt):
 end
 
 # Numerator for calculating qurom threshold
@@ -85,6 +96,20 @@ end
 func quorum_denominator_storage() -> (denominator : Uint256):
 end
 
+
+
+@constructor
+func constructor {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    _governance_adress:felt, _token:felt
+):
+    with_attr error_message("GOvernance:: invalid initial parameters"):
+        assert_not_zero(_governance_adress)
+        assert_not_zero(_token)
+    end
+    governance_storage.write(_governance_adress)
+    governance_token_address_storage.write(_token)
+    return()
+end
 
 ########################################
 # View fucntions
@@ -145,7 +170,7 @@ end
 func get_votes{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account : felt,block_number:felt
 ) -> (vote : Uint256):
-    let (token_address) = governancee_token_address_storage.read()
+    let (token_address) = governance_token_address_storage.read()
     let (vote) = IERC20Votes.getPastVotes(token_address, account,block_number)
     return (vote)
 end
@@ -157,7 +182,7 @@ func quorum{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}()
     quorum : Uint256
 ):
     alloc_locals
-    let (token_address) = governancee_token_address_storage.read()
+    let (token_address) = governance_token_address_storage.read()
     let (last_pos) = IERC20Votes.getLastTotalSupplyPos(token_address)
     let (past_total_supply) = IERC20Votes.getPastTotalSupply(token_address, last_pos)
 
@@ -219,6 +244,8 @@ func propose{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     values : felt*,
     calldata_len : felt,
     calldata : felt*,
+    data_offset_len : felt,
+    data_offset : felt*,
 ):  
     alloc_locals
     let (caller) = get_caller_address()
@@ -239,7 +266,7 @@ func propose{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
 
     let (proposal_id) = _hash_proposal(
-        targets_len, targets, values_len, values, calldata_len, calldata
+        targets_len, targets, values_len, values, calldata_len, calldata,data_offset_len ,data_offset ,
     )
 
     let (proposal_from_Storage) = proposals_storage.read(proposal_id)
@@ -264,6 +291,7 @@ func cast_vote {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 end
 
 
+# TODO not completed
 # Execute a proposal with  sufficient number of votes
 @external
 func execute {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -273,16 +301,26 @@ func execute {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     values : felt*,
     calldata_len : felt,
     calldata : felt*,
+    data_offset_len:felt,
+    data_offset:felt*
 )->(result:felt):  
     alloc_locals
     let (local proposal_id) = _hash_proposal(
-            targets_len, targets, values_len, values, calldata_len, calldata
+            targets_len, targets, values_len, values, calldata_len, calldata,data_offset_len ,data_offset ,
         )
     let (proposal_state)= state(proposal_id)
 
     with_attr error_message("Governance:: Proposal not succeeded"):
         assert proposal_state=5
     end
+    _execute(    
+        targets_len ,
+        targets,
+        values_len ,
+        values ,
+        calldata_len,
+        calldata,data_offset_len,
+    data_offset)
 
     return(TRUE)
 
@@ -308,7 +346,7 @@ end
 func _propose_threshold{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     threshold : Uint256
 ):
-    let (token_address) = governancee_token_address_storage.read()
+    let (token_address) = governance_token_address_storage.read()
     let (total_supply) = IERC20Votes.totalSupply(token_address)
     let (threshold, _) = uint256_checked_div_rem(total_supply, Uint256(100, 0))
     return (threshold)
@@ -323,15 +361,22 @@ func _hash_proposal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     values : felt*,
     calldata_len : felt,
     calldata : felt*,
+    data_offset_len : felt,
+    data_offset : felt*,
 ) -> (hashed_result : Uint256):
     alloc_locals
 
     let (target_values_join_len, target_values_join) = join(
         targets_len, targets, values_len, values
     )
-    let (result_array_len, result_array) = join(
+    let (target_values_calldata_join_len, target_values_calldata_join) = join(
         target_values_join_len, target_values_join, calldata_len, calldata
     )
+
+    let (result_array_len, result_array) = join(
+        target_values_calldata_join_len, target_values_calldata_join, data_offset_len, data_offset
+    )
+
     let (local bitwise_ptr : BitwiseBuiltin*) = alloc()
     let (local keccak_ptr_start) = alloc()
     let keccak_ptr = keccak_ptr_start
@@ -354,11 +399,94 @@ func _cast_vote {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
         assert proposal_state=4
     end
 
-    let (voter_weight)= get_votes(voter, proposal.vote_start)
+    let (account_vote)=proposal_account_votes.read(voter)
+    let(is_account_voting_once) =uint256_eq(account_vote,Uint256(0,0))
+    
+    with_attr error_message("Governance:: account already voted"):
+        assert is_account_voting_once=1
+    end
 
+    let (voter_weight)= get_votes(voter, proposal.vote_start)
     let(total_weight_before)=proposal_vote_count_storage.read(proposal_id)
+    proposal_account_votes.write(voter,voter_weight)
     let(new_total)=uint256_checked_add(total_weight_before,voter_weight)
     proposal_vote_count_storage.write(proposal_id,new_total)
     return(TRUE)
 end
 
+func _execute {syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    targets_len : felt,
+    targets : felt*,
+    values_len : felt,
+    values : felt*,
+    calldata_len : felt,
+    calldata : felt*,
+    data_offset_len : felt,
+    data_offset : felt*,
+)->(response_len:felt,response:felt*):
+
+    alloc_locals
+    let (__fp__, _) = get_fp_and_pc()
+    let (calls : Call*) = alloc()
+    _from_array_to_call(targets_len,targets, values, calldata, data_offset ,calls)
+    let calls_len = targets_len
+    
+
+    let (response : felt*) = alloc()
+    let (response_len) = _execute_list(calls_len, calls, response)
+    return (response_len=response_len, response=response)
+
+end
+
+
+func _execute_list{syscall_ptr: felt*}(
+        calls_len: felt,
+        calls: Call*,
+        response: felt*
+    ) -> (response_len: felt):
+    alloc_locals
+
+    # if no more calls
+    if calls_len == 0:
+        return (0)
+    end
+
+    # do the current call
+    let this_call: Call = [calls]
+    let res = call_contract(
+        contract_address=this_call.to,
+        function_selector=this_call.selector,
+        calldata_size=this_call.calldata_len,
+        calldata=this_call.calldata
+    )
+    # copy the result in response
+    memcpy(response, res.retdata, res.retdata_size)
+    # do the next calls recursively
+    let (response_len) = _execute_list(calls_len - 1, calls + Call.SIZE, response + res.retdata_size)
+    return (response_len + res.retdata_size)
+end
+
+func _from_array_to_call{syscall_ptr: felt*}(
+        targets_len: felt,
+        targets: felt*,
+        values:felt*,
+        calldata: felt*,
+        data_offset:felt*,
+        calls: Call*
+    ):
+    # if no more calls
+    if targets_len == 0:
+        return ()
+    end
+
+    # parse the current call
+    assert [calls] = Call(
+            to=[targets],
+            selector=[values],
+            calldata_len=[data_offset]-[data_offset-1],
+            calldata=calldata + [data_offset]
+        )
+    # parse the remaining calls recursively
+    _from_array_to_call(targets_len - 1, targets +1, values+1,calldata,data_offset+1, calls + Call.SIZE)
+    return ()
+end

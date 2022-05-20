@@ -438,6 +438,21 @@
     {
         "inputs": [
             {
+                "name": "_governance_adress",
+                "type": "felt"
+            },
+            {
+                "name": "_token",
+                "type": "felt"
+            }
+        ],
+        "name": "constructor",
+        "outputs": [],
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
                 "name": "proposal_id",
                 "type": "Uint256"
             }
@@ -561,6 +576,14 @@
             {
                 "name": "calldata",
                 "type": "felt*"
+            },
+            {
+                "name": "data_offset_len",
+                "type": "felt"
+            },
+            {
+                "name": "data_offset",
+                "type": "felt*"
             }
         ],
         "name": "propose",
@@ -606,6 +629,14 @@
             },
             {
                 "name": "calldata",
+                "type": "felt*"
+            },
+            {
+                "name": "data_offset_len",
+                "type": "felt"
+            },
+            {
+                "name": "data_offset",
                 "type": "felt*"
             }
         ],
