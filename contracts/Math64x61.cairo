@@ -324,18 +324,3 @@ func Math64x61_exp {range_check_ptr} (x: felt) -> (res: felt):
     let (res) = Math64x61_exp2(bin_exp)
     return (res)
 end
-
-
-@view
-func ble {range_check_ptr} () -> (res: felt):
-    let (res) = Math64x61_exp(0)
-    return (res)
-end
-
-@view
-func ble3 {range_check_ptr} () -> (res: felt):
-    let (res) = Math64x61_exp(Math64x61_FRACT_PART)
-    return (res)
-end
-
-
