@@ -5,6 +5,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import sign
+from starkware.cairo.common.math_cmp import is_le
 
 # Third party imports. Was copy pasted to this repo.
 from contracts.Math64x61 import (
@@ -15,11 +16,14 @@ from contracts.Math64x61 import (
     Math64x61_sqrt,
     Math64x61_mul,
     Math64x61_div,
-    Math64x61_add
+    Math64x61_add,
+    Math64x61_sub,
+    Math64x61_FRACT_PART,
+    Math64x61_ONE
 )
 
 
-const INPUT_UNIT = 10**16
+const INPUT_UNIT = 10**8
 
 
 func _decimal_thousandth{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(x: felt) -> (
@@ -69,8 +73,9 @@ func std_normal_cdf{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     end
 
     # Input adjustment
-    let (input_unadjusted) = Math64x61_fromFelt(x)
-    let (input) = Math64x61_div(input_unadjusted, base)
+    #let (input_unadjusted) = Math64x61_fromFelt(x)
+    #let (input) = Math64x61_div(input_unadjusted, base)
+    let input = x
 
     # Constants required in the "rest of the code".
     let (PI) = _get_pi()
@@ -84,7 +89,6 @@ func std_normal_cdf{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (two_pi) = Math64x61_mul(TWO, PI)
     let (root_of_two_pi) = Math64x61_sqrt(two_pi)
     let (inv_root_of_two_pi) = Math64x61_div(ONE, root_of_two_pi)
-    #let (MINUS_ONE) = Math64x61_fromFelt(-1)
     let (CDF_CONST) = Math64x61_mul(MINUS_ONE, inv_root_of_two_pi)
     let (const_a) = _decimal_thousandth(226)
     let (const_b) = _decimal_thousandth(640)
@@ -111,7 +115,59 @@ func std_normal_cdf{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     return (res=res_based_felt, base=base_felt)
 end
 
-@view
+func _get_d1_d2_numerator{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    is_frac: felt,
+    ln_price_to_strike: felt,
+    risk_plus_sigma_squared_half_time: felt
+) -> (
+    numerator : felt,
+    is_pos_d_1: felt
+):
+    if is_frac == 1:
+        # ln_price_to_strike < 0 (not stored as negative, but above the "let (div) = Math6..." had to be used
+        # to not overflow
+        # risk_plus_sigma_squared_half_time > 0
+        let (is_ln_smaller) = is_le(ln_price_to_strike, risk_plus_sigma_squared_half_time - 1)
+        if is_ln_smaller == 1:
+            let (numerator) = Math64x61_sub(risk_plus_sigma_squared_half_time, ln_price_to_strike)
+            let is_pos_d_1 = 1
+            return (numerator=numerator, is_pos_d_1=is_pos_d_1)
+        else:
+            let (numerator) = Math64x61_sub(ln_price_to_strike, risk_plus_sigma_squared_half_time)
+            let is_pos_d_1 = 0
+            return (numerator=numerator, is_pos_d_1=is_pos_d_1)
+        end
+    else:
+        # both ln_price_to_strike, risk_plus_sigma_squared_half_time are positive
+        let (numerator) = Math64x61_add(ln_price_to_strike, risk_plus_sigma_squared_half_time)
+        let is_pos_d_1 = 1
+        return (numerator=numerator, is_pos_d_1=is_pos_d_1)
+    end
+end
+
+func _get_d1_d2_d_2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    is_pos_d1: felt,
+    d_1: felt,
+    denominator: felt
+) -> (
+    d_2: felt,
+    is_pos_d_2: felt
+):
+    if is_pos_d1 == 0:
+        let (d_2) = Math64x61_add(d_1, denominator)
+        return (d_2=d_2, is_pos_d_2=0)
+    else:
+        let (is_pos_d_2) = is_le(denominator, d_1 - 1)
+        if is_pos_d_2 == 1:
+            let (d_2) = Math64x61_sub(d_1, denominator)
+            return (d_2=d_2, is_pos_d_2=is_pos_d_2)
+        else:
+            let (d_2) = Math64x61_sub(denominator, d_1)
+            return (d_2=d_2, is_pos_d_2=is_pos_d_2)
+        end
+    end
+end
+
 func d1_d2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     sigma: felt,
     time_till_maturity_annualized: felt,
@@ -119,8 +175,10 @@ func d1_d2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     underlying_price: felt,
     risk_free_rate_annualized: felt
 ) -> (
-    d_1 : felt,
-    d_2: felt
+    d_1: felt,
+    is_pos_d_1: felt,
+    d_2: felt,
+    is_pos_d_2: felt
 ):
     # ALL OF THE INPUTS ARE FIXED POINT VALUE (ie they went through the Math64x61_fromFelt)
 
@@ -137,20 +195,76 @@ func d1_d2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     let (risk_plus_sigma_squared_half) = Math64x61_add(risk_free_rate_annualized, sigma_squared_half)
 
     let (price_to_strike) = Math64x61_div(underlying_price, strike_price)
-    let (ln_price_to_strike) = Math64x61_ln(price_to_strike)
 
-    let (risk_plus_sigma_squared_half_time) = Math64x61_mul(risk_plus_sigma_squared_half,time_till_maturity_annualized)
+    # if price_to_strike < 1 -> ln_price_to_strike < 0...
+    let (is_frac) = is_le(price_to_strike, Math64x61_FRACT_PART - 1)
+    if is_frac == 1:
+        let (div) = Math64x61_div(Math64x61_ONE, price_to_strike)
+        let (ln_price_to_strike) = Math64x61_ln(div)
+    else:
+        let (ln_price_to_strike) = Math64x61_ln(price_to_strike)
+    end
 
-    let (numerator) = Math64x61_add(ln_price_to_strike, risk_plus_sigma_squared_half_time)
+    let (risk_plus_sigma_squared_half_time) = Math64x61_mul(risk_plus_sigma_squared_half, time_till_maturity_annualized)
+
+    let (numerator, is_pos_d1) = _get_d1_d2_numerator(
+        is_frac,
+        ln_price_to_strike,
+        risk_plus_sigma_squared_half_time
+    )
+
     let (denominator) = Math64x61_mul(sigma, sqrt_time_till_maturity_annualized)
 
     let (d_1) = Math64x61_div(numerator, denominator)
 
-    let (MINUS_ONE) = Math64x61_fromFelt(-1)
-    let (negative_denominator) = Math64x61_mul(MINUS_ONE, denominator)
-    let (d_2) = Math64x61_add(d_1, negative_denominator)
+    let (d_2, is_pos_d_2) = _get_d1_d2_d_2(is_pos_d1, d_1, denominator)
 
-    return (d_1=d_1, d_2=d_2)
+    return (d_1=d_1, is_pos_d_1=is_pos_d1, d_2=d_2, is_pos_d_2=is_pos_d_2)
+end
+
+@view
+func testable_d1_d2{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    _sigma: felt,
+    _time_till_maturity_annualized: felt,
+    _strike_price: felt,
+    _underlying_price: felt,
+    _risk_free_rate_annualized: felt
+) -> (
+    d_1 : felt,
+    is_pos_d_1: felt,
+    d_2: felt,
+    is_pos_d_2: felt
+):
+    # wrapper for d1_d2 function for purpose of testing
+
+    alloc_locals
+
+    let (base) = Math64x61_fromFelt(INPUT_UNIT)
+    let (sigma_) = Math64x61_fromFelt(_sigma)
+    let (time_till_maturity_annualized_) = Math64x61_fromFelt(_time_till_maturity_annualized)
+    let (strike_price_) = Math64x61_fromFelt(_strike_price)
+    let (underlying_price_) = Math64x61_fromFelt(_underlying_price)
+    let (risk_free_rate_annualized_) = Math64x61_fromFelt(_risk_free_rate_annualized)
+
+    let (sigma) = Math64x61_div(sigma_, base)
+    let (time_till_maturity_annualized) = Math64x61_div(time_till_maturity_annualized_, base)
+    let (strike_price) = Math64x61_div(strike_price_, base)
+    let (underlying_price) = Math64x61_div(underlying_price_, base)
+    let (risk_free_rate_annualized) = Math64x61_div(risk_free_rate_annualized_, base)
+
+    let (d_1, is_pos_d_1, d_2, is_pos_d_2) = d1_d2(
+        sigma,
+        time_till_maturity_annualized,
+        strike_price,
+        underlying_price,
+        risk_free_rate_annualized
+    )
+
+    let (d_1_) = Math64x61_mul(d_1, base)
+    let (d_2_) = Math64x61_mul(d_2, base)
+    let (d_1__) = Math64x61_toFelt(d_1_)
+    let (d_2__) = Math64x61_toFelt(d_2_)
+    return (d_1=d_1__, is_pos_d_1=is_pos_d_1, d_2=d_2__, is_pos_d_2=is_pos_d_2)
 end
 
 # Calculates approximate value for Black Scholes
@@ -190,7 +304,7 @@ func black_scholes{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     let (e_neg_risk_time_till_maturity) = Math64x61_exp(neg_risk_time_till_maturity)
     let (strike_e_neg_risk_time_till_maturity) = Math64x61_mul(strike_price_, e_neg_risk_time_till_maturity)
 
-    let (d_1, d_2) = d1_d2(
+    let (d_1, is_pos_d_1, d_2, is_pos_d_2) = d1_d2(
         sigma_,
         time_till_maturity_annualized_,
         strike_price_,
@@ -226,4 +340,7 @@ func black_scholes{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     let (put_premia) = Math64x61_toFelt(put_premia_based)
 
     return (call_premia=call_premia, put_premia=put_premia, base=base)
+
+    #let (sigma___) = Math64x61_toFelt(sigma__)
+    #return (call_premia=sigma___, put_premia=sigma___, base=sigma___)
 end
