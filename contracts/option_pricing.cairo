@@ -10,7 +10,6 @@ from starkware.cairo.common.math_cmp import is_le
 # Third party imports. Was copy pasted to this repo.
 from contracts.Math64x61 import (
     Math64x61_fromFelt,
-    Math64x61_toFelt,
     Math64x61_exp,
     Math64x61_ln,
     Math64x61_sqrt,
@@ -21,9 +20,6 @@ from contracts.Math64x61 import (
     Math64x61_FRACT_PART,
     Math64x61_ONE
 )
-
-
-const INPUT_UNIT = 10**8
 
 
 func _decimal_thousandth{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(x: felt) -> (
