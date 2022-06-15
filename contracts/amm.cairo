@@ -16,6 +16,8 @@ const POOL_BALANCE_UPPER_BOUND = 2 ** 64
 # TOKEN_A corresponds to ETH and TOKEN_B to USDC... Ie underlying asset is TOKEN_A/TOKEN_B
 # Call pool is denominated in TOKEN_A (ETH) and Put pool in TOKEN_B (USDC). Denominated
 # also means, that the liquidity is in given token.
+# FIXME: look into how the tokens are actually identified
+# FIXME: move the token identification to separate file
 const TOKEN_A = 1
 const TOKEN_B = 2
 
@@ -27,6 +29,7 @@ const TRADE_SIDE_LONG = 0
 const TRADE_SIDE_SHORT = 1
 
 
+# FIXME: look into how the token sizes are dealt with across different protocols
 # A map from account and token type to the corresponding balance of that account in given pool.
 # FIXME: This is at the moment not used.
 @storage_var
@@ -78,8 +81,6 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # 5) Get fees
 
 
-
-
     # 1) Update the pool_balance
         # increase by the amount of fees (in corresponding TOKEN)
         # if side==TRADE_SIDE_LONG increase pool_balance by premia (in corresponding TOKEN)
@@ -90,6 +91,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # (could be partially traded and partially minted).
     let (available_option_balance) = 
 
+    # available_option_balance is always >= 0
     let (to_be_traded) = min(available_option_balance, option_size)
     let (to_be_minted) = option_size - to_be_traded
 
@@ -101,11 +103,11 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # 4) Update the pool_balance
         # if side==TRADE_SIDE_SHORT increase pool_balance by
-            # if option_type==OPTION_CALL increase it by to_be_traded
-            # if option_type==OPTION_PUT increase it by to_be_traded*underlying_price
+            # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
+            # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
         # if side==TRADE_SIDE_LONG decrease pool_balance by
-            # if option_type==OPTION_CALL decrease it by to_be_traded
-            # if option_type==OPTION_PUT decrease it by to_be_traded*underlying_price
+            # if option_type==OPTION_CALL decrease it by to_be_minted
+            # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
 
 
