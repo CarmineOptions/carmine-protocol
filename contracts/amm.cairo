@@ -11,6 +11,11 @@ from contracts.option_pricing import black_scholes
 
 # The maximum amount of token in a pool.
 const POOL_BALANCE_UPPER_BOUND = 2 ** 64
+# The maximum amount of token for account balance
+const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64
+# The minimum and maximum volatility
+const VOLATILITY_LOWER_BOUND = 0
+const VOLATILITY_UPPER_BOUND = 2 ** 64
 
 # Imagine Token A being ETH and Token B being USDC. Ie underlying asset is ETH/USDC
 # TOKEN_A corresponds to ETH and TOKEN_B to USDC... Ie underlying asset is TOKEN_A/TOKEN_B
@@ -21,6 +26,8 @@ const POOL_BALANCE_UPPER_BOUND = 2 ** 64
 const TOKEN_A = 1
 const TOKEN_B = 2
 
+# option_type
+# TOKEN_A is used as locked capital in OPTION_CALL
 const OPTION_CALL = 0
 const OPTION_PUT = 1
 
@@ -60,6 +67,58 @@ func pool_volatility(option_type : felt, maturity : felt) -> (volatility : felt)
 end
 
 
+# Create list of options
+
+#---------------storage_var handlers------------------
+
+func set_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt, balance : felt
+):
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1)
+    pool_balance.write(option_type, balance)
+    return ()
+end
+
+func set_account_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    account_id : felt, token_type : felt, balance : felt
+):
+    assert (token_type - TOKEN_A) * (token_type - TOKEN_b) = 0
+    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1)
+    account_balance.write(account_id, token_type, balance)
+    return ()
+end
+
+func set_pool_option_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt,
+    strike_price : felt,
+    maturity : felt,
+    side : felt,
+    balance : felt
+):
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+    assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0
+    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1)
+    # FIXME: assert maturity
+    # FIXME: assert side
+
+    pool_option_balance.write(option_type, strike_price, maturity, side, balance)
+    return ()
+end
+
+func set_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt, maturity : felt, volatility : felt
+):
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+    assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1)
+    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility - 1)
+    pool_volatility.write(option_type, maturity, balance)
+    return ()
+end
+
+
+
+#---------------AMM logic------------------
 
 
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -76,9 +135,13 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # 3) Get price of underlying asset
 
-    # 4) Get premia
+    # 4) Get time till maturity
 
-    # 5) Get fees
+    # 5) risk free rate
+
+    # 6) Get premia
+
+    # 7) Get fees
 
 
     # 1) Update the pool_balance
@@ -148,6 +211,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
 end
 
+# -----------------------------------------------
+
+
 
 # FIXME: this will have to be replaced by sending tokens from wallet to the pool(s).
 # Adds fake tokens to the given account and for both pools (call and put pools).
@@ -155,19 +221,75 @@ end
 func add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt, amount_token_a : felt, amount_token_b : felt
 ):
-    # 1) check that the final balance is below POOL_BALANCE_UPPER_BOUND
-    # 2) update pool_balance
-    # 3) update account_balance
+    # 1) check that the final balance is below POOL_BALANCE_UPPER_BOUND with the additional amount
+    let (pool_balance_call) = pool_balance.read(OPTION_CALL)
+    let (pool_balance_put) = pool_balance.read(OPTION_PUT)
+
+    assert_nn_le(pool_balance_call, POOL_BALANCE_UPPER_BOUND - 1 - amount_token_a)
+    assert_nn_le(pool_balance_put, POOL_BALANCE_UPPER_BOUND - 1 - amount_token_b)
+
+    # 2) check that the final balance is below POOL_BALANCE_UPPER_BOUND with the additional amount
+    let (account_balance_call) = account_balance.read(account_id, TOKEN_A)
+    let (account_balance_put) = account_balance.read(account_id, TOKEN_B)
+
+    assert_nn_le(account_balance_call, ACCOUNT_BALANCE_UPPER_BOUND - 1 - amount_token_a)
+    assert_nn_le(account_balance_put, ACCOUNT_BALANCE_UPPER_BOUND - 1 - amount_token_b)
+
+    # 3) update pool_balance
+    set_pool_balance(OPTION_CALL, pool_balance_call + amount_token_a)
+    set_pool_balance(OPTION_PUT, pool_balance_put + amount_token_b)
+
+    # 4) update account_balance
+    set_account_balance(account_id, TOKEN_A, account_balance_call + amount_token_a)
+    set_account_balance(account_id, TOKEN_B, account_balance_put + amount_token_b)
     return ()
 end
+
+
+
+# func account_balance(account_id : felt, token_type : felt) -> (balance : felt):
+# end
+
+# # A map from option type to the corresponding balance of the pool.
+# @storage_var
+# func pool_balance(option_type : felt) -> (balance : felt):
+# end
+
+# # Stores information about underwritten or bought options that the AMM could
+# # use instead of minting a new option. If balance > 0 -> pool does not have to
+# # mint new options if user wants to buy, balance < 0 means the same when
+# # user wants to sell.
+# @storage_var
+# func pool_option_balance(
+#     option_type : felt,
+#     strike_price : felt,
+#     maturity : felt,
+#     side : felt
+# ) -> (balance : felt):
+# end
+
+# # Stores current value of volatility for given pool (option type) and maturity.
+# @storage_var
+# func pool_volatility(option_type : felt, maturity : felt) -> (volatility : felt):
+
 
 # FIXME: this is here only until we are able to send in test tokens
 @external
 func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     token_a : felt, token_b : felt
 ):
-    set_pool_token_balance(token_type=TOKEN_A, balance=12345)
-    set_pool_token_balance(token_type=TOKEN_B, balance=12345)
+    # 1) set pool_balance
+    set_pool_balance(token_type=OPTION_CALL, balance=12345)
+    set_pool_balance(token_type=OPTION_PUT, balance=12345)
+    
+    # 2) Set pool_option_balance
+
+
+    # 3) Set pool_volatility
+    set_pool_volatility(OPTION_CALL, 1000, 100)
+    set_pool_volatility(OPTION_PUT, 1000, 100)
+
+
 
     return ()
 end
