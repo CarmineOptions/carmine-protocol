@@ -4,7 +4,8 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 # from starkware.cairo.common.hash import hash2
-# from starkware.cairo.common.math import assert_le, assert_nn_le, unsigned_div_rem
+from starkware.cairo.common.math import assert_nn_le
+# from starkware.cairo.common.math import assert_le, unsigned_div_rem
 # from starkware.starknet.common.syscalls import storage_read, storage_write
 
 from contracts.option_pricing import black_scholes
@@ -83,7 +84,7 @@ end
 func set_account_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt, token_type : felt, balance : felt
 ):
-    assert (token_type - TOKEN_A) * (token_type - TOKEN_b) = 0
+    assert (token_type - TOKEN_A) * (token_type - TOKEN_B) = 0
     assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1)
     account_balance.write(account_id, token_type, balance)
     return ()
@@ -112,8 +113,51 @@ func set_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
     assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1)
     assert_nn_le(VOLATILITY_LOWER_BOUND, volatility - 1)
-    pool_volatility.write(option_type, maturity, balance)
+    pool_volatility.write(option_type, maturity, volatility)
     return ()
+end
+
+@view
+func get_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt
+) -> (
+    pool_balance: felt
+):
+    let (pool_balance_) = pool_balance.read(option_type)
+    return (pool_balance_)
+end
+
+@view
+func get_account_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    account_id : felt, token_type : felt
+) -> (
+    account_balance: felt
+):
+    let (account_balance_) = account_balance.read(account_id, token_type)
+    return (account_balance_)
+end
+
+@view
+func get_pool_option_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt,
+    strike_price : felt,
+    maturity : felt,
+    side : felt
+) -> (
+    pool_option_balance: felt
+):
+    let (pool_option_balance_) = pool_option_balance.read(option_type, strike_price, maturity, side)
+    return (pool_option_balance_)
+end
+
+@view
+func get_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt, maturity : felt
+) -> (
+    pool_volatility: felt
+):
+    let (pool_volatility_) = pool_volatility.read(option_type, maturity)
+    return (pool_volatility_)
 end
 
 
@@ -152,11 +196,11 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # 2) get size of options that could be "traded" and not "minted" from pool_option_balance
     # if there are available ones, trade them, if not mint new ones
     # (could be partially traded and partially minted).
-    let (available_option_balance) = 
+    #...... let (available_option_balance) =
 
     # available_option_balance is always >= 0
-    let (to_be_traded) = min(available_option_balance, option_size)
-    let (to_be_minted) = option_size - to_be_traded
+    #...... let (to_be_traded) = min(available_option_balance, option_size)
+    #...... let (to_be_minted) = option_size - to_be_traded
 
     # 3) Update the pool_option_balance
         # decrease by to_be_traded
@@ -173,7 +217,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
             # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
 
-
+    return ()
 end
 
 @external
@@ -208,7 +252,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     # 5) Check that option_size>0
 
     do_trade(account_id, option_type, strike_price, maturity, side, option_size)
-
+    return ()
 end
 
 # -----------------------------------------------
@@ -226,7 +270,7 @@ func add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     let (pool_balance_put) = pool_balance.read(OPTION_PUT)
 
     assert_nn_le(pool_balance_call, POOL_BALANCE_UPPER_BOUND - 1 - amount_token_a)
-    assert_nn_le(pool_balance_put, POOL_BALANCE_UPPER_BOUND - 1 - amount_token_b)
+    assert_nn_le(pool_balance_put, POOL_BALANCE_UPPER_BOUND - 1 - TOKEN_B)
 
     # 2) check that the final balance is below POOL_BALANCE_UPPER_BOUND with the additional amount
     let (account_balance_call) = account_balance.read(account_id, TOKEN_A)
@@ -275,12 +319,10 @@ end
 
 # FIXME: this is here only until we are able to send in test tokens
 @external
-func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    token_a : felt, token_b : felt
-):
+func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
     # 1) set pool_balance
-    set_pool_balance(token_type=OPTION_CALL, balance=12345)
-    set_pool_balance(token_type=OPTION_PUT, balance=12345)
+    set_pool_balance(option_type=OPTION_CALL, balance=12345)
+    set_pool_balance(option_type=OPTION_PUT, balance=12345)
     
     # 2) Set pool_option_balance
 
@@ -288,8 +330,6 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     # 3) Set pool_volatility
     set_pool_volatility(OPTION_CALL, 1000, 100)
     set_pool_volatility(OPTION_PUT, 1000, 100)
-
-
 
     return ()
 end
