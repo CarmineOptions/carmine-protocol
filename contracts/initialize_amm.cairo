@@ -3,10 +3,8 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-# from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import assert_nn_le
-# from starkware.cairo.common.math import assert_le, unsigned_div_rem
-# from starkware.starknet.common.syscalls import storage_read, storage_write
+from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div
 
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
     TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT)
@@ -47,18 +45,29 @@ end
 # FIXME: this is here only until we are able to send in test tokens
 @external
 func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+
+    alloc_locals
+
     # 1) set pool_balance
-    set_pool_balance(option_type=OPTION_CALL, balance=12345)
-    set_pool_balance(option_type=OPTION_PUT, balance=12345)
+    let (balance) = Math64x61_fromFelt(12345)
+    set_pool_balance(option_type=OPTION_CALL, balance=balance)
+    set_pool_balance(option_type=OPTION_PUT, balance=balance)
     
     # 2) Set pool_option_balance
 
 
     # 3) Set pool_volatility
-    set_pool_volatility(OPTION_CALL, 1000, 100)
-    set_pool_volatility(OPTION_PUT, 1000, 100)
-    set_pool_volatility(OPTION_CALL, 1100, 100)
-    set_pool_volatility(OPTION_PUT, 1100, 100)
+    let (volatility) = Math64x61_fromFelt(100)
+    let (maturity_1) = Math64x61_fromFelt(1)
+
+    let (eleven) = Math64x61_fromFelt(11)
+    let (ten) = Math64x61_fromFelt(11)
+    let (maturity_11) = Math64x61_div(eleven, ten)
+
+    set_pool_volatility(OPTION_CALL, maturity_1, volatility)
+    set_pool_volatility(OPTION_PUT, maturity_1, volatility)
+    set_pool_volatility(OPTION_CALL, maturity_11, volatility)
+    set_pool_volatility(OPTION_PUT, maturity_11, volatility)
 
     return ()
 end
