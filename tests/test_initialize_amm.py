@@ -6,7 +6,7 @@ import pytest
 from starkware.starknet.testing.starknet import Starknet
 
 # The path to the contract source code.
-CONTRACT_FILE = os.path.join("contracts", "amm.cairo")
+CONTRACT_FILE = os.path.join("contracts", "initialize_amm.cairo")
 
 TOKEN_A = 1
 TOKEN_B = 2
