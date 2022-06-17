@@ -94,3 +94,81 @@ async def test_init_pool() -> None:
         for maturity in [1000, 1100]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0], 100, abs_tol=0.0001)
+
+
+@pytest.mark.asyncio
+async def test_add_fake_tokens() -> None:
+    # Create a new Starknet class that simulates the StarkNet
+    # system.
+    starknet = await Starknet.empty()
+
+    # Deploy the contract.
+    contract = await starknet.deploy(source=CONTRACT_FILE,)
+
+    # initialize pool
+    await contract.init_pool().invoke()
+
+    # pool_balance
+    result = await contract.get_pool_balance(OPTION_CALL).call()
+    assert math.isclose(result.result[0], 12345, abs_tol=0.0001)
+    result = await contract.get_pool_balance(OPTION_PUT).call()
+    assert math.isclose(result.result[0], 12345, abs_tol=0.0001)
+
+    # account_balance
+    account_id = 123456789
+    result = await contract.get_account_balance(account_id, TOKEN_A).call()
+    assert math.isclose(result.result[0], 0, abs_tol=0.0001)
+    result = await contract.get_account_balance(account_id, TOKEN_B).call()
+    assert math.isclose(result.result[0], 0, abs_tol=0.0001)
+
+
+    # ----------------add fake tokens----------------
+    account_id = 123456789
+    await contract.add_fake_tokens(
+        account_id=account_id,
+        amount_token_a=100,
+        amount_token_b=90
+    ).invoke()
+    account_id = 987654321
+    await contract.add_fake_tokens(
+        account_id=account_id,
+        amount_token_a=50,
+        amount_token_b=40
+    ).invoke()
+
+    # pool_balance
+    result = await contract.get_pool_balance(OPTION_CALL).call()
+    assert math.isclose(result.result[0], 12495, abs_tol=0.0001)
+    result = await contract.get_pool_balance(OPTION_PUT).call()
+    assert math.isclose(result.result[0], 12475, abs_tol=0.0001)
+
+    # account_balance
+    account_id = 123456789
+    result = await contract.get_account_balance(account_id, TOKEN_A).call()
+    assert math.isclose(result.result[0], 100, abs_tol=0.0001)
+    result = await contract.get_account_balance(account_id, TOKEN_B).call()
+    assert math.isclose(result.result[0], 90, abs_tol=0.0001)
+    account_id = 987654321
+    result = await contract.get_account_balance(account_id, TOKEN_A).call()
+    assert math.isclose(result.result[0], 50, abs_tol=0.0001)
+    result = await contract.get_account_balance(account_id, TOKEN_B).call()
+    assert math.isclose(result.result[0], 40, abs_tol=0.0001)
+
+    # pool_option_balance
+    for option_type in [OPTION_CALL, OPTION_PUT]:
+        for strike_price in [1000, 1100, 1200]:
+            for maturity in [1000, 1100]:
+                for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
+                    result = await contract.get_pool_option_balance(
+                        option_type,
+                        strike_price,
+                        maturity,
+                        side
+                    ).call()
+                    assert math.isclose(result.result[0], 0, abs_tol=0.0001)
+
+    # pool_volatility
+    for option_type in [OPTION_CALL, OPTION_PUT]:
+        for maturity in [1000, 1100]:
+            result = await contract.get_pool_volatility(option_type, maturity).call()
+            assert math.isclose(result.result[0], 100, abs_tol=0.0001)
