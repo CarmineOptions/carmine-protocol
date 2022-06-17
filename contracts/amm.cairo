@@ -330,6 +330,8 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     # 3) Set pool_volatility
     set_pool_volatility(OPTION_CALL, 1000, 100)
     set_pool_volatility(OPTION_PUT, 1000, 100)
+    set_pool_volatility(OPTION_CALL, 1100, 100)
+    set_pool_volatility(OPTION_PUT, 1100, 100)
 
     return ()
 end
