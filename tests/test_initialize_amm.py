@@ -45,7 +45,11 @@ async def test_init_pool() -> None:
 
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for strike_price in [1000, 1100, 1200]:
+        for strike_price in [
+            1000 * Math64x61_FRACT_PART,
+            1100 * Math64x61_FRACT_PART,
+            1200 * Math64x61_FRACT_PART
+        ]:
             # maturity is 1.0 and 1.1... both * 2**61
             for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
@@ -63,6 +67,22 @@ async def test_init_pool() -> None:
         for maturity in [2305843009213693952, 2536427310135063347]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0], 0, abs_tol=0.0001)
+
+    # available_options
+    for option_type in [OPTION_CALL, OPTION_PUT]:
+        for strike_price in [
+            1000 * Math64x61_FRACT_PART,
+            1100 * Math64x61_FRACT_PART,
+            1200 * Math64x61_FRACT_PART
+        ]:
+            # maturity is 1.0 and 1.1... both * 2**61
+            for maturity in [2305843009213693952, 2536427310135063347]:
+                result = await contract.get_available_options(
+                    option_type,
+                    strike_price,
+                    maturity
+                ).call()
+                assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
     # ----------initialize pool----------
     await contract.init_pool().invoke()
@@ -82,7 +102,11 @@ async def test_init_pool() -> None:
 
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for strike_price in [1000, 1100, 1200]:
+        for strike_price in [
+            1000 * Math64x61_FRACT_PART,
+            1100 * Math64x61_FRACT_PART,
+            1200 * Math64x61_FRACT_PART
+        ]:
             # maturity is 1.0 and 1.1... both * 2**61
             for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
@@ -100,6 +124,29 @@ async def test_init_pool() -> None:
         for maturity in [2305843009213693952, 2536427310135063347]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 100, abs_tol=0.0001)
+
+    # available_options
+    # PUT and CALL were initialized with both maturities and with strikes 1000 and 1100
+    for option_type in [OPTION_CALL, OPTION_PUT]:
+        for strike_price in [1000 * Math64x61_FRACT_PART, 1100 * Math64x61_FRACT_PART]:
+            # maturity is 1.0 and 1.1... both * 2**61
+            for maturity in [2305843009213693952, 2536427310135063347]:
+                result = await contract.get_available_options(
+                    option_type,
+                    strike_price,
+                    maturity
+                ).call()
+                assert math.isclose(result.result[0], 1, abs_tol=0.0001)
+    for option_type in [OPTION_CALL, OPTION_PUT]:
+        strike_price = 1200 * Math64x61_FRACT_PART
+        # maturity is 1.0 and 1.1... both * 2**61
+        for maturity in [2305843009213693952, 2536427310135063347]:
+            result = await contract.get_available_options(
+                option_type,
+                strike_price,
+                maturity
+            ).call()
+            assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
 
 @pytest.mark.asyncio
@@ -162,7 +209,11 @@ async def test_add_fake_tokens() -> None:
 
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for strike_price in [1000, 1100, 1200]:
+        for strike_price in [
+            1000 * Math64x61_FRACT_PART,
+            1100 * Math64x61_FRACT_PART,
+            1200 * Math64x61_FRACT_PART
+        ]:
             # maturity is 1.0 and 1.1... both * 2**61
             for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
