@@ -39,6 +39,7 @@ func add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     # 4) update account_balance
     set_account_balance(account_id, TOKEN_A, account_balance_call + amount_token_a)
     set_account_balance(account_id, TOKEN_B, account_balance_put + amount_token_b)
+
     return ()
 end
 
@@ -58,14 +59,14 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 
     # 3) Set pool_volatility
     let (volatility) = Math64x61_fromFelt(100)
+
     let (maturity_1) = Math64x61_fromFelt(1)
-
-    let (eleven) = Math64x61_fromFelt(11)
-    let (ten) = Math64x61_fromFelt(11)
-    let (maturity_11) = Math64x61_div(eleven, ten)
-
     set_pool_volatility(OPTION_CALL, maturity_1, volatility)
     set_pool_volatility(OPTION_PUT, maturity_1, volatility)
+
+    let (eleven) = Math64x61_fromFelt(11)
+    let (ten) = Math64x61_fromFelt(10)
+    let (maturity_11) = Math64x61_div(eleven, ten)
     set_pool_volatility(OPTION_CALL, maturity_11, volatility)
     set_pool_volatility(OPTION_PUT, maturity_11, volatility)
 
