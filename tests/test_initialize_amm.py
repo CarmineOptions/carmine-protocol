@@ -46,19 +46,21 @@ async def test_init_pool() -> None:
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
         for strike_price in [1000, 1100, 1200]:
-            for maturity in [1., 1.1]:
+            # maturity is 1.0 and 1.1... both * 2**61
+            for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
                     result = await contract.get_pool_option_balance(
                         option_type,
                         strike_price * Math64x61_FRACT_PART,
-                        int(maturity * Math64x61_FRACT_PART),
+                        maturity,
                         side
                     ).call()
                     assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
     # pool_volatility
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for maturity in [1000, 1100]:
+        # maturity is 1.0 and 1.1... both * 2**61
+        for maturity in [2305843009213693952, 2536427310135063347]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
@@ -81,23 +83,22 @@ async def test_init_pool() -> None:
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
         for strike_price in [1000, 1100, 1200]:
-            for maturity in [1., 1.1]:
+            # maturity is 1.0 and 1.1... both * 2**61
+            for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
                     result = await contract.get_pool_option_balance(
                         option_type,
                         strike_price * Math64x61_FRACT_PART,
-                        int(maturity * Math64x61_FRACT_PART),
+                        maturity,
                         side
                     ).call()
                     assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
     # pool_volatility
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for maturity in [1., 1.1]:
-            result = await contract.get_pool_volatility(
-                option_type,
-                int(maturity * Math64x61_FRACT_PART)
-            ).call()
+        # maturity is 1.0 and 1.1... both * 2**61
+        for maturity in [2305843009213693952, 2536427310135063347]:
+            result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 100, abs_tol=0.0001)
 
 
@@ -162,23 +163,20 @@ async def test_add_fake_tokens() -> None:
     # pool_option_balance
     for option_type in [OPTION_CALL, OPTION_PUT]:
         for strike_price in [1000, 1100, 1200]:
-            for maturity in [1, 1.1]:
+            # maturity is 1.0 and 1.1... both * 2**61
+            for maturity in [2305843009213693952, 2536427310135063347]:
                 for side in [TRADE_SIDE_LONG, TRADE_SIDE_SHORT]:
                     result = await contract.get_pool_option_balance(
                         option_type,
                         strike_price * Math64x61_FRACT_PART,
-                        int(maturity * Math64x61_FRACT_PART),
+                        maturity,
                         side
                     ).call()
                     assert math.isclose(result.result[0], 0, abs_tol=0.0001)
 
     # pool_volatility
-    print('--------------------------------')
     for option_type in [OPTION_CALL, OPTION_PUT]:
-        for maturity in [1., 1.1]:
-            result = await contract.get_pool_volatility(
-                option_type,
-                int(maturity*Math64x61_FRACT_PART)
-            ).call()
-            print(maturity, option_type, result.result)
+        # maturity is 1 and 1.1... it is written this way, because python rounds 1.1*230584300921369395200
+        for maturity in [2305843009213693952, 2536427310135063347]:
+            result = await contract.get_pool_volatility(option_type, maturity).call()
             assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 100, abs_tol=0.0001)
