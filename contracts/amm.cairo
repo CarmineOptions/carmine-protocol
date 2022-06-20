@@ -7,7 +7,13 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
 # from starkware.starknet.common.syscalls import storage_read, storage_write
-from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div
+from contracts.Math64x61 import (
+    Math64x61_fromFelt,
+    Math64x61_mul,
+    Math64x61_div,
+    Math64x61_add,
+    Math64x61_sub
+)
 
 
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
@@ -177,6 +183,36 @@ end
 
 #---------------AMM logic------------------
 
+func _select_and_adjust_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    call_premia : felt,
+    put_premia : felt,
+    option_type : felt,
+    underlying_price : felt,
+) -> (premia: felt):
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+
+    if option_type == OPTION_CALL:
+        let (adjusted_call_premia) = Math64x61_div(call_premia, underlying_price)
+        return (premia=adjusted_call_premia)
+    end
+    return (premia=put_premia)
+end
+
+func _calc_new_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    side : felt,
+    current_pool_balance : felt,
+    total_premia : felt
+) -> (pool_balance : felt):
+    if side == TRADE_SIDE_LONG:
+        # User goes long and pays premia to the pool_balance
+        let (long_pool_balance) = Math64x61_add(current_pool_balance, total_premia)
+        return (long_pool_balance)
+    end
+    # User goes short and pool pays premia to the user
+    let (short_pool_balance) = Math64x61_sub(current_pool_balance, total_premia)
+    return (short_pool_balance)
+end
 
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
@@ -186,6 +222,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     side : felt,
     option_size : felt,
 ) -> (premia: felt):
+    # options_size is always denominated in base tokens (ETH in case of ETH/USDC)
 
     alloc_locals
 
@@ -196,7 +233,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # 2) Update volatility
 
     # 3) Get price of underlying asset
-    let (underlying_price) = Math64x61_fromFelt(1800)
+    let (underlying_price) = Math64x61_fromFelt(1000)
 
     # 4) Get time till maturity
     let (one) = Math64x61_fromFelt(1)
@@ -217,15 +254,26 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         underlying_price=underlying_price,
         risk_free_rate_annualized=risk_free_rate_annualized
     )
-    # FIXME: set premia to call_premia or to put_premia based on option_type
+    # AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
+    # Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
+    # and in quote tokens (USDC in case of ETH/USDC) for put option.
+    let (premia) = _select_and_adjust_premia(call_premia, put_premia, option_type, underlying_price)
+    # premia adjusted by size (multiplied by size)
+    let (total_premia) = Math64x61_mul(premia, option_size)
 
     # 7) Get fees
+    # FIXME: add fees to premia, the fees are not added at the moment (add/sub depending on side)
 
 
     # 1) Update the pool_balance
         # increase by the amount of fees (in corresponding TOKEN)
         # if side==TRADE_SIDE_LONG increase pool_balance by premia (in corresponding TOKEN)
         # if side==TRADE_SIDE_SHORT decrease pool_balance by premia (in corresponding TOKEN)
+    let (current_pool_balance) = get_pool_balance(option_type)
+
+    let (new_pool_balance) = _calc_new_pool_balance(side, current_pool_balance, total_premia)
+    set_pool_balance(option_type, new_pool_balance)
+
 
     # 2) get size of options that could be "traded" and not "minted" from pool_option_balance
     # if there are available ones, trade them, if not mint new ones
@@ -251,7 +299,8 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
             # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
 
-    return (premia=call_premia)
+    return (premia=premia)
+    # return (premia=call_premia)
 end
 
 @external
@@ -262,7 +311,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     maturity : felt,
     side : felt,
     option_size : felt,
-):
+) -> (premia : felt):
     # option_type is from {OPTION_CALL, OPTION_PUT}
     # option_size is denominated in TOKEN_A (ETH)
     # side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
@@ -285,6 +334,6 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
     # 5) Check that option_size>0
 
-    do_trade(account_id, option_type, strike_price, maturity, side, option_size)
-    return ()
+    let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size)
+    return (premia=premia)
 end
