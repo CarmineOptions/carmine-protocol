@@ -12,7 +12,7 @@ from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div
 
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
     VOLATILITY_LOWER_BOUND, VOLATILITY_UPPER_BOUND, TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT,
-    TRADE_SIDE_LONG, TRADE_SIDE_SHORT)
+    TRADE_SIDE_LONG, TRADE_SIDE_SHORT, STRIKE_PRICE_UPPER_BOUND)
 from contracts.option_pricing import black_scholes
 
 
@@ -38,7 +38,9 @@ func pool_option_balance(
     strike_price : felt,
     maturity : felt,
     side : felt
-) -> (balance : felt):
+) -> (
+    balance : felt
+):
 end
 
 # Stores current value of volatility for given pool (option type) and maturity.
@@ -46,8 +48,18 @@ end
 func pool_volatility(option_type : felt, maturity : felt) -> (volatility : felt):
 end
 
+# Determines whether an option is allowed or not. If 1 is returned, option is allowed.
+# FIXME: is this a good design?
+@storage_var
+func available_options(
+    option_type : felt,
+    strike_price : felt,
+    maturity : felt
+) -> (
+    availability : felt
+):
+end
 
-# Create list of options
 
 #---------------storage_var handlers------------------
 
@@ -96,6 +108,18 @@ func set_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return ()
 end
 
+func set_available_options{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt, strike_price : felt, maturity : felt
+):
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+    # FIXME: assert that maturity > current time
+    assert_nn_le(strike_price, STRIKE_PRICE_UPPER_BOUND - 1)
+
+    # Sets the availability of option to 1 (True)
+    available_options.write(option_type, strike_price, maturity, 1)
+    return ()
+end
+
 @view
 func get_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt
@@ -137,6 +161,16 @@ func get_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 ):
     let (pool_volatility_) = pool_volatility.read(option_type, maturity)
     return (pool_volatility_)
+end
+
+@view
+func get_available_options{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt, strike_price : felt, maturity : felt
+) -> (
+    option_availability: felt
+):
+    let (option_availability_) = available_options.read(option_type, strike_price, maturity)
+    return (option_availability_)
 end
 
 
