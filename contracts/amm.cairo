@@ -7,6 +7,8 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
 # from starkware.starknet.common.syscalls import storage_read, storage_write
+from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div
+
 
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
     VOLATILITY_LOWER_BOUND, VOLATILITY_UPPER_BOUND, TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT,
@@ -149,18 +151,39 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     maturity : felt,
     side : felt,
     option_size : felt,
-):
+) -> (premia: felt):
+
+    alloc_locals
+
+    # 0) Get current volatility
+    let (volatility) = Math64x61_fromFelt(1)
     # 1) Calculate new volatility, calculate trade volatility
 
     # 2) Update volatility
 
     # 3) Get price of underlying asset
+    let (underlying_price) = Math64x61_fromFelt(1800)
 
     # 4) Get time till maturity
+    let (one) = Math64x61_fromFelt(1)
+    let (ten) = Math64x61_fromFelt(10)
+    let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
 
     # 5) risk free rate
+    let (three) = Math64x61_fromFelt(3)
+    let (hundred) = Math64x61_fromFelt(100)
+    # let (risk_free_rate_annualized) = Math64x61_div(three, hundred)
+    let (risk_free_rate_annualized) = Math64x61_fromFelt(0)
 
     # 6) Get premia
+    let (call_premia, put_premia) = black_scholes(
+        sigma=volatility,
+        time_till_maturity_annualized=time_till_maturity,
+        strike_price=strike_price,
+        underlying_price=underlying_price,
+        risk_free_rate_annualized=risk_free_rate_annualized
+    )
+    # FIXME: set premia to call_premia or to put_premia based on option_type
 
     # 7) Get fees
 
@@ -194,7 +217,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
             # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
 
-    return ()
+    return (premia=call_premia)
 end
 
 @external
