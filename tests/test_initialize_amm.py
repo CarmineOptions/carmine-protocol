@@ -123,7 +123,7 @@ async def test_init_pool() -> None:
         # maturity is 1.0 and 1.1... both * 2**61
         for maturity in [2305843009213693952, 2536427310135063347]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
-            assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 100, abs_tol=0.0001)
+            assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 1, abs_tol=0.0001)
 
     # available_options
     # PUT and CALL were initialized with both maturities and with strikes 1000 and 1100
@@ -230,4 +230,4 @@ async def test_add_fake_tokens() -> None:
         # maturity is 1 and 1.1... it is written this way, because python rounds 1.1*230584300921369395200
         for maturity in [2305843009213693952, 2536427310135063347]:
             result = await contract.get_pool_volatility(option_type, maturity).call()
-            assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 100, abs_tol=0.0001)
+            assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 1, abs_tol=0.0001)
