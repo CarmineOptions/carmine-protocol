@@ -59,7 +59,8 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 
 
     # 3) Set pool_volatility
-    let (volatility) = Math64x61_fromFelt(100)
+    # 1 = 100%
+    let (volatility) = Math64x61_fromFelt(1)
 
     let (maturity_1) = Math64x61_fromFelt(1)
     set_pool_volatility(OPTION_CALL, maturity_1, volatility)
