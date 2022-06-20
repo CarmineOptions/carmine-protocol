@@ -11,6 +11,8 @@ const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
 # The minimum and maximum volatility
 const VOLATILITY_LOWER_BOUND = 0
 const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
+# Maximum strike price allowed
+const STRIKE_PRICE_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
 
 # Imagine Token A being ETH and Token B being USDC. Ie underlying asset is ETH/USDC
 # TOKEN_A corresponds to ETH and TOKEN_B to USDC... Ie underlying asset is TOKEN_A/TOKEN_B
