@@ -11,9 +11,12 @@ selling specific options directly.
 
 ## Set up
 
-As described in [Cairo quickstart](https://www.cairo-lang.org/docs/quickstart.html)
-and in [Nile](https://github.com/OpenZeppelin/nile).
-
+- Clone this repo with `git clone --recurse-submodules` (Protostar uses submodules)
+- [Cairo quickstart](https://www.cairo-lang.org/docs/quickstart.html)
+    - On a M1 Macbook, fastecdsa build might fail; [https://github.com/OpenZeppelin/nile/issues/22](this) might help.
+- [Install Protostar](https://docs.swmansion.com/protostar/docs/tutorials/installation)
+- setup a virtualenv, install requirements.txt...
+- `make build`; `make test`
 
 ## Current State
 
@@ -30,4 +33,4 @@ TBD
 - [Twitter](https://twitter.com/CarmineOptions)
 - [Web](https://carmine.finance)
 - [Discord](https://discord.com/invite/uRs7j8w3bX)
-- Docs - TBD
+- [Docs](https://carmine-finance.gitbook.io/carmine-options-amm/)
