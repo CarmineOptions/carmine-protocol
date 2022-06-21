@@ -6,7 +6,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 # from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import assert_nn_le
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
-# from starkware.starknet.common.syscalls import storage_read, storage_write
+from starkware.starknet.common.syscalls import get_block_timestamp# storage_write
 from contracts.Math64x61 import (
     Math64x61_fromFelt,
     Math64x61_mul,
@@ -236,9 +236,10 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     let (underlying_price) = Math64x61_fromFelt(1000)
 
     # 4) Get time till maturity
-    let (one) = Math64x61_fromFelt(1)
-    let (ten) = Math64x61_fromFelt(10)
-    let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
+    let (currtime) = get_block_timestamp()
+    let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
+    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
 
     # 5) risk free rate
     let (three) = Math64x61_fromFelt(3)
