@@ -76,6 +76,47 @@ async def test_testable_do_trade() -> None:
         rel_tol=0.0001
     )
 
+    # Test size of pool_option_balance
+    for (option_type, option_size, target) in [
+        (OPTION_CALL, TRADE_SIDE_LONG, 0),
+        (OPTION_CALL, TRADE_SIDE_SHORT, 1),
+        (OPTION_PUT, TRADE_SIDE_LONG, 2),
+        (OPTION_PUT, TRADE_SIDE_SHORT, 0)
+    ]:
+        result = await initialize_amm_contract.get_pool_option_balance(
+            option_type=option_type,
+            strike_price=1000*Math64x61_FRACT_PART,
+            maturity=2305843009213693952,
+            side=option_size
+        ).call()
+        assert math.isclose(result.result[0] / Math64x61_FRACT_PART, target, abs_tol=0.0001)
+
+    # Buy 25% of put option that someone else bought
+    result = await initialize_amm_contract.trade(
+        account_id=account_id,
+        option_type=OPTION_PUT,
+        strike_price=1000*Math64x61_FRACT_PART,
+        maturity=2305843009213693952,
+        side=TRADE_SIDE_LONG,
+        option_size=int(0.5*Math64x61_FRACT_PART),
+    ).invoke()
+    # Test size of pool_option_balance
+    for (option_type, option_size, target) in [
+        (OPTION_CALL, TRADE_SIDE_LONG, 0),
+        (OPTION_CALL, TRADE_SIDE_SHORT, 1),
+        (OPTION_PUT, TRADE_SIDE_LONG, 1.5),
+        (OPTION_PUT, TRADE_SIDE_SHORT, 0)
+    ]:
+        result = await initialize_amm_contract.get_pool_option_balance(
+            option_type=option_type,
+            strike_price=1000*Math64x61_FRACT_PART,
+            maturity=2305843009213693952,
+            side=option_size
+        ).call()
+        assert math.isclose(result.result[0] / Math64x61_FRACT_PART, target, abs_tol=0.0001)
+
+
+
 
     print('---------------------------')
     print('put', result.result[0] / Math64x61_FRACT_PART)
