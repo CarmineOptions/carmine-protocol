@@ -12,13 +12,14 @@ from contracts.Math64x61 import (
     Math64x61_mul,
     Math64x61_div,
     Math64x61_add,
-    Math64x61_sub
+    Math64x61_sub,
+    Math64x61_min
 )
 
 
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
     VOLATILITY_LOWER_BOUND, VOLATILITY_UPPER_BOUND, TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT,
-    TRADE_SIDE_LONG, TRADE_SIDE_SHORT, STRIKE_PRICE_UPPER_BOUND)
+    TRADE_SIDE_LONG, TRADE_SIDE_SHORT, get_opposite_side, STRIKE_PRICE_UPPER_BOUND)
 from contracts.option_pricing import black_scholes
 
 
@@ -190,6 +191,8 @@ func _select_and_adjust_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     underlying_price : felt,
 ) -> (premia: felt):
 
+    # Call and put premia are in quote tokens (in USDC in case of ETH/USDC)
+
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
 
     if option_type == OPTION_CALL:
@@ -279,17 +282,57 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # 2) get size of options that could be "traded" and not "minted" from pool_option_balance
     # if there are available ones, trade them, if not mint new ones
     # (could be partially traded and partially minted).
-    #...... let (available_option_balance) =
+    let (available_option_balance) = get_pool_option_balance(
+        option_type,
+        strike_price,
+        maturity,
+        side
+    )
+    # option balance for opposite side
+    let (opposite_side) = get_opposite_side(side)
+    let (available_opposite_option_balance) = get_pool_option_balance(
+        option_type,
+        strike_price,
+        maturity,
+        opposite_side
+    )
+    # size of option and hence the available_option_balance is always in terms of base token
+    # (ETH in case of ETH/USDC)
 
     # available_option_balance is always >= 0
-    #...... let (to_be_traded) = min(available_option_balance, option_size)
-    #...... let (to_be_minted) = option_size - to_be_traded
+    let (to_be_traded) = Math64x61_min(available_option_balance, option_size)
+    let (to_be_minted) = Math64x61_sub(option_size, to_be_traded)
 
     # 3) Update the pool_option_balance
-        # decrease by to_be_traded
-        # increase by to_be_minted
-        # NOTE: the decrease and increase are of different storage var
-            # (same option, but one storage var is for long, the other for short)
+        # decrease by to_be_traded (same side as is input "side")
+        # increase by to_be_minted (opposite side as is input "side")
+        # The reason behind different different sides is following (example)
+            # user goes long, so we want to resell long position to the user (to_be_traded)
+            #   -> decrease the "side" pool_option_balance
+            #      to level of available_option_balance - to_be_traded
+            # if we have to mint new options, we mint long and short, user gets long, pool
+            # keeps short and puts it into the pool
+            #   -> increase the "opposite_sied" of pool_option_balance
+
+    let (new_pool_option_balance) = Math64x61_sub(available_option_balance, to_be_traded)
+    set_pool_option_balance(
+        option_type,
+        strike_price,
+        maturity,
+        side,
+        new_pool_option_balance
+    )
+    let (new_opposite_pool_option_balance) = Math64x61_add(
+        available_opposite_option_balance,
+        to_be_minted
+    )
+    set_pool_option_balance(
+        option_type,
+        strike_price,
+        maturity,
+        opposite_side,
+        new_opposite_pool_option_balance
+    )
 
     # 4) Update the pool_balance
         # if side==TRADE_SIDE_SHORT increase pool_balance by
