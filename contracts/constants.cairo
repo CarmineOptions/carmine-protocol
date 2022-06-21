@@ -2,6 +2,8 @@
 
 %lang starknet
 
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+
 from contracts.Math64x61 import Math64x61_FRACT_PART
 
 # The maximum amount of token in a pool.
@@ -31,3 +33,14 @@ const OPTION_PUT = 1
 # This is used from perspective of user. When user goes long, the pool underwrites.
 const TRADE_SIDE_LONG = 0
 const TRADE_SIDE_SHORT = 1
+
+
+func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    side : felt
+) -> (opposite_side : felt):
+    assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0
+    if side == TRADE_SIDE_LONG:
+        return (TRADE_SIDE_SHORT)
+    end
+    return (TRADE_SIDE_LONG)
+end
