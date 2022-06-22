@@ -217,6 +217,19 @@ func _calc_new_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     return (short_pool_balance)
 end
 
+func _time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    maturity : felt
+) -> (
+    time_till_maturity : felt
+):
+    let (currtime) = get_block_timestamp()
+    let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
+    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    # let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
+    let (time_till_maturity) = Math64x61_fromFelt(1)
+    return (time_till_maturity)
+end
+
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
     option_type : felt,
@@ -239,10 +252,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     let (underlying_price) = Math64x61_fromFelt(1000)
 
     # 4) Get time till maturity
-    let (currtime) = get_block_timestamp()
-    let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
-    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
-    let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
+    let (time_till_maturity) = _time_till_maturity(maturity)
 
     # 5) risk free rate
     let (three) = Math64x61_fromFelt(3)
@@ -344,7 +354,6 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
 
     return (premia=premia)
-    # return (premia=call_premia)
 end
 
 @external
