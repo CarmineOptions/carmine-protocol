@@ -222,11 +222,17 @@ func _time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 ) -> (
     time_till_maturity : felt
 ):
-    let (currtime) = get_block_timestamp()
-    let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
-    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    # let (currtime) = get_block_timestamp()
+    # let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
+    # let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    # At this point the computation fails "not being able to get to the end of code" or something
+    # like that
     # let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
-    let (time_till_maturity) = Math64x61_fromFelt(1)
+    # return (time_till_maturity)
+
+    let (one) = Math64x61_fromFelt(1)
+    let (ten) = Math64x61_fromFelt(10)
+    let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
     return (time_till_maturity)
 end
 
@@ -401,15 +407,15 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
             # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
     # new_pool_balance is current state of the pool (from above) in terms of the pool's token
-    # let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
-    #     side,
-    #     option_type,
-    #     new_pool_balance,
-    #     underlying_price,
-    #     to_be_traded,
-    #     to_be_minted
-    # )
-    # set_pool_balance(option_type, new_pool_balance_after_locking_capital)
+    let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
+        side,
+        option_type,
+        new_pool_balance,
+        underlying_price,
+        to_be_traded,
+        to_be_minted
+    )
+    set_pool_balance(option_type, new_pool_balance_after_locking_capital)
 
     return (premia=premia)
 end
