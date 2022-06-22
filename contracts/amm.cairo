@@ -218,23 +218,25 @@ func _calc_new_pool_balance_with_premia{syscall_ptr : felt*, pedersen_ptr : Hash
     return (short_pool_balance)
 end
 
-func _time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func _time_till_maturity{syscall_ptr : felt*, range_check_ptr}(
     maturity : felt
 ) -> (
     time_till_maturity : felt
 ):
-    # let (currtime) = get_block_timestamp()
-    # let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
-    # let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    alloc_locals
+    local syscall_ptr : felt* = syscall_ptr # Reference revoked fix
+    let (currtime) = get_block_timestamp()
+    let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
+    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
     # At this point the computation fails "not being able to get to the end of code" or something
     # like that
-    # let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
-    # return (time_till_maturity)
-
-    let (one) = Math64x61_fromFelt(1)
-    let (ten) = Math64x61_fromFelt(10)
-    let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
+    let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
     return (time_till_maturity)
+
+    # let (one) = Math64x61_fromFelt(1)
+    # let (ten) = Math64x61_fromFelt(10)
+    # let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
+    # return (time_till_maturity)
 end
 
 func _calc_new_pool_balance_with_locked_capital{
