@@ -34,6 +34,7 @@ const OPTION_PUT = 1
 const TRADE_SIDE_LONG = 0
 const TRADE_SIDE_SHORT = 1
 
+const FEE_PROPORTION_PERCENT = 3
 
 func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt
