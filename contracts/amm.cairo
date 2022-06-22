@@ -20,6 +20,7 @@ from contracts.Math64x61 import (
 from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
     VOLATILITY_LOWER_BOUND, VOLATILITY_UPPER_BOUND, TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT,
     TRADE_SIDE_LONG, TRADE_SIDE_SHORT, get_opposite_side, STRIKE_PRICE_UPPER_BOUND)
+from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
 
 
@@ -279,6 +280,23 @@ func _calc_new_pool_balance_with_locked_capital{
     return (to_be_minted_put_long)
 end
 
+func _add_premia_fees{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    side : felt,
+    total_premia_before_fees : felt,
+    total_fees : felt
+) -> (total_premia : felt):
+    assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0
+
+    # if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
+    # if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    if side == TRADE_SIDE_LONG:
+        let (premia_fees_add) = Math64x61_add(total_premia_before_fees, total_fees)
+        return (premia_fees_add)
+    end
+    let (premia_fees_sub) = Math64x61_sub(total_premia_before_fees, total_fees)
+    return (premia_fees_sub)
+end
+
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
     option_type : felt,
@@ -322,10 +340,14 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # and in quote tokens (USDC in case of ETH/USDC) for put option.
     let (premia) = _select_and_adjust_premia(call_premia, put_premia, option_type, underlying_price)
     # premia adjusted by size (multiplied by size)
-    let (total_premia) = Math64x61_mul(premia, option_size)
+    let (total_premia_before_fees) = Math64x61_mul(premia, option_size)
 
     # 7) Get fees
-    # FIXME: add fees to premia, the fees are not added at the moment (add/sub depending on side)
+    # fees are already in the currency same as premia
+    # if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
+    # if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    let (total_fees) = get_fees(total_premia_before_fees)
+    let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees)
 
 
     # 1) Update the pool_balance
