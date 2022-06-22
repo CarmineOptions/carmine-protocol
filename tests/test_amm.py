@@ -57,8 +57,8 @@ async def test_do_trade() -> None:
     # 12445 + premia + locked capital = 12445 + 0.1255... - 1
     assert math.isclose(
         result.result[0] / Math64x61_FRACT_PART,
-        12445 + .12558804990 - 1,
-        rel_tol=0.0001
+        12445 + .12558804990 * 1.03 - 1,
+        rel_tol=0.0000001
     )
 
     # Short put, 1000 strike, time_till_maturity=2305843009213693952 (=1 year), size = 2
@@ -79,7 +79,7 @@ async def test_do_trade() -> None:
     # there is no locked capital here, since that is done by the user
     assert math.isclose(
         result.result[0] / Math64x61_FRACT_PART,
-        12445 - 2 * 125.58804990779984,
+        12445 - 2 * 125.58804990779984 * 0.97,
         rel_tol=0.0001
     )
 
@@ -126,14 +126,18 @@ async def test_do_trade() -> None:
     # Test pool_balance
     # Call pool did not change
     result = await initialize_amm_contract.get_pool_balance(OPTION_CALL).call()
-    assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 12444.1255880499, rel_tol=0.0001)
+    assert math.isclose(
+        result.result[0] / Math64x61_FRACT_PART,
+        12445 + .12558804990 * 1.03 - 1,
+        rel_tol=0.000001
+    )
 
     # Put pool increased by premia a didn't change by locked capital since the option
     # was taken from pool_option_balance
     result = await initialize_amm_contract.get_pool_balance(OPTION_PUT).call()
     assert math.isclose(
         result.result[0] / Math64x61_FRACT_PART,
-        12445 - 2 * 125.58804990779984 + .5 * 125.58804990779984,
+        12445 - 2 * 125.58804990779984 * 0.97 + .5 * 125.58804990779984 * 1.03,
         rel_tol=0.0001
     )
 
@@ -165,18 +169,17 @@ async def test_do_trade() -> None:
     # Test pool_balance
     # Call pool did not change
     result = await initialize_amm_contract.get_pool_balance(OPTION_CALL).call()
-    assert math.isclose(result.result[0] / Math64x61_FRACT_PART, 12444.1255880499, rel_tol=0.0001)
+    assert math.isclose(
+        result.result[0] / Math64x61_FRACT_PART,
+        12445 + .12558804990 * 1.03 - 1,
+        rel_tol=0.000001
+    )
 
     # Put pool increased by premia and didn't change by locked capital since the option
     # was taken from pool_option_balance
     result = await initialize_amm_contract.get_pool_balance(OPTION_PUT).call()
     assert math.isclose(
         result.result[0] / Math64x61_FRACT_PART,
-        12445 + 0.5 * 125.58804990779984 - 0.5*1000,
-        rel_tol=0.0001
+        12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.58804990779984 * 1.03 - 0.5*1000,
+        rel_tol=0.000001
     )
-
-    # print('---------------------------')
-    # print('put', result.result[0] / Math64x61_FRACT_PART)
-    # print('---------------------------')
-    # assert False
