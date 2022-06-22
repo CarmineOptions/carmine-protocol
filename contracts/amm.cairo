@@ -202,7 +202,7 @@ func _select_and_adjust_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
     return (premia=put_premia)
 end
 
-func _calc_new_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func _calc_new_pool_balance_with_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt,
     current_pool_balance : felt,
     total_premia : felt
@@ -228,6 +228,49 @@ func _time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     # let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
     let (time_till_maturity) = Math64x61_fromFelt(1)
     return (time_till_maturity)
+end
+
+func _calc_new_pool_balance_with_locked_capital{
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr
+}(
+    side : felt,
+    option_type : felt,
+    current_pool_balance : felt,
+    underlying_price : felt,
+    to_be_traded : felt,
+    to_be_minted : felt
+) -> (pool_balance : felt):
+    # if side==TRADE_SIDE_SHORT increase pool_balance by
+        # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
+        # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
+    # if side==TRADE_SIDE_LONG decrease pool_balance by
+        # if option_type==OPTION_CALL decrease it by to_be_minted
+        # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
+    assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0
+
+    if side == TRADE_SIDE_SHORT:
+        if option_type==OPTION_CALL:
+            let (to_be_traded_call_short) = Math64x61_add(current_pool_balance, to_be_traded)
+            return (to_be_traded_call_short)
+        end
+        let (to_be_traded_put) = Math64x61_mul(to_be_traded, underlying_price)
+        let (to_be_traded_put_short) = Math64x61_add(current_pool_balance, to_be_traded_put)
+        return (to_be_traded_put_short)
+    end
+    # here the side = TRADE_SIDE_LONG
+    if option_type==OPTION_CALL:
+        assert_nn_le(to_be_minted, current_pool_balance - 1)
+        let (to_be_minted_call_long) = Math64x61_sub(current_pool_balance, to_be_minted)
+        return (to_be_minted_call_long)
+    end
+    let (to_be_minted_put) = Math64x61_mul(to_be_minted, underlying_price)
+    assert_nn_le(to_be_minted_put, current_pool_balance - 1)
+    let (to_be_minted_put_long) = Math64x61_sub(current_pool_balance, to_be_minted_put)
+    return (to_be_minted_put_long)
 end
 
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -285,7 +328,12 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
         # if side==TRADE_SIDE_SHORT decrease pool_balance by premia (in corresponding TOKEN)
     let (current_pool_balance) = get_pool_balance(option_type)
 
-    let (new_pool_balance) = _calc_new_pool_balance(side, current_pool_balance, total_premia)
+    let (new_pool_balance) = _calc_new_pool_balance_with_premia(
+        side,
+        current_pool_balance,
+        total_premia
+    )
+    # FIXME: the set_pool_balance is called here and below, this could be done only once
     set_pool_balance(option_type, new_pool_balance)
 
 
@@ -352,6 +400,16 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
             # if option_type==OPTION_CALL decrease it by to_be_minted
             # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
+    # new_pool_balance is current state of the pool (from above) in terms of the pool's token
+    # let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
+    #     side,
+    #     option_type,
+    #     new_pool_balance,
+    #     underlying_price,
+    #     to_be_traded,
+    #     to_be_minted
+    # )
+    # set_pool_balance(option_type, new_pool_balance_after_locking_capital)
 
     return (premia=premia)
 end
