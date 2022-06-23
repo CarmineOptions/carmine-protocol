@@ -4,7 +4,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 # from starkware.cairo.common.hash import hash2
-from starkware.cairo.common.math import assert_nn_le
+from starkware.cairo.common.math import assert_nn_le, assert_nn
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
 from starkware.starknet.common.syscalls import get_block_timestamp# storage_write
 from contracts.Math64x61 import (
@@ -228,15 +228,11 @@ func _time_till_maturity{syscall_ptr : felt*, range_check_ptr}(
     let (currtime) = get_block_timestamp()
     let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
     let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+    assert_nn(secs_left)
     # At this point the computation fails "not being able to get to the end of code" or something
     # like that
     let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
     return (time_till_maturity)
-
-    # let (one) = Math64x61_fromFelt(1)
-    # let (ten) = Math64x61_fromFelt(10)
-    # let (time_till_maturity) = Math64x61_div(one, ten) # 0.1 year
-    # return (time_till_maturity)
 end
 
 func _calc_new_pool_balance_with_locked_capital{

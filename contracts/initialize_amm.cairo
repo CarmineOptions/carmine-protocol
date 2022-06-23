@@ -62,28 +62,29 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     # 1 = 100%
     let (volatility) = Math64x61_fromFelt(1)
 
-    let (maturity_1) = Math64x61_fromFelt(1)
+    # in tests the current timestamp is set to 1672527600 - (365*60*60*24) = 1640991600
+    # which is GMT: Friday 31. December 2021 23:00:00
+    # the maturity is set to be in 0.1 years time and in 1 year
+    let (maturity_01) = Math64x61_fromFelt(1644145200)
+    set_pool_volatility(OPTION_CALL, maturity_01, volatility)
+    set_pool_volatility(OPTION_PUT, maturity_01, volatility)
+
+    let (maturity_1) = Math64x61_fromFelt(1672527600)
     set_pool_volatility(OPTION_CALL, maturity_1, volatility)
     set_pool_volatility(OPTION_PUT, maturity_1, volatility)
 
-    let (eleven) = Math64x61_fromFelt(11)
-    let (ten) = Math64x61_fromFelt(10)
-    let (maturity_11) = Math64x61_div(eleven, ten)
-    set_pool_volatility(OPTION_CALL, maturity_11, volatility)
-    set_pool_volatility(OPTION_PUT, maturity_11, volatility)
-
     # 4) Set option availability
     let (strike_1000) = Math64x61_fromFelt(1000)
+    set_available_options(OPTION_CALL, strike_1000, maturity_01)
     set_available_options(OPTION_CALL, strike_1000, maturity_1)
-    set_available_options(OPTION_CALL, strike_1000, maturity_11)
+    set_available_options(OPTION_PUT, strike_1000, maturity_01)
     set_available_options(OPTION_PUT, strike_1000, maturity_1)
-    set_available_options(OPTION_PUT, strike_1000, maturity_11)
 
     let (strike_1100) = Math64x61_fromFelt(1100)
+    set_available_options(OPTION_CALL, strike_1100, maturity_01)
     set_available_options(OPTION_CALL, strike_1100, maturity_1)
-    set_available_options(OPTION_CALL, strike_1100, maturity_11)
+    set_available_options(OPTION_PUT, strike_1100, maturity_01)
     set_available_options(OPTION_PUT, strike_1100, maturity_1)
-    set_available_options(OPTION_PUT, strike_1100, maturity_11)
 
     return ()
 end
