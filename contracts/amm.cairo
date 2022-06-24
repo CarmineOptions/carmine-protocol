@@ -449,6 +449,8 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt,
     option_size : felt,
 ) -> (premia : felt):
+    # FIXME: with get_available_options check that option is available
+
     # option_type is from {OPTION_CALL, OPTION_PUT}
     # option_size is denominated in TOKEN_A (ETH)
     # side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
