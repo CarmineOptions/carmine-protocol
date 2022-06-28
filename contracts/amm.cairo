@@ -13,7 +13,8 @@ from contracts.Math64x61 import (
     Math64x61_div,
     Math64x61_add,
     Math64x61_sub,
-    Math64x61_min
+    Math64x61_min,
+    Math64x61_ONE
 )
 
 
@@ -111,7 +112,7 @@ func set_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 ):
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
     assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1)
-    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility - 1)
+    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility)  # TODO why? vol - 1
     pool_volatility.write(option_type, maturity, volatility)
     return ()
 end
@@ -308,11 +309,24 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     alloc_locals
 
     # 0) Get current volatility
-    let (volatility) = Math64x61_fromFelt(1)
+    let (volatility) = get_pool_volatility(option_type, maturity)
     # 1) Calculate new volatility, calculate trade volatility
+    let (current_pool_balance) = get_pool_balance(option_type)
+    assert_nn_le(Math64x61_ONE, current_pool_balance)
+    assert_nn_le(option_size, current_pool_balance)
+    let (a) = Math64x61_div(option_size, current_pool_balance)
+    # alpha – rate of change assumed to be 1
+    let (b) = Math64x61_sub(Math64x61_ONE, a)
+    let (c) = Math64x61_div(Math64x61_ONE, b)
+    let (trade_volatility) = Math64x61_mul(volatility, c)
+    local trade_volatility_loc = trade_volatility
 
+    let (volsum) = Math64x61_add(volatility, trade_volatility)
+    let (two) = Math64x61_fromFelt(2)
+    let (new_volatility) = Math64x61_div(volsum, two)
+    local new_volatility_loc = new_volatility
     # 2) Update volatility
-
+    set_pool_volatility(option_type, maturity, new_volatility)
     # 3) Get price of underlying asset
     let (underlying_price) = Math64x61_fromFelt(1000)
 

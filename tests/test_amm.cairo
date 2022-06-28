@@ -145,7 +145,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_32) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + .5 * 125.58804990779984 * 1.03
-    let target_32 = 28283555733802451116688
+    let target_32 = 28283567630196711058673  #28283555733802451116688
     assert result_32 = target_32
 
     # Trade 4 -------------------------------------------------------
@@ -182,7 +182,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_42) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.58804990779984 * 1.03 - 0.5*1000
-    let target_42 = 27727182062652206553527
+    let target_42 = 27727253678814648929732 #27727182062652206553527
     assert result_42 = target_42
 
     return ()
