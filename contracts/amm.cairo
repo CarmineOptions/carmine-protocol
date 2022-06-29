@@ -296,6 +296,55 @@ func _add_premia_fees{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     return (premia_fees_sub)
 end
 
+func _get_vol_update_denominator{
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr
+}(
+    relative_option_size : felt,
+    side : felt
+) -> (relative_option_size : felt):
+    if side == TRADE_SIDE_LONG:
+        let (long_denominator) = Math64x61_sub(Math64x61_ONE, relative_option_size)
+        return (long_denominator)
+    end
+    let (short_denominator) = Math64x61_add(Math64x61_ONE, relative_option_size)
+    return (short_denominator)
+
+end
+
+func _get_new_volatility{
+    syscall_ptr : felt*,
+    pedersen_ptr : HashBuiltin*,
+    range_check_ptr
+}(
+    current_volatility : felt,
+    option_size : felt,
+    option_type : felt,
+    side : felt
+) -> (
+    new_volatility : felt,
+    trade_volatility : felt
+):
+    alloc_locals
+
+    let (current_pool_balance) = get_pool_balance(option_type)
+    assert_nn_le(Math64x61_ONE, current_pool_balance)
+    assert_nn_le(option_size, current_pool_balance)
+    let (relative_option_size) = Math64x61_div(option_size, current_pool_balance)
+
+    # alpha – rate of change assumed to be 1
+    let (denominator) = _get_vol_update_denominator(relative_option_size, side)
+    let (volatility_scale) = Math64x61_div(Math64x61_ONE, denominator)
+    let (new_volatility) = Math64x61_mul(current_volatility, volatility_scale)
+
+    let (volsum) = Math64x61_add(current_volatility, new_volatility)
+    let (two) = Math64x61_fromFelt(2)
+    let (trade_volatility) = Math64x61_div(volsum, two)
+
+    return (new_volatility=new_volatility, trade_volatility=trade_volatility)
+end
+
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
     option_type : felt,
@@ -309,24 +358,19 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     alloc_locals
 
     # 0) Get current volatility
-    let (volatility) = get_pool_volatility(option_type, maturity)
-    # 1) Calculate new volatility, calculate trade volatility
-    let (current_pool_balance) = get_pool_balance(option_type)
-    assert_nn_le(Math64x61_ONE, current_pool_balance)
-    assert_nn_le(option_size, current_pool_balance)
-    let (a) = Math64x61_div(option_size, current_pool_balance)
-    # alpha – rate of change assumed to be 1
-    let (b) = Math64x61_sub(Math64x61_ONE, a)
-    let (c) = Math64x61_div(Math64x61_ONE, b)
-    let (trade_volatility) = Math64x61_mul(volatility, c)
-    local trade_volatility_loc = trade_volatility
+    let (current_volatility) = get_pool_volatility(option_type, maturity)
 
-    let (volsum) = Math64x61_add(volatility, trade_volatility)
-    let (two) = Math64x61_fromFelt(2)
-    let (new_volatility) = Math64x61_div(volsum, two)
-    local new_volatility_loc = new_volatility
+    # 1) Calculate new volatility, calculate trade volatility
+    let (new_volatility, trade_volatility) = _get_new_volatility(
+        current_volatility,
+        option_size,
+        option_type,
+        side
+    )
+
     # 2) Update volatility
     set_pool_volatility(option_type, maturity, new_volatility)
+
     # 3) Get price of underlying asset
     let (underlying_price) = Math64x61_fromFelt(1000)
 
@@ -341,7 +385,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # 6) Get premia
     let (call_premia, put_premia) = black_scholes(
-        sigma=new_volatility_loc,
+        sigma=trade_volatility,
         time_till_maturity_annualized=time_till_maturity,
         strike_price=strike_price,
         underlying_price=underlying_price,
