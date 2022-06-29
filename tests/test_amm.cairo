@@ -21,11 +21,13 @@ from contracts.initialize_amm import init_pool, add_fake_tokens
 
 @external
 func test_time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    #local syscall_ptr : felt* = syscall_ptr # Reference revoked fix
+    
+    alloc_locals
+    
     %{ warp(1672527600 - (365*60*60*24)) %}
-    let (r_dec) = _time_till_maturity(1672527600)
-    let (r_felt) = Math64x61_toFelt(r_dec)
-    assert r_felt = 1
+    
+    let (result) = _time_till_maturity(1672527600)
+    assert result = Math64x61_ONE
     return ()
 end
 
