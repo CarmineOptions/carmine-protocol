@@ -76,7 +76,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # Assuming the BS model is correctly computed
     # 12445 + premia + locked capital = 12445 + 0.1255... - 1
     let (result_1) = get_pool_balance(OPTION_CALL)
-    let target_1 = 28694208680571935839894 # 12444.129355691404
+    let target_1 = 28694208692467424729200 # 12444.129360850251
     assert result_1 = target_1
 
     # Trade 2 -------------------------------------------------------
@@ -87,7 +87,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # thats why we have such a difference here in comparison to the above trade
     # there is no locked capital here, since that is done by the user
     let (result_2) = get_pool_balance(OPTION_PUT)
-    let target_2 = 28134418775438300513479 # 12445 - 2 * 125.58804990779984 * 0.97
+    let target_2 = 28134373961836622285419 # 12445 - 2 * 125.58804990779984 * 0.97
     assert result_2 = target_2
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
@@ -145,7 +145,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_32) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + .5 * 125.58804990779984 * 1.03
-    let target_32 = 28283567630196711058673  #28283555733802451116688
+    let target_32 = 28283525850147471957358  #28283555733802451116688
     assert result_32 = target_32
 
     # Trade 4 -------------------------------------------------------
@@ -182,7 +182,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_42) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.58804990779984 * 1.03 - 0.5*1000
-    let target_42 = 27727253678814648929732 #27727182062652206553527
+    let target_42 = 27727260183583704148957 #27727182062652206553527
     assert result_42 = target_42
 
     return ()

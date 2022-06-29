@@ -341,7 +341,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # 6) Get premia
     let (call_premia, put_premia) = black_scholes(
-        sigma=volatility,
+        sigma=new_volatility_loc,
         time_till_maturity_annualized=time_till_maturity,
         strike_price=strike_price,
         underlying_price=underlying_price,
