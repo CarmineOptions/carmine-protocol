@@ -59,10 +59,10 @@ which means that only the 1672527600 maturity can be traded in the demo (the oth
 
 ### Interact with the demo
 
-Demo is at this moment deployed here `0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5`
+Demo is at this moment deployed here `0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090`
 to simply use it, create env var
 ```
-    export AMM_DEMO_ADDRESS='0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5'
+    export AMM_DEMO_ADDRESS='0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090'
 ```
 and download the ABI file from the repo from `build/amm_abi.json`
 ```
@@ -119,6 +119,7 @@ before and after the addition.
 
 #### Get price of an option
 
+TBD
 
 #### Trade option
 
@@ -154,7 +155,9 @@ where `--inputs` contains `option_type, strike_price, maturity, side`.
 
 ### Deploy demo
 
-protostar deploy build/amm.json --network alpha-goerli
+```
+    protostar deploy build/amm.json --network alpha-goerli
+```
 
 ### Init demo
 
@@ -166,7 +169,11 @@ Deploy the contract
 ```
 From the deployment save the address
 ```
-    export AMM_DEMO_ADDRESS='0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5'
+    export AMM_DEMO_ADDRESS='0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090'
+```
+and use the ABI file `build/amm_abi.json`
+```
+    export ABI_PATH='build/amm_abi.json'
 ```
 
 To initialize the pool run
