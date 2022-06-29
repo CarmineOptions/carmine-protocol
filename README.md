@@ -25,7 +25,8 @@ Just started building.
 
 ## Documentation
 
-TBD
+High level docs [here](https://carmine-finance.gitbook.io/carmine-options-amm/).
+Code docs will be published soon
 
 
 ## Other Links
@@ -37,7 +38,119 @@ TBD
 
 ## Demo
 
-We have build a demo.
+We are building a simple demo (not finished yet).
+
+### What can and can't the demo do
+
+The demo is meant to showcase the pricing model that sits at its core. Ie it shows how the internal
+metrics are updated and how the prices are created, everything else is heavily mocked.
+
+It assumes only one currency pair is being used.
+
+The demo is initialized with one fixed priced of the underlying asset equal to 1000.
+
+The options are created as follows
+- strike price 1000 and maturity 1644145200 (Sun Feb 06 2022 11:00:00 GMT+0000)
+- strike price 1000 and maturity 1672527600 (Sat Dec 31 2022 23:00:00 GMT+0000)
+- strike price 1100 and maturity 1644145200 (Sun Feb 06 2022 11:00:00 GMT+0000)
+- strike price 1100 and maturity 1672527600 (Sat Dec 31 2022 23:00:00 GMT+0000)
+
+which means that only the 1672527600 maturity can be traded in the demo (the other fails).
+
+### Interact with the demo
+
+Demo is at this moment deployed here `0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5`
+to simply use it, create env var
+```
+    export AMM_DEMO_ADDRESS='0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5'
+```
+and download the ABI file from the repo from `build/amm_abi.json`
+```
+    export ABI_PATH='build/amm_abi.json'
+```
+
+The demo was already initialized.
+
+The example assumes that user's starknet account is existing and some tokens on it to pay for fees
+```
+export STARKNET_NETWORK=alpha-goerli
+export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount
+```
+
+#### Add tokens to the pools
+First possible interaction is to add fake tokens to the pool
+```
+    starknet invoke \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function add_fake_tokens \
+    --network alpha-goerli \
+    --max_fee 50000000000000 \
+    --inputs 123 100000 200000
+```
+# FIXME: 100000 200000 should be multiplied by 2**61
+the `--inputs 123 100000 100000` says add 100000 TOKEN_1 tokens into the CALL pool
+and 200000 TOKEN_2 into the PUT pool, both for account 123. The tokens used are fake and virtual
+tokens.
+
+To validate that the tokens were added, and to see how many were added in total
+(run before and after the addition to see the difference)
+```
+    starknet call \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function get_account_balance \
+    --network alpha-goerli \
+    --inputs 123 1
+```
+where `--inputs 123 1` for TOKEN_1 (call pool) and `--inputs 123 2` for TOKEN_2 (put pool).
+
+To validate that the tokens were added into the CALL and PUT pools validate the size of the pool
+before and after the addition.
+```
+    starknet call \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function get_pool_balance \
+    --network alpha-goerli \
+    --inputs 0
+```
+`--inputs 0` for call pool and `--inputs 1` and put option.
+
+#### Get price of an option
+
+
+#### Trade option
+
+Trading an option means that a note of the trade is made, the size of the pool gets updated
+and volatility gets updated.
+```
+    starknet invoke \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function trade \
+    --network alpha-goerli \
+    --max_fee 50000000000000 \
+    --inputs 123 0 2305843009213693952000 1672527600 0 1
+```
+the `--inputs` correspond to the following
+`account_id, option_type, strike_price, maturity, side, option_size`
+
+You can check the call pool_balance with one of the above mentioned calls. The account_balance
+does not change (since it measures only the staked capital). You can also check
+the available_options with
+```
+    starknet call \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function get_pool_option_balance \
+    --network alpha-goerli \
+    --max_fee 50000000000000 \
+    --inputs 0 2305843009213693952000 1672527600 1
+```
+where `--inputs` contains `option_type, strike_price, maturity, side`.
+
+
 
 ### Deploy demo
 
@@ -58,12 +171,12 @@ From the deployment save the address
 
 To initialize the pool run
 ```
-    starknet invoke
-    --address $AMM_DEMO_ADDRESS
-    --abi build/amm_abi.json
-    --function init_pool
-    --network alpha-goerli
-    --max_fee 41464900146837
+    starknet invoke \
+    --address $AMM_DEMO_ADDRESS \
+    --abi $ABI_PATH \
+    --function init_pool \
+    --network alpha-goerli \
+    --max_fee 50000000000000
 ```
 
 To add "demo" tokens to account (some id)
@@ -73,7 +186,7 @@ To add "demo" tokens to account (some id)
     --abi build/amm_abi.json \
     --function add_fake_tokens \
     --network alpha-goerli \
-    --max_fee 41464900146837 \
+    --max_fee 50000000000000 \
     --inputs 123 100000 100000
 ```
 
@@ -85,16 +198,4 @@ To validate that tokens were added
     --function get_account_balance \
     --network alpha-goerli \
     --inputs 123 1
-```
-
-### Interact with demo
-
-TBD
-```
-    starknet call \
-    --address 0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5 \
-    --abi build/amm_abi.json \
-    --function get_pool_balance \
-    --network alpha-goerli \
-    --inputs 0 1 2
 ```
