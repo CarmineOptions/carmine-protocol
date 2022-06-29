@@ -8,4 +8,5 @@ libs_path = "lib"
 amm = [
     "./contracts/amm.cairo",
     "./contracts/initialize_amm.cairo",
+    "./contracts/option_pricing.cairo",
 ]
