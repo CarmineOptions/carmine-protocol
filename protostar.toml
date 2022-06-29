@@ -6,7 +6,5 @@ libs_path = "lib"
 
 ["protostar.contracts"]
 amm = [
-    "./contracts/amm.cairo",
-    "./contracts/initialize_amm.cairo",
-    "./contracts/option_pricing.cairo",
+    "./contracts/main.cairo"
 ]
