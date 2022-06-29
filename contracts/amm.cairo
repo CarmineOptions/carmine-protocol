@@ -226,12 +226,15 @@ func _time_till_maturity{syscall_ptr : felt*, range_check_ptr}(
 ):
     alloc_locals
     local syscall_ptr : felt* = syscall_ptr # Reference revoked fix
-    let (currtime) = get_block_timestamp()
+
+    let (currtime) = get_block_timestamp() # is number of seconds... unix timestamp
+    let (currtime_math) = Math64x61_fromFelt(currtime)
+    let (maturity_math) = Math64x61_fromFelt(maturity)
     let (secs_in_year) = Math64x61_fromFelt(60 * 60 * 24 * 365)
-    let (secs_left) = Math64x61_fromFelt(maturity - currtime)
+
+    let (secs_left) = Math64x61_sub(maturity_math, currtime_math)
     assert_nn(secs_left)
-    # At this point the computation fails "not being able to get to the end of code" or something
-    # like that
+
     let (time_till_maturity) = Math64x61_div(secs_left, secs_in_year)
     return (time_till_maturity)
 end
