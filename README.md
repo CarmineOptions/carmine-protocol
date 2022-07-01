@@ -38,7 +38,7 @@ Code docs will be published soon
 
 ## Demo
 
-We are building a simple demo (not finished yet).
+We are building a simple demo.
 
 ### What can and can't the demo do
 
@@ -56,6 +56,9 @@ The options are created as follows
 - strike price 1100 and maturity 1672527600 (Sat Dec 31 2022 23:00:00 GMT+0000)
 
 which means that only the 1672527600 maturity can be traded in the demo (the other fails).
+
+Most of the numbers coming in and out to/from the demo are in a Math64x61 format
+(number 1.1 is send as int(1.1 * 2**61)).
 
 ### Interact with the demo
 
@@ -86,12 +89,11 @@ First possible interaction is to add fake tokens to the pool
     --function add_fake_tokens \
     --network alpha-goerli \
     --max_fee 50000000000000 \
-    --inputs 123 100000 200000
+    --inputs 123 230584300921369395200 461168601842738790400
 ```
-# FIXME: 100000 200000 should be multiplied by 2**61
-the `--inputs 123 100000 100000` says add 100000 TOKEN_1 tokens into the CALL pool
-and 200000 TOKEN_2 into the PUT pool, both for account 123. The tokens used are fake and virtual
-tokens.
+the `--inputs 123 230584300921369395200 461168601842738790400` says add 230584300921369395200
+(100 * 2 ** 61) TOKEN_1 tokens into the CALL pool and 461168601842738790400 (200 * 2 ** 61) TOKEN_2
+into the PUT pool, both for account 123. The tokens used are fake and virtual tokens.
 
 To validate that the tokens were added, and to see how many were added in total
 (run before and after the addition to see the difference)
