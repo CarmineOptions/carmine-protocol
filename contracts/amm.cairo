@@ -25,6 +25,14 @@ from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
 
 
+# FIXME: look into how the token sizes are dealt with across different protocols
+# A map from account and token type to the corresponding balance of that account in given pool.
+# Ie this describes how much of the given pool the given account owns.
+@storage_var
+func account_balance(account_id : felt, token_type : felt) -> (balance : felt):
+end
+
+
 # A map from option type to the corresponding balance of the pool.
 @storage_var
 func pool_balance(option_type : felt) -> (balance : felt):
