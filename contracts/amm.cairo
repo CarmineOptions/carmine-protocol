@@ -25,13 +25,6 @@ from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
 
 
-# FIXME: look into how the token sizes are dealt with across different protocols
-# A map from account and token type to the corresponding balance of that account in given pool.
-# FIXME: This is at the moment not used.
-@storage_var
-func account_balance(account_id : felt, token_type : felt) -> (balance : felt):
-end
-
 # A map from option type to the corresponding balance of the pool.
 @storage_var
 func pool_balance(option_type : felt) -> (balance : felt):
@@ -290,7 +283,7 @@ func _add_premia_fees{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0
 
     # if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    # if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    # if side == TRADE_SIDE_SHORT (user receives premia) the fees are subtracted from the premia
     if side == TRADE_SIDE_LONG:
         let (premia_fees_add) = Math64x61_add(total_premia_before_fees, total_fees)
         return (premia_fees_add)
