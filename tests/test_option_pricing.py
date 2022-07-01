@@ -49,7 +49,7 @@ async def test_d1_d2() -> None:
         return int(x * Math64x61_FRACT_PART)
 
     inputs = [
-        # [_sigma, _time_till_maturity_annualized, _strike_price, _underlying_price, _risk_free_rate_annualized],
+        # [_sigma, _time_till_maturity_annualized, _strike_price, _underlying_price, _risk_free_rate_annualized, target_d_1, target_d_2],
         [to_unit(0.01), to_unit(0.1), to_unit(100), to_unit(100), to_unit(0.03), .95026443693, .94710215927],
         [to_unit(0.1), to_unit(0.1), to_unit(100), to_unit(100), to_unit(0.03), .11067971810589328, .07905694150420947],
         [to_unit(0.01), to_unit(0.5), to_unit(100), to_unit(100), to_unit(0.03), 2.124855877465575, 2.1177848096537097],
