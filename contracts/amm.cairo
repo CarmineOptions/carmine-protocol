@@ -23,7 +23,7 @@ from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER
     TRADE_SIDE_LONG, TRADE_SIDE_SHORT, get_opposite_side, STRIKE_PRICE_UPPER_BOUND)
 from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
-
+from contracts.oracles import empiric_median_price
 
 # FIXME: look into how the token sizes are dealt with across different protocols
 # A map from account and token type to the corresponding balance of that account in given pool.
@@ -377,6 +377,10 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # 3) Get price of underlying asset
     let (underlying_price) = Math64x61_fromFelt(1000)
+
+    # Commented out for now for the sake of not breaking the tests
+    # const ETH_KEY = 28556963469423460 # Hardcode eth for now
+    # let (underlying_price) = empiric_median_price(ETH_KEY)
 
     # 4) Get time till maturity
     let (time_till_maturity) = _time_till_maturity(maturity)
