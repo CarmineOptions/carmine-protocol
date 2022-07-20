@@ -1,0 +1,5 @@
+> protostar build && protostar deploy build/main.json --network alpha-goerli
+13:05:34 [INFO] Deploy transaction was sent.
+Contract address: 0x05e628ff52ab8b9fd3d03aa0fe67b1a1b6ecec77e68204077f28f3f255bd6d3b
+Transaction hash: 0x7a5bd99d4e1969256e42c5c35b961ce865a92f655241a4d2aca0dfc440ec9c4
+
