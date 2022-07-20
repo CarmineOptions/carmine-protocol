@@ -12,6 +12,7 @@ from contracts.Math64x61 import (
     Math64x61_toFelt,
     Math64x61_INT_PART,
     Math64x61_add,
+    Math64x61_sqrt,
 )
 
 from src._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
@@ -28,6 +29,29 @@ namespace IEmpiricOracle:
     end
 end
 
+func iter_div_64x61{range_check_ptr} (x: felt, y: felt) -> (res: felt):
+    # both x and y are Math64x61
+    # this is needed because of weird error in overflow
+    # this may introduce imprecisions
+    alloc_locals
+
+    let (pow_10_to_30) = pow(10, 30)
+    let (is_convertable) = is_le(y, pow_10_to_30)
+    
+    if is_convertable == 1:
+        let (res_a) = Math64x61_div(x, y)
+        return (res_a)
+    end
+
+    let (div_a) = Math64x61_sqrt(y)
+    let (div_b) = Math64x61_div(y, div_a)
+
+    let (partial_res) = iter_div_64x61(x, div_a)
+    let (res) = iter_div_64x61(partial_res, div_b)
+
+    return (res)
+end
+
 func convert_price{range_check_ptr}(price : felt, m : felt) -> (price : felt):
     alloc_locals
 
@@ -37,7 +61,7 @@ func convert_price{range_check_ptr}(price : felt, m : felt) -> (price : felt):
         let (converted_price) = Math64x61_fromFelt(price)
         let (pow10xM) = pow(10, m)
         let (pow10x61) = Math64x61_fromFelt(pow10xM)
-        let (fin_conv_price) = Math64x61_div(converted_price, pow10x61)
+        let (fin_conv_price) = iter_div_64x61(converted_price, pow10x61)
 
         return (fin_conv_price)
     end
@@ -55,6 +79,8 @@ func convert_price{range_check_ptr}(price : felt, m : felt) -> (price : felt):
     let (res) = Math64x61_add(a, b)
     # let (pow10x18) = pow(10, 18)
     # let (fin_res) = Math64x61_div(res, pow10x18)
+
+    # FIXME: THIS HAS TO VALIDATED THAT THE ROUNDING CAUSED BY THE IMPRECISE CALCULATIONS IS NOT TOO BIG
 
     return (res)
 end
