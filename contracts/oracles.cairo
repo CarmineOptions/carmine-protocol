@@ -14,6 +14,7 @@ from contracts.Math64x61 import (
 )
 
 from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
+from lib.math_64x61_extended import Math64x61_div_imprecise
 
 # List of available tickers:
 #  https://docs.empiric.network/using-empiric/supported-assets
@@ -27,53 +28,28 @@ namespace IEmpiricOracle:
     end
 end
 
-# Function for iterative division
-func iter_div_64x61{range_check_ptr}(x : felt, y : felt) -> (res : felt):
-    # both x and y are Math64x61
-    # this is needed because of weird error in overflow
-    # this may introduce imprecisions
-    alloc_locals
-
-    let (pow_10_to_30) = pow(10, 30)
-    let (is_convertable) = is_le(y, pow_10_to_30)
-
-    if is_convertable == TRUE:
-        let (res_a) = Math64x61_div(x, y)
-        return (res_a)
-    end
-
-    let (div_a) = Math64x61_sqrt(y)
-    let (div_b) = Math64x61_div(y, div_a)
-
-    let (partial_res) = iter_div_64x61(x, div_a)
-    let (res) = iter_div_64x61(partial_res, div_b)
-
-    return (res)
-end
-
-# Function to convert base 10**18 number from oracle to base 2**61
+# Function to convert base 10**decimals number from oracle to base 2**61
 # which is used throughout the AMM
-func convert_price{range_check_ptr}(price : felt, m : felt) -> (price : felt):
+func convert_price{range_check_ptr}(price : felt, decimals : felt) -> (price : felt):
     alloc_locals
 
     let (is_convertable) = is_le(price, Math64x61_INT_PART)
     if is_convertable == TRUE:
         let (converted_price) = Math64x61_fromFelt(price)
-        let (pow10xM) = pow(10, m)
+        let (pow10xM) = pow(10, decimals)
         let (pow10xM_to_64x61) = Math64x61_fromFelt(pow10xM)
-        let (price_64x61) = iter_div_64x61(converted_price, pow10xM_to_64x61)
-
+        let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61)
         return (price_64x61)
     end
 
-    let (m_1, r) = unsigned_div_rem(m, 2)
-    let m_2 = m - m_1
+    let (decimals_1, r) = unsigned_div_rem(decimals, 2)
+    let decimals_2 = decimals - decimals_1
 
-    let (pow_10_m1) = pow(10, m_1)
+    let (pow_10_m1) = pow(10, decimals_1)
     let (c, remainder) = unsigned_div_rem(price, pow_10_m1)
 
-    let (a) = convert_price(c, m_2)
-    let (b) = convert_price(remainder, m)
+    let (a) = convert_price(c, decimals_2)
+    let (b) = convert_price(remainder, decimals)
 
     let (res) = Math64x61_add(a, b)
 

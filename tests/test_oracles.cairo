@@ -1,22 +1,12 @@
 %lang starknet
 
 from starkware.cairo.common.pow import pow
-from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
-from starkware.cairo.common.math import assert_le, unsigned_div_rem
-from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.Math64x61 import (
-    Math64x61_fromFelt,
-    Math64x61_div,
-    Math64x61_fromUint256,
-    Math64x61_toFelt,
-    Math64x61_INT_PART,
-    Math64x61_add,
-    Math64x61_sqrt,
-)
-from contracts.oracles import convert_price, iter_div_64x61, empiric_median_price, IEmpiricOracle
+from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div, Math64x61_sqrt
 
+from contracts.oracles import convert_price, empiric_median_price
+from lib.math_64x61_extended import Math64x61_div_imprecise
 from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMPIRIC_AGGREGATION_MODE
 
 @external
@@ -34,39 +24,30 @@ func test_convert_price{range_check_ptr}():
 end
 
 @external
-func test_iter_div_64x61{range_check_ptr}() -> (res : felt):
+func test_Math64x61_div_imprecise{range_check_ptr}():
     # both x and y are Math64x61
     # this is needed because of weird error in overflow
     alloc_locals
-    let x_ = 65536
-    let (y_) = pow(10, 19)
-    let (x) = Math64x61_fromFelt(x_)
-    let (y) = Math64x61_fromFelt(y_)  # 10**19*2**61
-    # let y = 7291715840636310552495090012
+    let decimals = 18
+    let (pow10xM) = pow(10, decimals)
+    let (pow10xM_to_64x61) = Math64x61_fromFelt(pow10xM)
 
-    let pow_10_to_30 = 10 ** 30
-    let (is_convertable) = is_le(y, pow_10_to_30)
+    # test ETH price 1480.23 * 10**18
+    let eth_test = 1480230000000000000000
+    let (eth_res) = Math64x61_div_imprecise(eth_test, pow10xM_to_64x61)
+    assert eth_res = 1480
 
-    assert 0 = is_convertable
+    # test BTC price 21567.86 * 10**18
+    let btc_test = 21567860000000000000000
+    let (btc_res) = Math64x61_div_imprecise(btc_test, pow10xM_to_64x61)
+    assert btc_res = 21567
 
-    if is_convertable == 1:
-        let (res_a) = Math64x61_div(x, y)
-        return (res_a)
-    end
+    # test some random coin worth 0.58 dollars
+    let rand_test = 580000000000000000
+    let (rand_res) = Math64x61_div_imprecise(rand_test, pow10xM_to_64x61)
+    assert rand_res = 0  # FIXME: this should not be zero
 
-    let (div_a) = Math64x61_sqrt(y)
-    let (div_b) = Math64x61_div(y, div_a)
-
-    assert 7291715840636310552495090012 = div_a
-    assert 7291715831147479162736768891 = div_b
-
-    let (partial_res) = iter_div_64x61(x, div_a)
-    assert 47786988871008 = partial_res
-
-    let (res) = iter_div_64x61(partial_res, div_b)
-    assert 15111 = res
-
-    return (res)
+    return ()
 end
 
 @external
