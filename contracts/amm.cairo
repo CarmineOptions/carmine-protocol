@@ -224,11 +224,11 @@ func _calc_new_pool_balance_with_locked_capital{
     to_be_minted : felt,
 ) -> (pool_balance : felt):
     # if side==TRADE_SIDE_SHORT increase pool_balance by
-    # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
-    # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
+        # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
+        # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
     # if side==TRADE_SIDE_LONG decrease pool_balance by
-    # if option_type==OPTION_CALL decrease it by to_be_minted
-    # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
+        # if option_type==OPTION_CALL decrease it by to_be_minted
+        # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
     assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0
@@ -361,9 +361,9 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees)
 
     # 1) Update the pool_balance
-    # increase by the amount of fees (in corresponding TOKEN)
-    # if side==TRADE_SIDE_LONG increase pool_balance by premia (in corresponding TOKEN)
-    # if side==TRADE_SIDE_SHORT decrease pool_balance by premia (in corresponding TOKEN)
+        # increase by the amount of fees (in corresponding TOKEN)
+        # if side==TRADE_SIDE_LONG increase pool_balance by premia (in corresponding TOKEN)
+        # if side==TRADE_SIDE_SHORT decrease pool_balance by premia (in corresponding TOKEN)
     let (current_pool_balance) = get_pool_balance(option_type)
 
     let (new_pool_balance) = _calc_new_pool_balance_with_premia(
@@ -391,15 +391,15 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     let (to_be_minted) = Math64x61_sub(option_size, to_be_traded)
 
     # 3) Update the pool_option_balance
-    # decrease by to_be_traded (same side as is input "side")
-    # increase by to_be_minted (opposite side as is input "side")
-    # The reason behind different different sides is following (example)
-    # user goes long, so we want to resell long position to the user (to_be_traded)
-    #   -> decrease the "side" pool_option_balance
-    #      to level of available_option_balance - to_be_traded
-    # if we have to mint new options, we mint long and short, user gets long, pool
-    # keeps short and puts it into the pool
-    #   -> increase the "opposite_sied" of pool_option_balance
+        # decrease by to_be_traded (same side as is input "side")
+        # increase by to_be_minted (opposite side as is input "side")
+        # The reason behind different different sides is following (example)
+            # user goes long, so we want to resell long position to the user (to_be_traded)
+            #   -> decrease the "side" pool_option_balance
+            #      to level of available_option_balance - to_be_traded
+            # if we have to mint new options, we mint long and short, user gets long, pool
+            # keeps short and puts it into the pool
+            #   -> increase the "opposite_sied" of pool_option_balance
 
     let (new_pool_option_balance) = Math64x61_sub(available_option_balance, to_be_traded)
     set_pool_option_balance(option_type, strike_price, maturity, side, new_pool_option_balance)
@@ -411,12 +411,12 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     )
 
     # 4) Update the pool_balance
-    # if side==TRADE_SIDE_SHORT increase pool_balance by
-    # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
-    # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
-    # if side==TRADE_SIDE_LONG decrease pool_balance by
-    # if option_type==OPTION_CALL decrease it by to_be_minted
-    # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
+        # if side==TRADE_SIDE_SHORT increase pool_balance by
+            # if option_type==OPTION_CALL increase (call pool) it by to_be_traded
+            # if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
+        # if side==TRADE_SIDE_LONG decrease pool_balance by
+            # if option_type==OPTION_CALL decrease it by to_be_minted
+            # if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
 
     # new_pool_balance is current state of the pool (from above) in terms of the pool's token
     let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
@@ -441,18 +441,18 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     # option_type is from {OPTION_CALL, OPTION_PUT}
     # option_size is denominated in TOKEN_A (ETH)
     # side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
-    # ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
-    # means that user is underwriting the option.
+        # ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
+        # means that user is underwriting the option.
 
     # 1) Check that account_id has enough amount of given token to
-    # - to pay the fee
-    # - to pay the premia in case of size==TRADE_SIDE_LONG
-    # - to lock in capital in case of size==TRADE_SIDE_SHORT
-    # FIXME: do this once test or actual capital is used
+        # - to pay the fee
+        # - to pay the premia in case of size==TRADE_SIDE_LONG
+        # - to lock in capital in case of size==TRADE_SIDE_SHORT
+        # FIXME: do this once test or actual capital is used
 
     # 2) Check that there is enough available capital in the given pool_balance
-    # - to pay the premia in case of size==TRADE_SIDE_LONG
-    # - to lock in capital in case of size==TRADE_SIDE_SHORT
+        # - to pay the premia in case of size==TRADE_SIDE_LONG
+        # - to lock in capital in case of size==TRADE_SIDE_SHORT
 
     # 3) Check that the strike_price > 0, check that the maturity haven't passed yet
 
