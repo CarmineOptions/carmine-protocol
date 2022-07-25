@@ -62,15 +62,15 @@ func test_init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     assert pool_balance_put = 0
 
     # Test account balances
-    let account_id = 123456789
+    let ACCOUNT_ID = 123456789
 
     let (account_balance_a) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id, TOKEN_A
+        CONTRACT_ADDRESS, ACCOUNT_ID, TOKEN_A
     )
     assert account_balance_a = 0
 
     let (account_balance_b) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id, TOKEN_B
+        CONTRACT_ADDRESS, ACCOUNT_ID, TOKEN_B
     )
     assert account_balance_b = 0
 
@@ -156,12 +156,12 @@ func test_init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     # check account balance
     let (account_balance_a) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id, TOKEN_A
+        CONTRACT_ADDRESS, ACCOUNT_ID, TOKEN_A
     )
     assert account_balance_a = 0
 
     let (account_balance_b) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id, TOKEN_B
+        CONTRACT_ADDRESS, ACCOUNT_ID, TOKEN_B
     )
     assert account_balance_b = 0
 
@@ -252,16 +252,16 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     assert pool_balance_put = pool_balance
 
     # Check account balance
-    let account_id_1 = 123456789
-    let account_id_2 = 987654321
+    let ACCOUNT_ID_1 = 123456789
+    let ACCOUNT_ID_2 = 987654321
 
     let (account_balance_a) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_1, TOKEN_A
+        CONTRACT_ADDRESS, ACCOUNT_ID_1, TOKEN_A
     )
     assert account_balance_a = 0
 
     let (account_balance_b) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_1, TOKEN_B
+        CONTRACT_ADDRESS, ACCOUNT_ID_1, TOKEN_B
     )
     assert account_balance_b = 0
 
@@ -270,13 +270,13 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     let amount_token_a_1 = 100 * Math64x61_FRACT_PART
     let amount_token_b_1 = 90 * Math64x61_FRACT_PART
     ITestContract.add_fake_tokens(
-        CONTRACT_ADDRESS, account_id_1, amount_token_a_1, amount_token_b_1
+        CONTRACT_ADDRESS, ACCOUNT_ID_1, amount_token_a_1, amount_token_b_1
     )
 
     let amount_token_a_2 = 50 * Math64x61_FRACT_PART
     let amount_token_b_2 = 40 * Math64x61_FRACT_PART
     ITestContract.add_fake_tokens(
-        CONTRACT_ADDRESS, account_id_2, amount_token_a_2, amount_token_b_2
+        CONTRACT_ADDRESS, ACCOUNT_ID_2, amount_token_a_2, amount_token_b_2
     )
 
     # Check pool balance
@@ -293,12 +293,12 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     let balance_b_1 = 90 * Math64x61_FRACT_PART
 
     let (account_balance_a_1) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_1, TOKEN_A
+        CONTRACT_ADDRESS, ACCOUNT_ID_1, TOKEN_A
     )
     assert account_balance_a_1 = balance_a_1
 
     let (account_balance_b_1) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_1, TOKEN_B
+        CONTRACT_ADDRESS, ACCOUNT_ID_1, TOKEN_B
     )
     assert account_balance_b_1 = balance_b_1
 
@@ -306,12 +306,12 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     let balance_b_2 = 40 * Math64x61_FRACT_PART
 
     let (account_balance_a_2) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_2, TOKEN_A
+        CONTRACT_ADDRESS, ACCOUNT_ID_2, TOKEN_A
     )
     assert account_balance_a_2 = balance_a_2
 
     let (account_balance_b_2) = ITestContract.get_account_balance(
-        CONTRACT_ADDRESS, account_id_2, TOKEN_B
+        CONTRACT_ADDRESS, ACCOUNT_ID_2, TOKEN_B
     )
     assert account_balance_b_2 = balance_b_2
 
