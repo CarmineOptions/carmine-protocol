@@ -208,3 +208,11 @@ To validate that tokens were added
     --network alpha-goerli \
     --inputs 123 1
 ```
+
+### Oracles
+
+Currently using only Empiric oracle, which returns the median price(aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
+
+Website: https://empiric.network/
+
+More oracles coming in the future(Stork etc.)
