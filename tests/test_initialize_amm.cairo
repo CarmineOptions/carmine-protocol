@@ -1,13 +1,9 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import assert_nn_le
-from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div, Math64x61_FRACT_PART
+from contracts.Math64x61 import Math64x61_FRACT_PART
 
-from contracts.initialize_amm import add_fake_tokens, init_pool
 from contracts.constants import (
-    POOL_BALANCE_UPPER_BOUND,
-    ACCOUNT_BALANCE_UPPER_BOUND,
     TOKEN_A,
     TOKEN_B,
     OPTION_CALL,
