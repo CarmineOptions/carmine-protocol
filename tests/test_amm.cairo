@@ -9,52 +9,58 @@ from contracts.Math64x61 import (
     Math64x61_add,
     Math64x61_sub,
     Math64x61_mul,
-    Math64x61_div
+    Math64x61_div,
 )
 
-from contracts.amm import (_time_till_maturity, do_trade, get_pool_balance,
-    get_pool_option_balance, get_pool_volatility)
-from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, 
-    VOLATILITY_LOWER_BOUND, VOLATILITY_UPPER_BOUND, TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT,
-    TRADE_SIDE_LONG, TRADE_SIDE_SHORT, get_opposite_side, STRIKE_PRICE_UPPER_BOUND)
+from contracts.amm import (
+    _time_till_maturity,
+    do_trade,
+    get_pool_balance,
+    get_pool_option_balance,
+    get_pool_volatility,
+)
+from contracts.constants import (
+    POOL_BALANCE_UPPER_BOUND,
+    ACCOUNT_BALANCE_UPPER_BOUND,
+    VOLATILITY_LOWER_BOUND,
+    VOLATILITY_UPPER_BOUND,
+    TOKEN_A,
+    TOKEN_B,
+    OPTION_CALL,
+    OPTION_PUT,
+    TRADE_SIDE_LONG,
+    TRADE_SIDE_SHORT,
+    get_opposite_side,
+    STRIKE_PRICE_UPPER_BOUND,
+)
 from contracts.initialize_amm import init_pool, add_fake_tokens
+from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY
+from contracts.oracles import empiric_median_price
 
 @external
 func test_time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    
     alloc_locals
-    
+
     %{ warp(1672527600 - (365*60*60*24)) %}
-    
+
     let (result) = _time_till_maturity(1672527600)
     assert result = Math64x61_ONE
     return ()
 end
 
 func _test_pool_option_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    option_type : felt,
-    strike_price : felt,
-    maturity : felt,
-    side : felt,
-    target : felt
+    option_type : felt, strike_price : felt, maturity : felt, side : felt, target : felt
 ):
-
     let (result) = get_pool_option_balance(
-        option_type=option_type,
-        strike_price=strike_price,
-        maturity=maturity,
-        side=side
+        option_type=option_type, strike_price=strike_price, maturity=maturity, side=side
     )
     assert result = target
     return ()
 end
 
 func _test_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    option_type : felt,
-    maturity : felt,
-    target : felt
+    option_type : felt, maturity : felt, target : felt
 ):
-
     let (result) = get_pool_volatility(option_type=option_type, maturity=maturity)
     assert result = target
     return ()
@@ -62,11 +68,22 @@ end
 
 @external
 func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
-    
     alloc_locals
 
     # mock timestamp
     %{ warp(1672527600 - (365*60*60*24)) %}
+
+    # Start mocking oracle contract
+    %{
+        stop_mock = mock_call(
+            ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1000000000000000000000, 18, 0, 0]
+        )
+    %}
+
+    let (oracle_res) = empiric_median_price(EMPIRIC_ETH_USD_KEY)
+
+    # Test that it returns 1000 * 2**61 (Math64x61 format)
+    assert oracle_res = 2305843009213693952000
 
     # set some constants
     const account_id = 123456789
@@ -89,7 +106,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # Assuming the BS model is correctly computed
     # 12445 + premia + locked capital = 12445 + 0.1255... - 1
     let (result_1) = get_pool_balance(OPTION_CALL)
-    let target_1 = 28694208692467424729200 # 12444.129360850251
+    let target_1 = 28694208692467424729200  # 12444.129360850251
     assert result_1 = target_1
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
@@ -105,7 +122,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # thats why we have such a difference here in comparison to the above trade
     # there is no locked capital here, since that is done by the user
     let (result_2) = get_pool_balance(OPTION_PUT)
-    let target_2 = 28134463574457816631959 # 12445 - 2 * 125.5... * 0.97
+    let target_2 = 28134463574457816631959  # 12445 - 2 * 125.5... * 0.97
     assert result_2 = target_2
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
@@ -114,7 +131,9 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
-    _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE)
+    _test_pool_option_balance(
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+    )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, two)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, 0)
 
@@ -143,7 +162,9 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
-    _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE)
+    _test_pool_option_balance(
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+    )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, one_and_half)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, 0)
 
@@ -168,7 +189,6 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     let target_31 = target_1
     assert result_31 = target_31
 
-
     # Put pool increased by premia a didn't change by locked capital since the option
     # was taken from pool_option_balance
     let (result_32) = get_pool_balance(OPTION_PUT)
@@ -186,7 +206,9 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
-    _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE)
+    _test_pool_option_balance(
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+    )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, half)
 
@@ -217,6 +239,9 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # 12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.5... * 1.03 - 0.5*1000
     let target_42 = 27727183503722603837152
     assert result_42 = target_42
+
+    # End mocking oracle contract
+    %{ stop_mock() %}
 
     return ()
 end
