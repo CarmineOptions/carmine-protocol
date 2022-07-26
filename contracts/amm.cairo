@@ -7,7 +7,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
 from starkware.starknet.common.syscalls import get_block_timestamp  # storage_write
-from contracts.Math64x61 import (
+from Math64x61 import (
     Math64x61_fromFelt,
     Math64x61_mul,
     Math64x61_div,
