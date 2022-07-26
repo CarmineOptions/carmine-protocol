@@ -18,9 +18,12 @@ from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER
 func add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt, amount_token_a : felt, amount_token_b : felt
 ):
+    alloc_locals
     # 1) check that the final balance is below POOL_BALANCE_UPPER_BOUND with the additional amount
-    let (pool_balance_call) = pool_balance.read(OPTION_CALL)
-    let (pool_balance_put) = pool_balance.read(OPTION_PUT)
+    let (pbc) = pool_balance.read(OPTION_CALL)
+    local pool_balance_call = pbc
+    let (pbp) = pool_balance.read(OPTION_PUT)
+    local pool_balance_put = pbp
 
     assert_nn_le(pool_balance_call, POOL_BALANCE_UPPER_BOUND - 1 - amount_token_a)
     assert_nn_le(pool_balance_put, POOL_BALANCE_UPPER_BOUND - 1 - TOKEN_B)
