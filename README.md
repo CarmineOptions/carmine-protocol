@@ -215,4 +215,4 @@ Currently using only Empiric oracle, which returns the median price(aggregated o
 
 Website: https://empiric.network/
 
-More oracles coming in the future(Stork etc.)
+More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
