@@ -6,6 +6,8 @@ from starkware.cairo.common.bool import TRUE, FALSE
 
 from contracts.Math64x61 import Math64x61_div, Math64x61_sqrt
 
+const DIV_IMPRECISE_THRESHOLD = 10 ** 30
+
 # Function for iterative division
 func Math64x61_div_imprecise{range_check_ptr}(x : felt, y : felt) -> (res : felt):
     # both x and y are Math64x61
@@ -15,8 +17,7 @@ func Math64x61_div_imprecise{range_check_ptr}(x : felt, y : felt) -> (res : felt
 
     # check whether the number is small enough to
     # be divisible without causing error
-    let (pow_10_to_30) = pow(10, 30)
-    let (is_convertable) = is_le(y, pow_10_to_30)
+    let (is_convertable) = is_le(y, DIV_IMPRECISE_THRESHOLD)
     if is_convertable == TRUE:
         let (res_a) = Math64x61_div(x, y)
         return (res_a)
