@@ -6,5 +6,9 @@ libs_path = "lib"
 
 ["protostar.contracts"]
 amm = [
-    "./contracts/main.cairo"
+    "./contracts/main.cairo",
+    "./contracts/liquidity_pool.cairo"
+]
+lptoken = [
+    "./contracts/lptoken.cairo"
 ]
