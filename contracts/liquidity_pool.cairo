@@ -13,6 +13,9 @@ from Math64x61 import (  # prefix contracts because code is in lib/cairo_math_64
     Math64x61_ONE,
     Math64x61_fromUint256,
 )
+
+from starware.cairo.common.math import assert_nn
+
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_unsigned_div_rem
@@ -86,6 +89,15 @@ end
 # assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
 # amt is amt of underlying token to deposit
 # FIXME: could we call this deposit_liquidity
+@storage_var
+func pool_balance() -> (res:felt):
+end
+
+@storage_var
+func contract_balance() -> (res : felt):
+end
+
+
 @external
 func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt,
@@ -95,6 +107,8 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     let (own_addr) = get_contract_address()
     tempvar balance_before = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
+    let (current_balance) = pool_balance.read()
+
     IERC20.transferFrom(
         contract_address=erc20_address,
         sender=caller_addr,
@@ -102,8 +116,42 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         amount=amt,
     )  # we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
 
+    pool_balance.write(current_balance + amt)
+    contract_balance.write(balance_before + amt)
+    
     let (mint_amt) = get_lptokens_for_underlying(pooled_token_addr, amt)
     mint(caller_addr, resulting_amt_uint256)
+
+    return ()
+end
+
+@external
+func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: felt,
+    amt: Uint256
+):
+    let (caller_addr) =  get_caller_address()
+    let (own_addr) = get_contract_address()
+    tempvar balance_before = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
+
+
+    let curent_balance = pool_balance.read()
+
+    with_attr error_message("Not enough funds in pool"):
+        assert_nn(current_balance - amt)
+        assert_nn(balance_before - amt)
+
+    pool_balance.write(current_balance - amt)
+    contract_balance.write(balance_before - amt)
+
+    IERC20.transferFrom(
+        contract_address=erc20_address,
+        sender=own_addr,
+        recipient=caller_adr,
+        amount=amt,
+    )  # we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
+
+    # FIXME: Should we burn something here?
 
     return ()
 end
