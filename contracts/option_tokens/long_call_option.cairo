@@ -12,7 +12,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE
 
-from openzeppelin.access.ownable import Ownable
+from openzeppelin.access.ownable.library import Ownable
 from openzeppelin.token.erc20.library import ERC20
 
 # FIXME: how do we add information about strike price, maturity and uderlying asset???
@@ -236,9 +236,10 @@ func getSide{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
-    }():
+    }(side: felt):
     # do we do this with @storage_var? or constant?
-    return (0)
+    let side = 1
+    return ()
 end
 
 # returns 0 for call and 1 for put
@@ -250,9 +251,10 @@ func getOptionType{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
-    }():
+    }(type: felt):
     # do we do this with @storage_var? or constant?
-    return (0)
+    let type = 0
+    return ()
 end
 
 # returns strike price
@@ -261,9 +263,10 @@ func getStrikePrice{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
-    }():
+    }(strikeprice: felt):
     # do we do this with @storage_var? or constant?
-    return (1100)
+    let strikeprice = 1100
+    return ()
 end
 
 # returns maturity of the option
@@ -272,9 +275,10 @@ func getMaturity{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
-    }():
+    }(maturity: felt):
     # do we do this with @storage_var? or constant?
-    return (1672527600)
+    let maturity = 1672527600
+    return ()
 end
 
 @view

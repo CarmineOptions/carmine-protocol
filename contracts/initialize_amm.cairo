@@ -4,7 +4,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le
-from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div
+from math64x61 import Math64x61
 
 from contracts.amm import (pool_balance, account_balance, set_pool_balance, set_pool_volatility,
     set_account_balance, set_available_options)
@@ -53,7 +53,7 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     alloc_locals
 
     # 1) set pool_balance
-    let (balance) = Math64x61_fromFelt(12345)
+    let (balance) = Math64x61.fromFelt(12345)
     set_pool_balance(option_type=OPTION_CALL, balance=balance)
     set_pool_balance(option_type=OPTION_PUT, balance=balance)
     
@@ -63,7 +63,7 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
 
     # 3) Set pool_volatility
     # 1 = 100%
-    let (volatility) = Math64x61_fromFelt(1)
+    let (volatility) = Math64x61.fromFelt(1)
 
     # in tests the current timestamp is set to 1672527600 - (365*60*60*24) = 1640991600
     # which is GMT: Friday 31. December 2021 23:00:00
@@ -77,13 +77,13 @@ func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
     set_pool_volatility(OPTION_PUT, maturity_1, volatility)
 
     # 4) Set option availability
-    let (strike_1000) = Math64x61_fromFelt(1000)
+    let (strike_1000) = Math64x61.fromFelt(1000)
     set_available_options(OPTION_CALL, strike_1000, maturity_01)
     set_available_options(OPTION_CALL, strike_1000, maturity_1)
     set_available_options(OPTION_PUT, strike_1000, maturity_01)
     set_available_options(OPTION_PUT, strike_1000, maturity_1)
 
-    let (strike_1100) = Math64x61_fromFelt(1100)
+    let (strike_1100) = Math64x61.fromFelt(1100)
     set_available_options(OPTION_CALL, strike_1100, maturity_01)
     set_available_options(OPTION_CALL, strike_1100, maturity_1)
     set_available_options(OPTION_PUT, strike_1100, maturity_01)

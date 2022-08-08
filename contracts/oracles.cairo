@@ -4,13 +4,7 @@ from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.Math64x61 import (
-    Math64x61_fromFelt,
-    Math64x61_div,
-    Math64x61_INT_PART,
-    Math64x61_add,
-    Math64x61_sqrt,
-)
+from math64x61 import Math64x61
 
 from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
 from lib.math_64x61_extended import Math64x61_div_imprecise
@@ -33,10 +27,10 @@ end
 func convert_price{range_check_ptr}(price : felt, decimals : felt) -> (price : felt):
     alloc_locals
 
-    let (is_convertable) = is_le(price, Math64x61_INT_PART)
+    let (is_convertable) = is_le(price, Math64x61.INT_PART)
     if is_convertable == TRUE:
         let (converted_price) = Math64x61_fromFelt(price)
-        let (pow10xM) = pow10(decimals)
+        let (pow10xM) = pow(10, decimals)
         let (pow10xM_to_64x61) = Math64x61_fromFelt(pow10xM)
         let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61)
         return (price_64x61)
@@ -51,7 +45,7 @@ func convert_price{range_check_ptr}(price : felt, decimals : felt) -> (price : f
     let (a) = convert_price(c, decimals_2)
     let (b) = convert_price(remainder, decimals)
 
-    let (res) = Math64x61_add(a, b)
+    let (res) = Math64x61.add(a, b)
 
     # FIXME: THIS HAS TO VALIDATED THAT THE ROUNDING CAUSED BY THE IMPRECISE CALCULATIONS IS NOT TOO BIG
 
