@@ -1,35 +1,23 @@
 %lang starknet
 
 # Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from lptoken import mint, totalSupply
+from lptoken import LPToken
 
-from Math64x61 import (  # prefix contracts because code is in lib/cairo_math_64x61/**contracts**/Math64x61.cairo
-    Math64x61_fromFelt,
-    Math64x61_mul,
-    Math64x61_div,
-    Math64x61_add,
-    Math64x61_sub,
-    Math64x61_min,
-    Math64x61_ONE,
-    Math64x61_fromUint256,
-)
-
-from starware.cairo.common.math import assert_nn
-
+from starkware.cairo.common.math import assert_nn
+from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256,
+    uint256_mul,
+    uint256_add,
+    uint256_sub,
     uint256_unsigned_div_rem
 )
 from starkware.starknet.common.syscalls import (
     get_caller_address,
     get_contract_address,
 )
-from openzeppelin.token.erc20.interfaces import IERC20
+from openzeppelin.token.erc20.IERC20 import IERC20
 
-from option_tokens.logn_call_option import (
-    mint as long_call_mint,
-    burn as long_call_burn
-)
 from constants import (
     OPTION_CALL,
     OPTION_PUT,
@@ -68,36 +56,37 @@ func get_lptokens_for_underlying{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     underlying_amt: Uint256
 ) -> (lpt_amt: Uint256):
     alloc_locals
-    tempvar reserves = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
+    let (own_addr) = get_contract_address()
+    let (reserves: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
     if reserves.low == 0:
         return (underlying_amt)
     end
-    let (lpt_supply) = totalSupply()
+    let (lpt_supply) = LPToken.totalSupply()
     let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves)
     let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt)
-    assert to_mint_high = 0
+    assert to_mint_high.low = 0
     let (to_div_low, to_div_high) = uint256_mul(rem, underlying_amt)
-    assert to_div_high = 0
+    assert to_div_high.low = 0
     let (to_mint_additional_quot, to_mint_additional_rem) = uint256_unsigned_div_rem(to_div_low, reserves)  # to_mint_additional_rem goes to liq pool // treasury
     let (mint_total, carry) = uint256_add(to_mint_additional_quot, to_mint_low)
     assert carry = 0
     return (mint_total)
 end
 
+@storage_var
+func pool_balance() -> (res:Uint256):
+end
+
+@storage_var
+func contract_balance() -> (res:Uint256):
+end
+
+
 # mints LPToken
 # assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
 # amt is amt of underlying token to deposit
 # FIXME: could we call this deposit_liquidity
-@storage_var
-func pool_balance() -> (res:felt):
-end
-
-@storage_var
-func contract_balance() -> (res : felt):
-end
-
-
 @external
 func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt,
@@ -105,22 +94,27 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 ):
     let (caller_addr) =  get_caller_address()
     let (own_addr) = get_contract_address()
-    tempvar balance_before = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
+    let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
     let (current_balance) = pool_balance.read()
 
     IERC20.transferFrom(
-        contract_address=erc20_address,
+        contract_address=pooled_token_addr,
         sender=caller_addr,
         recipient=own_addr,
         amount=amt,
     )  # we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
 
-    pool_balance.write(current_balance + amt)
-    contract_balance.write(balance_before + amt)
-    
+    let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt)
+    assert carry = 0
+    pool_balance.write(new_pb)
+    let (new_cb: Uint256, carry: felt) = uint256_add(balance_before, amt)
+    assert carry = 0
+    contract_balance.write(new_cb)
+
     let (mint_amt) = get_lptokens_for_underlying(pooled_token_addr, amt)
-    mint(caller_addr, resulting_amt_uint256)
+    let (caller_addr) =  get_caller_address()
+    LPToken.mint(caller_addr, mint_amt)
 
     return ()
 end
@@ -132,22 +126,25 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
 ):
     let (caller_addr) =  get_caller_address()
     let (own_addr) = get_contract_address()
-    tempvar balance_before = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
+    let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
 
-    let curent_balance = pool_balance.read()
+    let (current_balance: Uint256) = pool_balance.read()
 
-    with_attr error_message("Not enough funds in pool"):
-        assert_nn(current_balance - amt)
-        assert_nn(balance_before - amt)
+    #with_attr error_message("Not enough funds in pool"):
+    #    assert_nn(current_balance - amt)
+    #    assert_nn(balance_before - amt)
+    #end
 
-    pool_balance.write(current_balance - amt)
-    contract_balance.write(balance_before - amt)
+    let (new_pb: Uint256) = uint256_sub(current_balance, amt)
+    pool_balance.write(new_pb)
+    let (new_cb: Uint256) = uint256_sub(balance_before, amt)
+    contract_balance.write(new_cb)
 
     IERC20.transferFrom(
-        contract_address=erc20_address,
+        contract_address=pooled_token_addr,
         sender=own_addr,
-        recipient=caller_adr,
+        recipient=caller_addr,
         amount=amt,
     )  # we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
 
@@ -196,10 +193,12 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 
     # assuming we are in a CALL pool (ie ETH pool)
 
-    if option_side == TRADE_SIDE_LONG:
-        _mint_option_token_long(address, amount, strike, maturity)
-    else:
-        _mint_option_token_short(address, amount, strike, maturity)
+    # if option_side == TRADE_SIDE_LONG:
+    #     _mint_option_token_long(address, amount, strike, maturity)
+    # else:
+    #     _mint_option_token_short(address, amount, strike, maturity)
+    # end
+    return ()
 end
 
 func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -209,11 +208,12 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     maturity: felt
 ):
     # address is user address
-    long_call_mint(address, amount, strike, maturity)
+    #long_call_mint(address, amount, strike, maturity)
 
     # move premia and fees from user to the pool
 
     # decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
+    return ()
 end
 
 func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -223,12 +223,13 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     maturity: felt
 ):
     # address is user address
-    short_call_mint(address, amount, strike, maturity)
+    #short_call_mint(address, amount, strike, maturity)
 
     # move (amount minus (premia minus fees)) from user to the pool
     # user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
 
     # increase available capital by (amount - premia + fees) (this might be happening in the amm.cairo)
+    return ()
 end
 
 # User decreases its position (if user is long, it decreases the size of its long,
@@ -249,10 +250,12 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 
     # assuming we are in a CALL pool (ie ETH pool)
 
-    if option_side == TRADE_SIDE_LONG:
-        _burn_option_token_long(address, amount, strike, maturity)
-    else:
-        _burn_option_token_short(address, amount, strike, maturity)
+    # if option_side == TRADE_SIDE_LONG:
+    #     _burn_option_token_long(address, amount, strike, maturity)
+    # else:
+    #     _burn_option_token_short(address, amount, strike, maturity)
+    # end
+    return ()
 end
 
 func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -262,12 +265,13 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     maturity: felt
 ):
     # address is user address
-    long_call_burn(address, amount, strike, maturity)
+    #long_call_burn(address, amount, strike, maturity)
 
     # user gets premia minus fees
     # pool updates its available capital (unlocks it)
 
     # increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
+    return ()
 end
 
 func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -277,13 +281,14 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     maturity: felt
 ):
     # address is user address
-    short_call_burn(address, amount, strike, maturity)
+    #short_call_burn(address, amount, strike, maturity)
 
     # user receives back its locked capital, pays premia and fees
     # pool updates it available capital
 
     # increase available capital by (premia - fees) (this might be happening in the amm.cairo)
     # NOTICE: the available capital does not get updated by amount, since it was never available for the pool
+    return ()
 end
 
 # Once the option has expired return corresponding capital to the option owner
