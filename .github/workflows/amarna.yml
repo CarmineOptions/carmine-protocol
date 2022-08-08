@@ -2,8 +2,9 @@ name: Amarna analysis
 
 on:
   push:
-    branches: [master]
-    pull_request:
+    paths:
+      - '**.cairo'
+  pull_request:
 
 jobs:
   analyze:
