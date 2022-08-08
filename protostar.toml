@@ -4,6 +4,13 @@ protostar_version = "0.2.3"
 ["protostar.project"]
 libs_path = "lib"
 
+["protostar.shared_command_configs"]
+cairo-path = ["./lib/cairo_contracts/src",
+    "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
+    "contracts/",
+    "./lib/cairo_contracts/src"
+]
+
 ["protostar.contracts"]
 amm = [
     "./contracts/main.cairo",
@@ -11,4 +18,8 @@ amm = [
 ]
 lptoken = [
     "./contracts/lptoken.cairo"
+]
+
+option_token = [
+    "./contracts/option_tokens/long_call_option.cairo"
 ]
