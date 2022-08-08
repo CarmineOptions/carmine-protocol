@@ -1,0 +1,24 @@
+name: Protostar
+
+on:
+  push:
+    paths:
+      - '**.cairo'
+  pull_request:
+
+jobs:
+  check:
+    name: Protostar project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Protostar
+        uses: sambarnes/protostar-toolchain@main
+
+      - name: Build
+        run: protostar build
+#     - name: Test
+#       run: protostar test
