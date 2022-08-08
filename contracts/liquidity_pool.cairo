@@ -61,7 +61,7 @@ func get_lptokens_for_underlying{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
 
     if reserves.low == 0:
         return (underlying_amt)
-    #end
+    #end#
     let (lpt_supply) = LPToken.totalSupply()
     let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves)
     let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt)
