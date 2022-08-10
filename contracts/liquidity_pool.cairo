@@ -1,7 +1,7 @@
 %lang starknet
 
 # Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from lptoken import LPToken
+from interface_lptoken import ILPToken
 
 from starkware.cairo.common.math import assert_nn
 from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -62,7 +62,8 @@ func get_lptokens_for_underlying{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     if reserves.low == 0:
         return (underlying_amt)
     end
-    let (lpt_supply) = LPToken.totalSupply()
+    let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    let (lpt_supply) = ILPToken.totalSupply(contract_address=lpt_addr)
     let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves)
     let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt)
     assert to_mint_high.low = 0
@@ -74,14 +75,39 @@ func get_lptokens_for_underlying{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     return (mint_total)
 end
 
+# computes what amt of underlying corresponds to a given amt of lpt.
+# Doesn't take into account whether this underlying is actually free to be withdrawn.
+# computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
+# notation used: ... = (a)*my_lpt = b
+func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: felt,
+    lpt_amt: Uint256
+) -> (underlying_amt: Uint256):
+    alloc_locals
+    let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lpt_addr)
+    let (total_underlying_amt: Uint256) = pool_balance.read(pooled_token_addr)
+    let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt)
+    let (b_low, b_high) = uint256_mul(a_quot, lpt_amt)
+    assert b_high.low = 0 # bits that overflow uint256 after multiplication
+    let (tmp_low, tmp_high) = uint256_mul(a_rem, lpt_amt)
+    assert tmp_high.low = 0
+    let (to_burn_additional_quot, to_burn_additional_rem) = uint256_unsigned_div_rem(tmp_low, total_lpt)
+    let (to_burn, carry) = uint256_add(to_burn_additional_quot, b_low)
+    assert carry = 0
+    return (to_burn)
+end
+
+# total balance of underlying in the pool
+# available balance for withdraw will be computed on-demand since
+# compute is cheap, storage is expensive on StarkNet currently
 @storage_var
-func pool_balance() -> (res:Uint256):
+func pool_balance(pooled_token_addr: felt) -> (res:Uint256):
 end
 
 @storage_var
-func contract_balance() -> (res:Uint256):
+func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt):
 end
-
 
 # mints LPToken
 # assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
@@ -96,7 +122,7 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     let (own_addr) = get_contract_address()
     let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
-    let (current_balance) = pool_balance.read()
+    let (current_balance) = pool_balance.read(pooled_token_addr)
 
     IERC20.transferFrom(
         contract_address=pooled_token_addr,
@@ -107,15 +133,15 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 
     let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt)
     assert carry = 0
-    pool_balance.write(new_pb)
-    let (new_cb: Uint256, carry: felt) = uint256_add(balance_before, amt)
-    assert carry = 0
-    contract_balance.write(new_cb)
+    pool_balance.write(pooled_token_addr, new_pb)
+    #let (new_cb: Uint256, carry: felt) = uint256_add(balance_before, amt)
+    #assert carry = 0
+    #contract_balance.write(new_cb)
 
     let (mint_amt) = get_lptokens_for_underlying(pooled_token_addr, amt)
     let (caller_addr) =  get_caller_address()
-    LPToken.mint(caller_addr, mint_amt)
-
+    let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    ILPToken.mint(contract_address=lpt_addr, to=caller_addr, amount=mint_amt)
     return ()
 end
 
@@ -124,12 +150,14 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     pooled_token_addr: felt,
     amt: Uint256
 ):
-    let (caller_addr) =  get_caller_address()
+    alloc_locals
+    let (caller_addr_) =  get_caller_address()
+    local caller_addr = caller_addr_
     let (own_addr) = get_contract_address()
     let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
 
-    let (current_balance: Uint256) = pool_balance.read()
+    let (current_balance: Uint256) = pool_balance.read(pooled_token_addr)
 
     #with_attr error_message("Not enough funds in pool"):
     #    assert_nn(current_balance - amt)
@@ -137,9 +165,7 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     #end
 
     let (new_pb: Uint256) = uint256_sub(current_balance, amt)
-    pool_balance.write(new_pb)
-    let (new_cb: Uint256) = uint256_sub(balance_before, amt)
-    contract_balance.write(new_cb)
+    pool_balance.write(pooled_token_addr, new_pb)
 
     IERC20.transferFrom(
         contract_address=pooled_token_addr,
@@ -148,7 +174,9 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
         amount=amt,
     )  # we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
 
-    # FIXME: Should we burn something here?
+    let (burn_amt) = get_underlying_for_lptokens(pooled_token_addr, amt)
+    let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    ILPToken.burn(contract_address=lpt_addr, account=caller_addr, amount=burn_amt)
 
     return ()
 end
