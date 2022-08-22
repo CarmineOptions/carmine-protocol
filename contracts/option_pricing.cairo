@@ -8,7 +8,7 @@ from starkware.cairo.common.math import sign
 from starkware.cairo.common.math_cmp import is_le
 
 # Third party imports. Was copy pasted to this repo.
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 func _decimal_thousandth{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         x : felt) -> (res : felt):

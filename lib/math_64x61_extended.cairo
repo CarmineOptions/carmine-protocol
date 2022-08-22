@@ -4,7 +4,7 @@ from starkware.cairo.common.pow import pow
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 const DIV_IMPRECISE_THRESHOLD = 10 ** 30
 

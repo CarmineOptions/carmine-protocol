@@ -4,7 +4,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 from contracts.constants import FEE_PROPORTION_PERCENT
 

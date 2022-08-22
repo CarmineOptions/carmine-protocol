@@ -4,7 +4,7 @@ from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.math import unsigned_div_rem
 from starkware.cairo.common.bool import TRUE, FALSE
 
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
 from lib.math_64x61_extended import Math64x61_div_imprecise

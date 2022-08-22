@@ -7,7 +7,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn
 # from starkware.cairo.common.math import assert_le, unsigned_div_rem
 from starkware.starknet.common.syscalls import get_block_timestamp  # storage_write
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 from contracts.constants import (
     POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND, VOLATILITY_LOWER_BOUND,

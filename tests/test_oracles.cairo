@@ -3,7 +3,7 @@
 from starkware.cairo.common.pow import pow
 from starkware.cairo.common.math_cmp import is_le
 
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 from contracts.oracles import convert_price, empiric_median_price
 from lib.math_64x61_extended import Math64x61_div_imprecise

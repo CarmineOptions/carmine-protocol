@@ -4,6 +4,14 @@ protostar_version = "0.3.2"
 ["protostar.project"]
 libs_path = "./lib"
 
+["protostar.shared_command_configs"]
+cairo-path = ["./lib/cairo_contracts/src",
+    "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
+    "contracts/",
+    "./lib/cairo_contracts/src"
+]
+
+
 ["protostar.contracts"]
 amm = [
     "./contracts/main.cairo"

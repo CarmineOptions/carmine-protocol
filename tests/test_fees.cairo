@@ -5,7 +5,7 @@ from starkware.cairo.common.math import assert_not_equal
 
 from contracts.fees import get_fees
 
-from contracts.cairo_math_64x61.math64x61 import Math64x61
+from math64x61 import Math64x61
 
 @external
 func test_get_fees{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
