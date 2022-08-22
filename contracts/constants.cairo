@@ -4,17 +4,17 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
-from contracts.Math64x61 import Math64x61_FRACT_PART
+from contracts.cairo_math_64x61.math64x61 import Math64x61
 
 # The maximum amount of token in a pool.
-const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
+const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART
 # The maximum amount of token for account balance
-const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
+const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART
 # The minimum and maximum volatility
 const VOLATILITY_LOWER_BOUND = 0
-const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
+const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART
 # Maximum strike price allowed
-const STRIKE_PRICE_UPPER_BOUND = 2 ** 64 * Math64x61_FRACT_PART
+const STRIKE_PRICE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART
 
 # Imagine Token A being ETH and Token B being USDC. Ie underlying asset is ETH/USDC
 # TOKEN_A corresponds to ETH and TOKEN_B to USDC... Ie underlying asset is TOKEN_A/TOKEN_B
