@@ -2,15 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
-from contracts.Math64x61 import (
-    Math64x61_toFelt,
-    Math64x61_fromFelt,
-    Math64x61_ONE,
-    Math64x61_add,
-    Math64x61_sub,
-    Math64x61_mul,
-    Math64x61_div,
-)
+from math64x61 import Math64x61
 
 from contracts.amm import (
     _time_till_maturity,
@@ -44,7 +36,7 @@ func test_time_till_maturity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     %{ warp(1672527600 - (365*60*60*24)) %}
 
     let (result) = _time_till_maturity(1672527600)
-    assert result = Math64x61_ONE
+    assert result = Math64x61.ONE
     return ()
 end
 
@@ -87,12 +79,12 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
 
     # set some constants
     const account_id = 123456789
-    let (hundred) = Math64x61_fromFelt(100)
-    let (strike_1000) = Math64x61_fromFelt(1000)
-    let (strike_1100) = Math64x61_fromFelt(1100)
-    let (two) = Math64x61_fromFelt(2)
-    let (half) = Math64x61_div(Math64x61_ONE, two)
-    let (one_and_half) = Math64x61_add(Math64x61_ONE, half)
+    let (hundred) = Math64x61.fromFelt(100)
+    let (strike_1000) = Math64x61.fromFelt(1000)
+    let (strike_1100) = Math64x61.fromFelt(1100)
+    let (two) = Math64x61.fromFelt(2)
+    let (half) = Math64x61.div(Math64x61.ONE, two)
+    let (one_and_half) = Math64x61.add(Math64x61.ONE, half)
     let maturity_01 = 1644145200
     let maturity_1 = 1672527600
 
@@ -101,7 +93,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     add_fake_tokens(account_id, hundred, hundred)
 
     # Trade 1 -------------------------------------------------------
-    do_trade(account_id, OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, Math64x61_ONE)
+    do_trade(account_id, OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, Math64x61.ONE)
 
     # Assuming the BS model is correctly computed
     # 12445 + premia + locked capital = 12445 + 0.1255... - 1
@@ -110,9 +102,9 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     assert result_1 = target_1
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
-    _test_volatility(OPTION_PUT, maturity_01, Math64x61_ONE)
-    _test_volatility(OPTION_CALL, maturity_1, Math64x61_ONE)
-    _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
+    _test_volatility(OPTION_PUT, maturity_01, Math64x61.ONE)
+    _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
+    _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
     # Trade 2 -------------------------------------------------------
     do_trade(account_id, OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, two)
@@ -127,12 +119,12 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
     _test_volatility(OPTION_PUT, maturity_01, 2305472503387516769)
-    _test_volatility(OPTION_CALL, maturity_1, Math64x61_ONE)
-    _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
+    _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
+    _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
     _test_pool_option_balance(
-        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61.ONE
     )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, two)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, 0)
@@ -158,12 +150,12 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
     _test_volatility(OPTION_PUT, maturity_01, 2305566983161341618)
-    _test_volatility(OPTION_CALL, maturity_1, Math64x61_ONE)
-    _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
+    _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
+    _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
     _test_pool_option_balance(
-        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61.ONE
     )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, one_and_half)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, 0)
@@ -202,12 +194,12 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
     _test_volatility(OPTION_PUT, maturity_01, 2305942971103526059)
-    _test_volatility(OPTION_CALL, maturity_1, Math64x61_ONE)
-    _test_volatility(OPTION_PUT, maturity_1, Math64x61_ONE)
+    _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
+    _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
     _test_pool_option_balance(OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
     _test_pool_option_balance(
-        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61_ONE
+        OPTION_CALL, strike_1000, maturity_01, TRADE_SIDE_SHORT, Math64x61.ONE
     )
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, 0)
     _test_pool_option_balance(OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_SHORT, half)

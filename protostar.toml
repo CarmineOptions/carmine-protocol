@@ -1,5 +1,5 @@
 ["protostar.config"]
-protostar_version = "0.2.3"
+protostar_version = "0.3.1"
 
 ["protostar.project"]
 libs_path = "lib"
@@ -14,6 +14,7 @@ cairo-path = ["./lib/cairo_contracts/src",
 ["protostar.contracts"]
 amm = [
     "./contracts/main.cairo",
+    "./contracts/amm.cairo",
     "./contracts/liquidity_pool.cairo"
 ]
 lptoken = [
