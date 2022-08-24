@@ -29,9 +29,9 @@ func convert_price{range_check_ptr}(price : felt, decimals : felt) -> (price : f
 
     let (is_convertable) = is_le(price, Math64x61.INT_PART)
     if is_convertable == TRUE:
-        let (converted_price) = Math64x61_fromFelt(price)
-        let (pow10xM) = pow(10, decimals)
-        let (pow10xM_to_64x61) = Math64x61_fromFelt(pow10xM)
+        let (converted_price) = Math64x61.fromFelt(price)
+        let (pow10xM) = pow10(decimals)
+        let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM)
         let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61)
         return (price_64x61)
     end
