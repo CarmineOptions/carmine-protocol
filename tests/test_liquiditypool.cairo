@@ -16,7 +16,9 @@ func __setup__():
 end
 
 func test_initialization{syscall_ptr : felt*, range_check_ptr}():
-    let (symbol) = ILPToken.symbol(contract_address=lpt_addr)
+    let (symbol) = ILPToken.symbol(contract_address=context.lpt_addr)
     assert symbol = 'LPT'
     return ()
 end
+
+# tests don't work yet, will be fixed in the future
