@@ -3,8 +3,9 @@
 # Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from interface_lptoken import ILPToken
 
-from starkware.cairo.common.math import assert_nn
-from starkware.cairo.common.cairo_builtins import HashBuiltin
+# commented out code already imported in amm.cairo
+# from starkware.cairo.common.math import assert_nn
+# from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -18,13 +19,13 @@ from starkware.starknet.common.syscalls import (
 )
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-from constants import (
-    OPTION_CALL,
-    OPTION_PUT,
-    TRADE_SIDE_LONG,
-    TRADE_SIDE_SHORT,
-    get_opposite_side
-)
+# from constants import (
+#     OPTION_CALL,
+#     OPTION_PUT,
+#     TRADE_SIDE_LONG,
+#     TRADE_SIDE_SHORT,
+#     get_opposite_side
+# )
 
 
 
@@ -86,7 +87,7 @@ func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     alloc_locals
     let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lpt_addr)
-    let (total_underlying_amt: Uint256) = pool_balance.read(pooled_token_addr)
+    let (total_underlying_amt: Uint256) = lpool_balance.read(pooled_token_addr)
     let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt)
     let (b_low, b_high) = uint256_mul(a_quot, lpt_amt)
     assert b_high.low = 0 # bits that overflow uint256 after multiplication
@@ -102,7 +103,7 @@ end
 # available balance for withdraw will be computed on-demand since
 # compute is cheap, storage is expensive on StarkNet currently
 @storage_var
-func pool_balance(pooled_token_addr: felt) -> (res:Uint256):
+func lpool_balance(pooled_token_addr: felt) -> (res:Uint256):
 end
 
 @storage_var
@@ -122,7 +123,7 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     let (own_addr) = get_contract_address()
     let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
-    let (current_balance) = pool_balance.read(pooled_token_addr)
+    let (current_balance) = lpool_balance.read(pooled_token_addr)
 
     IERC20.transferFrom(
         contract_address=pooled_token_addr,
@@ -133,7 +134,7 @@ func deposit_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 
     let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt)
     assert carry = 0
-    pool_balance.write(pooled_token_addr, new_pb)
+    lpool_balance.write(pooled_token_addr, new_pb)
     #let (new_cb: Uint256, carry: felt) = uint256_add(balance_before, amt)
     #assert carry = 0
     #contract_balance.write(new_cb)
@@ -157,7 +158,7 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     let (balance_before: Uint256) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
 
 
-    let (current_balance: Uint256) = pool_balance.read(pooled_token_addr)
+    let (current_balance: Uint256) = lpool_balance.read(pooled_token_addr)
 
     #with_attr error_message("Not enough funds in pool"):
     #    assert_nn(current_balance - amt)
@@ -165,7 +166,7 @@ func withdraw_lp{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     #end
 
     let (new_pb: Uint256) = uint256_sub(current_balance, amt)
-    pool_balance.write(pooled_token_addr, new_pb)
+    lpool_balance.write(pooled_token_addr, new_pb)
 
     IERC20.transferFrom(
         contract_address=pooled_token_addr,

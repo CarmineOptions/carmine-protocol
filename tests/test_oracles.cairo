@@ -3,7 +3,7 @@
 from starkware.cairo.common.pow import pow
 from starkware.cairo.common.math_cmp import is_le
 
-from contracts.Math64x61 import Math64x61_fromFelt, Math64x61_div, Math64x61_sqrt
+from math64x61 import Math64x61
 
 from contracts.oracles import convert_price, empiric_median_price
 from lib.math_64x61_extended import Math64x61_div_imprecise
@@ -30,7 +30,7 @@ func test_Math64x61_div_imprecise{range_check_ptr}():
     alloc_locals
     let decimals = 18
     let (pow10xM) = pow(10, decimals)
-    let (pow10xM_to_64x61) = Math64x61_fromFelt(pow10xM)
+    let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM)
 
     # test ETH price 1480.23 * 10**18
     let eth_test = 1480230000000000000000
