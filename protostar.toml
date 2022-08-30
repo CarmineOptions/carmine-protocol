@@ -13,10 +13,14 @@ cairo-path = ["./lib/cairo_contracts/src",
 
 ["protostar.contracts"]
 amm = [
-    "./contracts/main.cairo",
     "./contracts/amm.cairo",
-    "./contracts/liquidity_pool.cairo"
+    "./contracts/liquidity_pool.cairo",
+    #"./contracts/main.cairo",
+    "./contracts/initialize_amm.cairo",
 ]
 lptoken = [
     "./contracts/lptoken.cairo"
 ]
+#option_token = [
+#    "./contracts/option_token.cairo"
+#]
