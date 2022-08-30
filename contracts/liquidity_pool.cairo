@@ -2,10 +2,10 @@
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from interface_lptoken import ILPToken
-
-// commented out code already imported in amm.cairo
-// from starkware.cairo.common.math import assert_nn
-// from starkware.cairo.common.cairo_builtins import HashBuiltin
+from option_token import OptionToken
+# commented out code already imported in amm.cairo
+# from starkware.cairo.common.math import assert_nn
+# from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -16,13 +16,13 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-// from constants import (
-//     OPTION_CALL,
-//     OPTION_PUT,
-//     TRADE_SIDE_LONG,
-//     TRADE_SIDE_SHORT,
-//     get_opposite_side
-// )
+#from constants import (
+#    OPTION_CALL,
+#    OPTION_PUT,
+#    TRADE_SIDE_LONG,
+#    TRADE_SIDE_SHORT,
+#    get_opposite_side
+#)
 
 // @external
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
@@ -98,9 +98,54 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_burn,);
 }
 
-// total balance of underlying in the pool
-// available balance for withdraw will be computed on-demand since
-// compute is cheap, storage is expensive on StarkNet currently
+    if reserves.low == 0:
+        return (underlying_amt)
+    end
+    let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    let (lpt_supply) = ILPToken.totalSupply(contract_address=lpt_addr)
+
+    let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves)
+    let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt)
+
+    assert to_mint_high.low = 0
+
+    let (to_div_low, to_div_high) = uint256_mul(rem, underlying_amt)
+
+    assert to_div_high.low = 0
+
+    let (to_mint_additional_quot, to_mint_additional_rem) = uint256_unsigned_div_rem(to_div_low, reserves)  # to_mint_additional_rem goes to liq pool // treasury
+    let (mint_total, carry) = uint256_add(to_mint_additional_quot, to_mint_low)
+
+    assert carry = 0
+    return (mint_total)
+end
+
+# computes what amt of underlying corresponds to a given amt of lpt.
+# Doesn't take into account whether this underlying is actually free to be withdrawn.
+# computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
+# notation used: ... = (a)*my_lpt = b
+func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: felt,
+    lpt_amt: Uint256
+) -> (underlying_amt: Uint256):
+    alloc_locals
+    let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
+    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lpt_addr)
+    let (total_underlying_amt: Uint256) = lpool_balance.read(pooled_token_addr)
+    let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt)
+    let (b_low, b_high) = uint256_mul(a_quot, lpt_amt)
+    assert b_high.low = 0 # bits that overflow uint256 after multiplication
+    let (tmp_low, tmp_high) = uint256_mul(a_rem, lpt_amt)
+    assert tmp_high.low = 0
+    let (to_burn_additional_quot, to_burn_additional_rem) = uint256_unsigned_div_rem(tmp_low, total_lpt)
+    let (to_burn, carry) = uint256_add(to_burn_additional_quot, b_low)
+    assert carry = 0
+    return (to_burn)
+end
+
+# total balance of underlying in the pool
+# available balance for withdraw will be computed on-demand since
+# compute is cheap, storage is expensive on StarkNet currently
 @storage_var
 func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
 }
@@ -211,102 +256,284 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // assuming we are in a CALL pool (ie ETH pool)
 
-    // if option_side == TRADE_SIDE_LONG:
-    //     _mint_option_token_long(address, amount, strike, maturity)
-    // else:
-    //     _mint_option_token_short(address, amount, strike, maturity)
-    // end
-    return ();
-}
+# User increases its position (if user is long, it increases the size of its long,
+# if he/she is short, the short gets increased).
+# Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
+# This corresponds to something like "mint_option_token", but does more, it also changes internal state of the pool
+#   and realocates locked capital/premia and fees between user and the pool
+#   for example how much capital is available, how much is locked,...
+func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_token_address: felt,
+    amount: felt,
+    option_side: felt,
+    option_type: felt,
+    maturity: felt,
+    strike: felt,
+    premia: felt,
+    fees: felt
+):
+    # FIXME: do we want to have the amount here as felt or do want it as uint256???
+    alloc_locals
 
-func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    address: felt, amount: felt, strike: felt, maturity: felt
-) {
-    // address is user address
-    // long_call_mint(address, amount, strike, maturity)
+    # Make sure the contract is the one that user wishes to trade
+    let (contract_option_type) = OptionToken.option_type(option_token_address)
+    let (contract_strike) = OptionToken.strike(option_token_address)
+    let (contract_maturity) = OptionToken.maturity(option_token_address)
+    let (contract_option_side) = OptionToken.side(option_token_address)
 
-    // move premia and fees from user to the pool
+    assert contract_option_type = option_type
+    assert contract_strike      = strike
+    assert contract_maturity    = maturity
+    assert contract_option_side = side
 
-    // decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
-    return ();
-}
+    # assuming we are in a CALL pool (ie ETH pool)
+    if option_side == TRADE_SIDE_LONG:
+        _mint_option_token_long(
+            token_address = option_token_address,
+            amount = amount,
+            strike = strike,
+            maturity = maturity,
+            premia = premia,
+            fees = fees
 
-func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    address: felt, amount: felt, strike: felt, maturity: felt
-) {
-    // address is user address
-    // short_call_mint(address, amount, strike, maturity)
+        )
+    else:
+        _mint_option_token_short(
+            token_address = option_token_address,
+            user_address = caller_address
+            amount = amount,
+            strike = strike,
+            maturity = maturity,
+            premia = premia,
+            fees = fees
 
-    // move (amount minus (premia minus fees)) from user to the pool
-    // user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
+        )
+    end
 
-    // increase available capital by (amount - premia + fees) (this might be happening in the amm.cairo)
-    return ();
-}
+    return ()
+end
 
-// User decreases its position (if user is long, it decreases the size of its long,
-// if he/she is short, the short gets decreased).
-// Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
-// This corresponds to something like "burn_option_token", but does more, it also changes internal state of the pool
-//   and realocates locked capital/premia and fees between user and the pool
-//   for example how much capital is available, how much is locked,...
-func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt, option_type: felt, option_side: felt
-) {
-    // FIXME: do we want to have the amount here as felt or do want it as uint256???
+func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    token_address: felt,
+    amount: felt,
+    premia: felt,
+    fees: felt
+):
+    alloc_locals
 
-    // if option_type != correct option type -> fail
-    // ie for call options only pool with ETH is used and for PUT options only the USDC is used
+    let (current_contract_address) = get_contract_address()
+    let (user_address) = get_caller_address()
 
-    // assuming we are in a CALL pool (ie ETH pool)
+    # FIXME: What should be checked here? ie That user has enough ETH?
+    let (user_balance)  =
+    assert_nn(user_balance - amount)
 
-    // if option_side == TRADE_SIDE_LONG:
-    //     _burn_option_token_long(address, amount, strike, maturity)
-    // else:
-    //     _burn_option_token_short(address, amount, strike, maturity)
-    // end
-    return ();
-}
+    # Mint tokens
+    OptionToken.mint(token_address, user_address, amount)
 
-func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    address: felt, amount: felt, strike: felt, maturity: felt
-) {
-    // address is user address
-    // long_call_burn(address, amount, strike, maturity)
+    # User will pay (premia + fees)
+    let to_be_paid_by_user = premia + fees
 
-    // user gets premia minus fees
-    // pool updates its available capital (unlocks it)
+    # Move premia and fees from user to the pool
+    IERC20.transferFrom(
+        contract_address = token_address,
+        sender = user_address,
+        recipient = current_contract_address,
+        amount = to_be_paid_by_user
+    )
 
-    // increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
-    return ();
-}
+    # Should the decreasing happen somewhere else? Ie OptionToken.mint function?
+    # decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
+    return ()
+end
 
-func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    address: felt, amount: felt, strike: felt, maturity: felt
-) {
-    // address is user address
-    // short_call_burn(address, amount, strike, maturity)
+func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    token_address: felt,
+    amount: felt,
+    premia: felt,
+    fees: felt
+):
+    alloc_locals
 
-    // user receives back its locked capital, pays premia and fees
-    // pool updates it available capital
+    let (current_contract_address) = get_contract_address()
+    let (user_address) = get_caller_address()
 
-    // increase available capital by (premia - fees) (this might be happening in the amm.cairo)
-    // NOTICE: the available capital does not get updated by amount, since it was never available for the pool
-    return ();
-}
+    # FIXME: What should be checked here? ie That user has enough ETH?
+    let (user_balance)  =
+    assert_nn(user_balance - amount)
 
-// Once the option has expired return corresponding capital to the option owner
-// for long call:
-// return max(0, amount * (current_price - strike_price)) in ETH
-// for short call:
-// return amount - (max(0, amount * (current_price - strike_price)) in ETH)
-// for long put:
-// return max(0, amount * (strike_price - current_price)) in ETH
-// for short put:
-// return amount - (max(0, amount * (strike_price - current_price)) in ETH)
-func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt, option_type: felt, option_side: felt, strike_price: felt
-) {
-    // FIXME: tbd
-    return ();
-}
+    # Mint tokens
+    OptionToken.mint(token_address, user_address, amount)
+
+    # User will pay (amount - (premia - fees)))
+    let premia_less_fees = premia - fees
+    let to_be_paid_by_user = amount - premia_les_fees
+
+    # FIXME: User shouldne send the token but USDC or sth i guess?
+    # Move (amount minus (premia minus fees)) from user to the pool
+    IERC20.transferFrom(
+        contract_address = token_address,
+        sender = user_address,
+        recipient = current_contract_address,
+        amount = to_be_paid_by_user
+    )
+
+    # FIXME: Should happen somewhere else?
+    # user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
+    # increase available capital by (amount - premia + fees) (this might be happening in the amm.cairo)
+    return ()
+end
+
+# User decreases its position (if user is long, it decreases the size of its long,
+# if he/she is short, the short gets decreased).
+# Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
+# This corresponds to something like "burn_option_token", but does more, it also changes internal state of the pool
+#   and realocates locked capital/premia and fees between user and the pool
+#   for example how much capital is available, how much is locked,...
+func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_token_address:felt,
+    amount: felt,
+    option_side: felt,
+    option_type: felt,
+    maturity: felt,
+    strike: felt,
+    premia: felt,
+    fees: felt
+):
+    alloc_locals
+
+    # Make sure the contract is the one that user wishes to trade
+    let (contract_option_type) = OptionToken.option_type(option_token_address)
+    let (contract_strike) = OptionToken.strike(option_token_address)
+    let (contract_maturity) = OptionToken.maturity(option_token_address)
+    let (contract_option_side) = OptionToken.side(option_token_address)
+
+    assert contract_option_type = option_type
+    assert contract_strike      = strike
+    assert contract_maturity    = maturity
+    assert contract_option_side = side
+
+    if option_side == TRADE_SIDE_LONG:
+        _burn_option_token_long(
+            token_address = option_token_address,
+            amount = amount,
+            strike = strike,
+            maturity = maturity,
+            premia = premia,
+            fees = fees
+
+        )
+    else:
+        _burn_option_token_short(
+            token_address = option_token_address,
+            amount = amount,
+            strike = strike,
+            maturity = maturity,
+            premia = premia,
+            fees = fees
+
+        )
+    end
+
+    return ()
+end
+
+func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    token_address: felt,
+    amount: felt,
+    strike: felt,
+    maturity: felt,
+    premia: felt,
+    fees: felt
+
+):
+    alloc_locals
+    let current_contract_address = get_contract_address()
+    let user_address = get_caller_address()
+
+    # Make sure user has enough funds
+    let (user_balance) = OptionToken.balanceOf(token_address, user_address)
+    assert_nn(user_balance - amount)
+
+    # Burn the tokens
+    OptionToken.burn(token_address, user_address, amount)
+
+    # Send (premia - fees)  to user
+    let to_be_received_by_user = premia - fees
+
+    IERC20.transferFrom(
+        contract_address = token_address,
+        sender = current_contract_address,
+        recipient = user_address,
+        amount = to_be_received_by_user
+    )
+
+    # FIXME: Should happen here or in OptionToken.burn() function?
+    # pool updates its available capital (unlocks it)
+    # increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
+    return ()
+end
+
+func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    token_address: felt,
+    amount: felt,
+    strike: felt,
+    maturity: felt,
+    premia: felt,
+    fees: felt
+):
+    # address is user address
+    alloc_locals
+    let current_contract_address = get_contract_address()
+
+    # Assert that there is enough
+    let (user_balance) = OptionToken.balanceOf(token_address, user_address)
+    assert_nn(user_balance - amount)
+
+    # Burn the tokens
+    OptionToken.burn(token_address, user_address, amount)
+
+    # User pays (premia + fees)
+    let to_be_paid_by_user = premia + fees
+
+    # FIXME: Calculate unlocked capital for user
+    # Retrieve locked capital to be paid to user
+    let unlocked_capital_for_user = unlocked_capital_amount(amount)
+
+    # Total sum to be received by user
+    # User receives back its locked capital, pays premia and fees
+    let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user
+
+    IERC20.transferFrom(
+        contract_address = token_address,
+        sender = user_address,
+        recipient = current_contract_address,
+        amount = total_user_payment
+    )
+
+
+    # FIXME: Should happen here?
+    # pool updates it available capital
+    # increase available capital by (premia - fees) (this might be happening in the amm.cairo)
+    # NOTICE: the available capital does not get updated by amount, since it was never available for the pool
+    return ()
+end
+
+# Once the option has expired return corresponding capital to the option owner
+    # for long call:
+        # return max(0, amount * (current_price - strike_price)) in ETH
+    # for short call:
+        # return amount - (max(0, amount * (current_price - strike_price)) in ETH)
+    # for long put:
+        # return max(0, amount * (strike_price - current_price)) in ETH
+    # for short put:
+        # return amount - (max(0, amount * (strike_price - current_price)) in ETH)
+func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    amount: felt,
+    option_type: felt,
+    option_side: felt,
+    strike_price: felt
+):
+    # FIXME: tbd
+    return ()
+end
