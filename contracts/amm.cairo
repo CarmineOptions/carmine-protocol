@@ -118,7 +118,7 @@ func set_available_options{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     return ()
 end
 
-#@view
+@view
 func get_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt
 ) -> (pool_balance : felt):
@@ -126,7 +126,7 @@ func get_pool_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     return (pool_balance_)
 end
 
-#@view
+@view
 func get_account_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt, token_type : felt
 ) -> (account_balance : felt):
@@ -134,7 +134,7 @@ func get_account_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return (account_balance_)
 end
 
-#@view
+@view
 func get_pool_option_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt, strike_price : felt, maturity : felt, side : felt
 ) -> (pool_option_balance : felt):
@@ -142,7 +142,7 @@ func get_pool_option_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     return (pool_option_balance_)
 end
 
-#@view
+@view
 func get_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt, maturity : felt
 ) -> (pool_volatility : felt):
@@ -150,7 +150,7 @@ func get_pool_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return (pool_volatility_)
 end
 
-#@view
+@view
 func get_available_options{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt, strike_price : felt, maturity : felt
 ) -> (option_availability : felt):
@@ -419,7 +419,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     return (premia=premia)
 end
 
-#@external
+@external
 func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
     option_type : felt,
