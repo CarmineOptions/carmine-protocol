@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, List, Union, NewType
 
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.testing.contract import StarknetContract
@@ -19,6 +19,8 @@ STRIKE_PRICE = 2305843009213693952000  # 1000 * 2**61
 CURRENT_PRICE = 1_200  # of ETH
 CURRENT_PRICE_2 = 800  # of ETH
 
+# Define type for our AMM
+AmmContract = NewType('AmmContract', StarknetContract)
 
 async def show_pool_volatility(amm: Starknet, return_res: bool = False) -> Optional[Dict[str, float]]:
     if not isinstance(amm, StarknetContract):
@@ -38,7 +40,7 @@ async def show_pool_volatility(amm: Starknet, return_res: bool = False) -> Optio
 
 
 async def show_current_premium(
-    amm: StarknetContract, trade_size: int, return_res: bool = False
+        amm: StarknetContract, trade_size: int, current_price: int,  return_res: bool = False
 ) -> Optional[Dict[str, float]]:
     if not isinstance(amm, StarknetContract):
         raise TypeError('Not a Starknet Contract')
@@ -64,11 +66,11 @@ async def show_current_premium(
 
     if return_res:
         return {
-            'prem_CALL': prem_CALL.result[0] / 2**61 * CURRENT_PRICE,
+            'prem_CALL': prem_CALL.result[0] / 2**61 * current_price,
             'prem_PUT': prem_PUT.result[0] / 2**61,
         }
 
-    print("Call Premium: ", prem_CALL.result[0] / 2**61 * CURRENT_PRICE)
+    print("Call Premium: ", prem_CALL.result[0] / 2**61 * current_price)
     print("Put Premium: ", prem_PUT.result[0] / 2**61)
 
 
