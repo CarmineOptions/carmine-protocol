@@ -31,7 +31,7 @@ from contracts.constants import (
 @storage_var
 func option_token_underlying_asset() -> (underlying_asset: felt):
 end
-ar
+
 func option_token_option_type() -> (option_type: felt):
 end
 
@@ -278,7 +278,7 @@ namespace OptionToken:
         # options_size = amount  # in terms of base token (ETH in case ETH/USD)
         if option_type == OPTION_CALL:
             let (call_lp_value) = amount - holder_value
-            return call_lp_value
+            return (call_lp_value)
         end
 
         let (amount_in_quote) = amount * final_price

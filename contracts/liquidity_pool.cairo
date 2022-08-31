@@ -4,8 +4,11 @@
 from interface_lptoken import ILPToken
 from option_token import OptionToken
 # commented out code already imported in amm.cairo
-# from starkware.cairo.common.math import assert_nn
 # from starkware.cairo.common.cairo_builtins import HashBuiltin
+
+
+from starkware.cairo.common.math import abs_value
+from starkware.cairo.common.math_cmp import is_nn
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -263,6 +266,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 #   and realocates locked capital/premia and fees between user and the pool
 #   for example how much capital is available, how much is locked,...
 func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     option_token_address: felt,
     amount: felt,
     option_side: felt,
@@ -281,29 +285,27 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     let (contract_maturity) = OptionToken.maturity(option_token_address)
     let (contract_option_side) = OptionToken.side(option_token_address)
 
-    assert contract_option_type = option_type
-    assert contract_strike      = strike
-    assert contract_maturity    = maturity
-    assert contract_option_side = side
+    with_attr error_message("Required contract doesnt match the address."):
+        assert contract_option_type = option_type
+        assert contract_strike = strike
+        assert contract_maturity = maturity
+        assert contract_option_side = side
+    end
 
-    # assuming we are in a CALL pool (ie ETH pool)
     if option_side == TRADE_SIDE_LONG:
         _mint_option_token_long(
+            currency_address = currency_address,
             token_address = option_token_address,
             amount = amount,
-            strike = strike,
-            maturity = maturity,
             premia = premia,
             fees = fees
 
         )
     else:
         _mint_option_token_short(
+            currency_address = currency_address,
             token_address = option_token_address,
-            user_address = caller_address
             amount = amount,
-            strike = strike,
-            maturity = maturity,
             premia = premia,
             fees = fees
 
@@ -314,7 +316,9 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 end
 
 func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     token_address: felt,
+    user_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -323,10 +327,6 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
 
     let (current_contract_address) = get_contract_address()
     let (user_address) = get_caller_address()
-
-    # FIXME: What should be checked here? ie That user has enough ETH?
-    let (user_balance)  =
-    assert_nn(user_balance - amount)
 
     # Mint tokens
     OptionToken.mint(token_address, user_address, amount)
@@ -336,19 +336,21 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
 
     # Move premia and fees from user to the pool
     IERC20.transferFrom(
-        contract_address = token_address,
+        contract_address = currency_address,
         sender = user_address,
         recipient = current_contract_address,
         amount = to_be_paid_by_user
-    )
+    ) # Transaction will fail if there is not enough fund on user's account
 
-    # Should the decreasing happen somewhere else? Ie OptionToken.mint function?
+    # FIXME: Should the decreasing happen somewhere else? Ie OptionToken.mint function or the amm?
     # decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
     return ()
 end
 
 func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     token_address: felt,
+    user_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -358,10 +360,6 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let (current_contract_address) = get_contract_address()
     let (user_address) = get_caller_address()
 
-    # FIXME: What should be checked here? ie That user has enough ETH?
-    let (user_balance)  =
-    assert_nn(user_balance - amount)
-
     # Mint tokens
     OptionToken.mint(token_address, user_address, amount)
 
@@ -369,10 +367,9 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let premia_less_fees = premia - fees
     let to_be_paid_by_user = amount - premia_les_fees
 
-    # FIXME: User shouldne send the token but USDC or sth i guess?
     # Move (amount minus (premia minus fees)) from user to the pool
     IERC20.transferFrom(
-        contract_address = token_address,
+        contract_address = currency_address,
         sender = user_address,
         recipient = current_contract_address,
         amount = to_be_paid_by_user
@@ -408,27 +405,27 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     let (contract_maturity) = OptionToken.maturity(option_token_address)
     let (contract_option_side) = OptionToken.side(option_token_address)
 
-    assert contract_option_type = option_type
-    assert contract_strike      = strike
-    assert contract_maturity    = maturity
-    assert contract_option_side = side
+    with_attr error_message("Required contract doesnt match the address."):
+        assert contract_option_type = option_type
+        assert contract_strike = strike
+        assert contract_maturity = maturity
+        assert contract_option_side = side
+    end
 
     if option_side == TRADE_SIDE_LONG:
         _burn_option_token_long(
+            currency_address = currency_address,
             token_address = option_token_address,
             amount = amount,
-            strike = strike,
-            maturity = maturity,
             premia = premia,
             fees = fees
 
         )
     else:
         _burn_option_token_short(
+            currency_address = currency_address,
             token_address = option_token_address,
             amount = amount,
-            strike = strike,
-            maturity = maturity,
             premia = premia,
             fees = fees
 
@@ -439,21 +436,17 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 end
 
 func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     token_address: felt,
     amount: felt,
-    strike: felt,
-    maturity: felt,
     premia: felt,
     fees: felt
 
 ):
     alloc_locals
+
     let current_contract_address = get_contract_address()
     let user_address = get_caller_address()
-
-    # Make sure user has enough funds
-    let (user_balance) = OptionToken.balanceOf(token_address, user_address)
-    assert_nn(user_balance - amount)
 
     # Burn the tokens
     OptionToken.burn(token_address, user_address, amount)
@@ -462,7 +455,7 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     let to_be_received_by_user = premia - fees
 
     IERC20.transferFrom(
-        contract_address = token_address,
+        contract_address = currency_address,
         sender = current_contract_address,
         recipient = user_address,
         amount = to_be_received_by_user
@@ -475,20 +468,16 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
 end
 
 func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     token_address: felt,
     amount: felt,
-    strike: felt,
-    maturity: felt,
     premia: felt,
     fees: felt
 ):
-    # address is user address
     alloc_locals
-    let current_contract_address = get_contract_address()
 
-    # Assert that there is enough
-    let (user_balance) = OptionToken.balanceOf(token_address, user_address)
-    assert_nn(user_balance - amount)
+    let current_contract_address = get_contract_address()
+    let user_address = get_caller_address()
 
     # Burn the tokens
     OptionToken.burn(token_address, user_address, amount)
@@ -498,19 +487,32 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
 
     # FIXME: Calculate unlocked capital for user
     # Retrieve locked capital to be paid to user
-    let unlocked_capital_for_user = unlocked_capital_amount(amount)
+    let unlocked_capital_for_user = get_unlocked_capital_amt(amount)
 
-    # Total sum to be received by user
     # User receives back its locked capital, pays premia and fees
     let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user
 
-    IERC20.transferFrom(
-        contract_address = token_address,
-        sender = user_address,
-        recipient = current_contract_address,
-        amount = total_user_payment
-    )
+    let (is_negative) = is_nn(total_user_payment)
 
+    # If the amount is negative, user needs to pay us
+    if is_negative == 1:
+        let abs_payment = abs_value(total_user_payment)
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = user_address,
+            recipient = current_contract_address,
+            amount = abs_payment
+        )
+
+    else:
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = current_contract_address,
+            recipient = current_contract_address,
+            amount = total_user_payment
+        )
+
+    end
 
     # FIXME: Should happen here?
     # pool updates it available capital
