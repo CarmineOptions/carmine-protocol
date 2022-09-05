@@ -48,14 +48,16 @@ end
 
 # FIXME: this is here only until we are able to send in test tokens
 @external
-func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+func init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    balance_call : felt, balance_put : felt
+):
 
     alloc_locals
 
     # 1) set pool_balance
-    let (balance) = Math64x61.fromFelt(12345)
-    set_pool_balance(option_type=OPTION_CALL, balance=balance)
-    set_pool_balance(option_type=OPTION_PUT, balance=balance)
+    # let (balance) = Math64x61.fromFelt(12345)
+    set_pool_balance(option_type=OPTION_CALL, balance=balance_call)
+    set_pool_balance(option_type=OPTION_PUT, balance=balance_put)
     
     # 2) Set pool_option_balance
     # No need, at the start the option balance of the pools is zero
