@@ -74,7 +74,7 @@ async def show_current_premium(
     print("Put Premium: ", prem_PUT.result[0] / 2**61)
 
 
-async def do_trade(amm: str, trade_size: int, option_type: int, side: int):
+async def do_trade(amm: AmmContract, trade_size: int, option_type: int, side: int):
     if not isinstance(amm, StarknetContract):
         raise TypeError('Not a Starknet Contract')
     prem_0_0 = await amm.trade(
