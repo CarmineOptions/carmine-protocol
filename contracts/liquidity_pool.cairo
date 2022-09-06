@@ -266,15 +266,15 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 #   and realocates locked capital/premia and fees between user and the pool
 #   for example how much capital is available, how much is locked,...
 func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    currency_address: felt,
+    currency_address: felt,  # adress of token staked in the pool (ETH/USDC/...)
     option_token_address: felt,
-    amount: felt,
+    amount: felt,  # in base tokens (ETH in case of ETH/USDC)
     option_side: felt,
     option_type: felt,
-    maturity: felt,
-    strike: felt,
-    premia: felt,
-    fees: felt
+    maturity: felt,  # felt in seconds
+    strike: felt,  # in Math64x61
+    premia: felt,  # in Math64x61 in either base or quote token
+    fees: felt  # in Math64x61 in either base or quote token
 ):
     # FIXME: do we want to have the amount here as felt or do want it as uint256???
     alloc_locals
@@ -295,7 +295,7 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     if option_side == TRADE_SIDE_LONG:
         _mint_option_token_long(
             currency_address = currency_address,
-            token_address = option_token_address,
+            option_token_address = option_token_address,
             amount = amount,
             premia = premia,
             fees = fees
@@ -304,7 +304,7 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     else:
         _mint_option_token_short(
             currency_address = currency_address,
-            token_address = option_token_address,
+            option_token_address = option_token_address,
             amount = amount,
             premia = premia,
             fees = fees
@@ -317,8 +317,7 @@ end
 
 func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    token_address: felt,
-    user_address: felt,
+    option_token_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -329,7 +328,7 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     let (user_address) = get_caller_address()
 
     # Mint tokens
-    OptionToken.mint(token_address, user_address, amount)
+    OptionToken.mint(option_token_address, user_address, amount)
 
     # User will pay (premia + fees)
     let to_be_paid_by_user = premia + fees
@@ -349,8 +348,7 @@ end
 
 func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    token_address: felt,
-    user_address: felt,
+    option_token_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -361,10 +359,11 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let (user_address) = get_caller_address()
 
     # Mint tokens
-    OptionToken.mint(token_address, user_address, amount)
+    OptionToken.mint(option_token_address, user_address, amount)
 
     # User will pay (amount - (premia - fees)))
     let premia_less_fees = premia - fees
+    # FIXME: amount has to be converted to quote token for PUT pool... amount := amount * strike_price
     let to_be_paid_by_user = amount - premia_les_fees
 
     # Move (amount minus (premia minus fees)) from user to the pool
@@ -377,7 +376,7 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
 
     # FIXME: Should happen somewhere else?
     # user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
-    # increase available capital by (amount - premia + fees) (this might be happening in the amm.cairo)
+    # increase available capital by (fees - premia) (this might be happening in the amm.cairo)
     return ()
 end
 
@@ -415,7 +414,7 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     if option_side == TRADE_SIDE_LONG:
         _burn_option_token_long(
             currency_address = currency_address,
-            token_address = option_token_address,
+            option_token_address = option_token_address,
             amount = amount,
             premia = premia,
             fees = fees
@@ -424,7 +423,7 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     else:
         _burn_option_token_short(
             currency_address = currency_address,
-            token_address = option_token_address,
+            option_token_address = option_token_address,
             amount = amount,
             premia = premia,
             fees = fees
@@ -437,7 +436,7 @@ end
 
 func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    token_address: felt,
+    option_token_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -449,7 +448,7 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     let user_address = get_caller_address()
 
     # Burn the tokens
-    OptionToken.burn(token_address, user_address, amount)
+    OptionToken.burn(option_token_address, user_address, amount)
 
     # Send (premia - fees)  to user
     let to_be_received_by_user = premia - fees
@@ -469,7 +468,7 @@ end
 
 func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    token_address: felt,
+    option_token_address: felt,
     amount: felt,
     premia: felt,
     fees: felt
@@ -480,14 +479,15 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let user_address = get_caller_address()
 
     # Burn the tokens
-    OptionToken.burn(token_address, user_address, amount)
+    OptionToken.burn(option_token_address, user_address, amount)
 
     # User pays (premia + fees)
     let to_be_paid_by_user = premia + fees
 
     # FIXME: Calculate unlocked capital for user
     # Retrieve locked capital to be paid to user
-    let unlocked_capital_for_user = get_unlocked_capital_amt(amount)
+    # FIXME: amount has to be converted to quote token for PUT pool... amount := amount * strike_price
+    let unlocked_capital_for_user = amount
 
     # User receives back its locked capital, pays premia and fees
     let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user
@@ -496,6 +496,7 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
 
     # If the amount is negative, user needs to pay us
     if is_negative == 1:
+        # FIXME: throw an error with reasonable message instead of this transfer
         let abs_payment = abs_value(total_user_payment)
         IERC20.transferFrom(
             contract_address = currency_address,
@@ -520,6 +521,7 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     # NOTICE: the available capital does not get updated by amount, since it was never available for the pool
     return ()
 end
+
 
 # Once the option has expired return corresponding capital to the option owner
     # for long call:

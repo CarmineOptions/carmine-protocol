@@ -119,12 +119,12 @@ func set_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 }
 
 @view
-func get_pool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt
-) -> (pool_balance: felt) {
-    let (pool_balance_) = pool_balance.read(option_type);
-    return (pool_balance_,);
-}
+func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : felt
+) -> (pool_balance : felt):
+    let (pool_balance_) = pool_balance.read(option_type)
+    return (pool_balance_)
+end
 
 @view
 func get_account_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -419,8 +419,11 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // keeps short and puts it into the pool
     //   -> increase the "opposite_sied" of pool_option_balance
 
-    let (new_pool_option_balance) = Math64x61.sub(available_option_balance, to_be_traded);
-    set_pool_option_balance(option_type, strike_price, maturity, side, new_pool_option_balance);
+    let (new_pool_option_balance) = Math64x61.sub(available_option_balance, to_be_traded)
+    set_pool_option_balance(option_type, strike_price, maturity, side, new_pool_option_balance)
+    # FIXME: new_opposite_pool_option_balance seems to be in base tokens (ie ETH for ETH/USDC)
+    # FIXME: but should be corresponding to locked capital... ie for calls in base
+    # FIXME: and for puts in quote tokens
     let (new_opposite_pool_option_balance) = Math64x61.add(
         available_opposite_option_balance, to_be_minted
     );
