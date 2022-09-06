@@ -211,7 +211,7 @@ func _calc_new_pool_balance_with_locked_capital{
     side : felt,
     option_type : felt,
     current_pool_balance : felt,
-    underlying_price : felt,
+    strike_price : felt,
     to_be_traded : felt,
     to_be_minted : felt,
 ) -> (pool_balance : felt):
@@ -226,11 +226,12 @@ func _calc_new_pool_balance_with_locked_capital{
     assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0
 
     if side == TRADE_SIDE_SHORT:
+        # pool unlocks locked capital in size of to_be_traded
         if option_type == OPTION_CALL:
             let (to_be_traded_call_short) = Math64x61.add(current_pool_balance, to_be_traded)
             return (to_be_traded_call_short)
         end
-        let (to_be_traded_put) = Math64x61.mul(to_be_traded, underlying_price)
+        let (to_be_traded_put) = Math64x61.mul(to_be_traded, strike_price)
         let (to_be_traded_put_short) = Math64x61.add(current_pool_balance, to_be_traded_put)
         return (to_be_traded_put_short)
     end
@@ -240,7 +241,7 @@ func _calc_new_pool_balance_with_locked_capital{
         let (to_be_minted_call_long) = Math64x61.sub(current_pool_balance, to_be_minted)
         return (to_be_minted_call_long)
     end
-    let (to_be_minted_put) = Math64x61.mul(to_be_minted, underlying_price)
+    let (to_be_minted_put) = Math64x61.mul(to_be_minted, strike_price)
     assert_nn_le(to_be_minted_put, current_pool_balance - 1)
     let (to_be_minted_put_long) = Math64x61.sub(current_pool_balance, to_be_minted_put)
     return (to_be_minted_put_long)
@@ -294,6 +295,16 @@ func _get_new_volatility{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return (new_volatility=new_volatility, trade_volatility=trade_volatility)
 end
 
+func _get_option_size_in_pool_currency{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_size : felt, option_type : felt, underlying_price : felt
+) -> (relative_option_size : felt):
+    if option_type == OPTION_CALL:
+        return (option_size)
+    end
+    let (adjusted_option_size) = Math64x61.mul(option_size, underlying_price)
+    return (adjusted_option_size)
+end
+
 func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
     option_type : felt,
@@ -309,35 +320,39 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # 0) Get current volatility
     let (current_volatility) = get_pool_volatility(option_type, maturity)
 
-    # 1) Calculate new volatility, calculate trade volatility
+    # 1) Get price of underlying asset
+    let (underlying_price) = empiric_median_price(EMPIRIC_ETH_USD_KEY)
+
+    # 2) Calculate new volatility, calculate trade volatilit
+    let (option_size_in_pool_currency) = _get_option_size_in_pool_currency(
+        option_size, option_type, underlying_price
+    )
     let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size, option_type, side
+        current_volatility, option_size_in_pool_currency, option_type, side
     )
 
-    # 2) Update volatility
+    # 3) Update volatility
     set_pool_volatility(option_type, maturity, new_volatility)
-
-    # 3) Get price of underlying asset
-    # Hardcode ETH for now
-    let (underlying_price) = empiric_median_price(EMPIRIC_ETH_USD_KEY)
 
     # 4) Get time till maturity
     let (time_till_maturity) = _time_till_maturity(maturity)
 
     # 5) risk free rate
-    let (three) = Math64x61.fromFelt(3)
-    let (hundred) = Math64x61.fromFelt(100)
+    # let (three) = Math64x61.fromFelt(3)
+    # let (hundred) = Math64x61.fromFelt(100)
     # let (risk_free_rate_annualized) = Math64x61.div(three, hundred)
     let (risk_free_rate_annualized) = Math64x61.fromFelt(0)
 
     # 6) Get premia
+    # call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
     let (call_premia, put_premia) = black_scholes(
-        sigma=trade_volatility,
-        time_till_maturity_annualized=time_till_maturity,
-        strike_price=strike_price,
-        underlying_price=underlying_price,
-        risk_free_rate_annualized=risk_free_rate_annualized,
+        sigma=trade_volatility,  # Math64x61
+        time_till_maturity_annualized=time_till_maturity,  # Math64x61
+        strike_price=strike_price,  # Math64x61
+        underlying_price=underlying_price,  # Math64x61
+        risk_free_rate_annualized=risk_free_rate_annualized,  # Math64x61
     )
+
     # AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     # Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
     # and in quote tokens (USDC in case of ETH/USDC) for put option.
@@ -379,6 +394,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
     # (ETH in case of ETH/USDC)
 
     # available_option_balance is always >= 0
+    # FIXME test, check and potentially repair... that the option_balances are correctly updated
     let (to_be_traded) = Math64x61.min(available_option_balance, option_size)
     let (to_be_minted) = Math64x61.sub(option_size, to_be_traded)
 
@@ -412,7 +428,7 @@ func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 
     # new_pool_balance is current state of the pool (from above) in terms of the pool's token
     let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
-        side, option_type, new_pool_balance, underlying_price, to_be_traded, to_be_minted
+        side, option_type, new_pool_balance, strike_price, to_be_traded, to_be_minted
     )
     set_pool_balance(option_type, new_pool_balance_after_locking_capital)
 
