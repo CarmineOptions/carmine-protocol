@@ -12,9 +12,11 @@
 
 %lang starknet
 
-from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.uint256 import Uint256
+from starkware.starknet.common.syscalls import get_block_timestamp
 
 from openzeppelin.access.ownable.library import Ownable
 from openzeppelin.token.erc20.library import ERC20
@@ -26,17 +28,19 @@ from contracts.constants import (
     TRADE_SIDE_SHORT,
     get_opposite_side
 )
+from contracts.helpers import max
 
 
 @storage_var
-func option_token_underlying_asset() -> (underlying_asset: felt):
+func option_token_underlying_asset_address() -> (underlying_asset_address: felt):
 end
 
+@storage_var
 func option_token_option_type() -> (option_type: felt):
 end
 
 @storage_var
-func _option_tokenstrike_price() -> (strike_price: felt):
+func option_token_strike_price() -> (strike_price: felt):
 end
 
 @storage_var
@@ -63,7 +67,7 @@ namespace OptionToken:
             recipient: felt,
             owner: felt,
             # bellow are inputs needed for the option definition
-            underlying_asset: felt,
+            underlying_asset_address: felt,
             option_type: felt,
             strike_price: felt,
             maturity: felt,
@@ -73,7 +77,7 @@ namespace OptionToken:
         ERC20._mint(recipient, initial_supply)
         Ownable.initializer(owner)
 
-        option_token_underlying_asset.write(underlying_asset)
+        option_token_underlying_asset_address.write(underlying_asset_address)
         option_token_option_type.write(option_type)
         option_token_strike_price.write(strike_price)
         option_token_maturity.write(maturity)
@@ -156,13 +160,13 @@ namespace OptionToken:
     end
 
     @view
-    func underlying_asset{
+    func underlying_asset_address{
             syscall_ptr : felt*,
             pedersen_ptr : HashBuiltin*,
             range_check_ptr
         }() -> (underlying_asset: felt):
-        let (underlying_asset: felt) = option_token_underlying_asset.read()
-        return (underlying_asset)
+        let (underlying_asset_address: felt) = option_token_underlying_asset_address.read()
+        return (underlying_asset_address)
     end
 
     @view
@@ -216,46 +220,75 @@ namespace OptionToken:
 
         # FIXME: validate that the code below makes LP better off in case of rounding values
 
-        # # FIXME
-        # # pseudo code:
-        # options_size = amount  # in terms of base token (ETH in case ETH/USD)
+        # in terms of base token (ETH in case ETH/USD)
+        let option_size = amount
 
-        # if maturity has not passed yet
-        #     fail with "maturity has not passed yet"!
-        # else:
-        #     if type == call:
-        #         # The sum of the following two cases has to equal to the size of the locked capital
-        #         # which is in base tokens (ETH in case ETH/USD)
-        #         if side == long
-        #             # user is buyer and gets money only if the strike was hit
-        #             # in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
-        #             # and the final_price and option_token_strike_price are in terms of quote token
-        #             return options_size * max(0, final_price - option_token_strike_price.read()) / final_price
-        #         else:
-        #             # user is seller (underwriter) and gets money everytime, but size of the cash
-        #             # depends on the final price and the strike
-        #             # in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
-        #             # and the final_price and option_token_strike_price are in terms of quote token
-        #             # and options_size in terms of base token
-        #             return options_size - options_size * max(0, final_price - option_token_strike_price.read()) / final_price
+        # current_timestamp is in number of seconds... unix timestamp
+        let (current_timestamp) = get_block_timestamp()
+        let (maturity_timestamp) = option_token_maturity.read()
 
-        #     else:
-        #         # The sum of the following two cases has to equal to the size of the locked capital
-        #         # which is in quote tokens (USD in case ETH/USD)
-        #         if side == long
-        #             # user is buyer and gets money only if the strike was hit
-        #             # in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
-        #             # and the final_price and option_token_strike_price are in terms of quote token (same token)
-        #             return options_size * max(0, option_token_strike_price.read() - final_price)
-        #         else:
-        #             # user is seller (underwriter) and gets money everytime unless the final price is 0,
-        #             # but size of the cash depends on the final price and the strike
-        #             # in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
-        #             # and the final_price and option_token_strike_price are in terms of quote token (same token)
-        #             # and options_size in terms of base token
+        let (is_mature) = is_le(maturity_timestamp, current_timestamp)
 
-        #             # FIXME: extra test the scenario that the currencies are of correct type (base/quote)
-        #             return options_size * option_token_strike_price.read() - options_size * max(0, final_price - option_token_strike_price.read())
+        if is_not_yet_mature == TRUE:
+
+        with_attr error_message("Option is not yet mature."):
+            assert is_mature
+        end
+
+        let (option_type) = option_token_option_type.read()
+        let (option_side) = option_token_side.read()
+        let (strike_price) = option_token_strike_price.read()
+
+        if option_type == OPTION_CALL:
+            # The sum of the following two cases has to equal to the size of the locked capital
+            # which is in base tokens (ETH in case ETH/USD)
+
+            let (final_minus_strike) = final_price - strike_price
+            let (best_case_in_quote_call_long) = max(0, final_minus_strike)
+            let (best_case_in_base_call_long) = best_case_in_quote_call_long / final_price
+            let (best_case_in_base_call_long_scaled) = option_size * best_case_in_base_call_long
+
+            if option_side == TRADE_SIDE_LONG:
+                # user is buyer and gets money only if the strike was hit
+                # in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
+                # and the final_price and option_token_strike_price are in terms of quote token
+
+                return best_case_in_base_call_long_scaled
+            else:
+                # user is seller (underwriter) and gets money everytime, but size of the cash
+                # depends on the final price and the strike
+                # in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
+                # and the final_price and option_token_strike_price are in terms of quote token
+                # and option_size in terms of base token
+
+                return option_size - best_case_in_base_call_long_scaled
+            end
+        else:
+            # The sum of the following two cases has to equal to the size of the locked capital
+            # which is in quote tokens (USD in case ETH/USD)
+
+            let (strike_minus_final) = strike_price - final_price
+            let (best_case_in_quote_put_long) = max(0, strike_minus_final)
+            let (best_case_in_quote_put_long_scaled) = option_size * best_case_in_quote_put_long
+
+            if side == long
+                # user is buyer and gets money only if the strike was hit
+                # in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
+                # and the final_price and option_token_strike_price are in terms of quote token (same token)
+                return best_case_in_quote_put_long_scaled
+            else:
+                # user is seller (underwriter) and gets money everytime unless the final price is 0,
+                # but size of the cash depends on the final price and the strike
+                # in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
+                # and the final_price and option_token_strike_price are in terms of quote token (same token)
+                # and option_size in terms of base token
+                # FIXME: extra test the scenario that the currencies are of correct type (base/quote)
+
+                let (option_size_in_quote) = option_size * strike_price
+
+                return option_size_in_quote - best_case_in_quote_put_long_scaled
+            end
+        end
 
         return ()
     end
@@ -266,7 +299,7 @@ namespace OptionToken:
             pedersen_ptr : HashBuiltin*,
             range_check_ptr
         }(final_price: felt, amount: felt) -> (liqudity_pool_value: felt):
-        # FIXME: deal with correct types -> felt vs Math_64x61
+        # FIXME: deal with correct types -> felt vs Math_64x61 vs uint256
 
         let (side) = option_token_side.read()
         let (option_type) = option_token_option_type.read()
@@ -277,10 +310,12 @@ namespace OptionToken:
         # liquidity pool value is locked capital minus holder value
         # options_size = amount  # in terms of base token (ETH in case ETH/USD)
         if option_type == OPTION_CALL:
+            # holder_value is already in the same currency as amount... in base token
             let (call_lp_value) = amount - holder_value
             return (call_lp_value)
         end
 
+        # holder_value is already in the same currency as amount_in_quote... in quote token
         let (amount_in_quote) = amount * final_price
         let (put_lp_value) = amount_in_quote - holder_value
         return (put_lp_value)
@@ -366,10 +401,6 @@ namespace OptionToken:
         Ownable.assert_only_owner()
         ERC20._burn(account, amount)
         return ()
-        # TBD... namespace ERC20 already has a burn method
-        # https://github.com/OpenZeppelin/cairo-contracts/blob/main/src/openzeppelin/token/erc20/library.cairo#L253
-        # alternative is ERC1155
-        # https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/token/ERC1155_Mintable_Burnable.cairo#L123
     end
 
     @external
