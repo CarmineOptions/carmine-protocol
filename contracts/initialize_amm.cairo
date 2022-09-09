@@ -2,14 +2,14 @@
 
 %lang starknet
 
-# from starkware.cairo.common.cairo_builtins import HashBuiltin
-# from starkware.cairo.common.math import assert_nn_le
-# from math64x61 import Math64x61
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.math import assert_nn_le
+from math64x61 import Math64x61
 
-# from contracts.amm import (pool_balance, account_balance, set_pool_balance, set_pool_volatility,
-#     set_account_balance, set_available_options)
-# from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND,
-#     TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT)
+from contracts.amm import (pool_balance, account_balance, set_pool_balance, set_pool_volatility,
+ set_account_balance, set_available_options)
+from contracts.constants import (POOL_BALANCE_UPPER_BOUND, ACCOUNT_BALANCE_UPPER_BOUND,
+ TOKEN_A, TOKEN_B, OPTION_CALL, OPTION_PUT)
 
 
 # FIXME: this will have to be replaced by sending tokens from wallet to the pool(s).
