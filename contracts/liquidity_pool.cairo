@@ -541,3 +541,25 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     # FIXME: tbd
     return ()
 end
+
+
+func expire_option_token_for_user{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    amount: felt,
+    option_type: felt,
+    option_side: felt,
+    strike_price: felt
+):
+    # FIXME: this could be called only by owner of the option token
+    return ()
+end
+
+
+func expire_option_token_for_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    amount: felt,
+    option_type: felt,
+    option_side: felt,
+    strike_price: felt
+):
+    # FIXME: this could be called by anyone and it releases the locked capital for pool (in pool to pool)
+    return ()
+end
