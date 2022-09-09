@@ -2,7 +2,7 @@
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from interface_lptoken import ILPToken
-from option_token import OptionToken
+from interface_option_token import IOptionToken
 # commented out code already imported in amm.cairo
 # from starkware.cairo.common.cairo_builtins import HashBuiltin
 
@@ -274,18 +274,19 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     maturity: felt,  # felt in seconds
     strike: felt,  # in Math64x61
     premia: felt,  # in Math64x61 in either base or quote token
-    fees: felt  # in Math64x61 in either base or quote token
+    fees: felt,  # in Math64x61 in either base or quote token
+    underlying_price: felt, # in Math64x61
 ):
     # FIXME: do we want to have the amount here as felt or do want it as uint256???
     alloc_locals
 
     # Make sure the contract is the one that user wishes to trade
-    let (contract_option_type) = OptionToken.option_type(option_token_address)
-    let (contract_strike) = OptionToken.strike(option_token_address)
-    let (contract_maturity) = OptionToken.maturity(option_token_address)
-    let (contract_option_side) = OptionToken.side(option_token_address)
+    let (contract_option_type) = IOptionToken.option_type(option_token_address)
+    let (contract_strike) = IOptionToken.strike(option_token_address)
+    let (contract_maturity) = IOptionToken.maturity(option_token_address)
+    let (contract_option_side) = IOptionToken.side(option_token_address)
 
-    with_attr error_message("Required contract doesnt match the address."):
+    with_attr error_message("Required contract doesn't match the address."):
         assert contract_option_type = option_type
         assert contract_strike = strike
         assert contract_maturity = maturity
@@ -298,8 +299,7 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
             option_token_address = option_token_address,
             amount = amount,
             premia = premia,
-            fees = fees
-
+            fees = fees,
         )
     else:
         _mint_option_token_short(
@@ -307,8 +307,9 @@ func mint_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
             option_token_address = option_token_address,
             amount = amount,
             premia = premia,
-            fees = fees
-
+            fees = fees,
+            option_type = option_type,
+            underlying_price = underlying_price,
         )
     end
 
@@ -320,7 +321,7 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     option_token_address: felt,
     amount: felt,
     premia: felt,
-    fees: felt
+    fees: felt,
 ):
     alloc_locals
 
@@ -328,7 +329,7 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     let (user_address) = get_caller_address()
 
     # Mint tokens
-    OptionToken.mint(option_token_address, user_address, amount)
+    IOptionToken.mint(option_token_address, user_address, amount)
 
     # User will pay (premia + fees)
     let to_be_paid_by_user = premia + fees
@@ -341,7 +342,7 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
         amount = to_be_paid_by_user
     ) # Transaction will fail if there is not enough fund on user's account
 
-    # FIXME: Should the decreasing happen somewhere else? Ie OptionToken.mint function or the amm?
+    # FIXME: Should the decreasing happen somewhere else? Ie IOptionToken.mint function or the amm?
     # decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
     return ()
 end
@@ -351,7 +352,9 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     option_token_address: felt,
     amount: felt,
     premia: felt,
-    fees: felt
+    fees: felt,
+    option_type: felt,
+    underlying_price: felt
 ):
     alloc_locals
 
@@ -359,12 +362,17 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let (user_address) = get_caller_address()
 
     # Mint tokens
-    OptionToken.mint(option_token_address, user_address, amount)
+    IOptionToken.mint(option_token_address, user_address, amount)
 
     # User will pay (amount - (premia - fees)))
     let premia_less_fees = premia - fees
-    # FIXME: amount has to be converted to quote token for PUT pool... amount := amount * strike_price
-    let to_be_paid_by_user = amount - premia_les_fees
+
+    if option_type == OPTION_PUT:
+        let amount_quote = Math64x61.mul(amount, underlying_price)
+        let to_be_paid_by_user = amount - premia_less_fees
+    else:
+        let to_be_paid_by_user = amount - premia_less_fees
+    end
 
     # Move (amount minus (premia minus fees)) from user to the pool
     IERC20.transferFrom(
@@ -394,15 +402,16 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     maturity: felt,
     strike: felt,
     premia: felt,
-    fees: felt
+    fees: felt,
+    underlying_price: felt,
 ):
     alloc_locals
 
     # Make sure the contract is the one that user wishes to trade
-    let (contract_option_type) = OptionToken.option_type(option_token_address)
-    let (contract_strike) = OptionToken.strike(option_token_address)
-    let (contract_maturity) = OptionToken.maturity(option_token_address)
-    let (contract_option_side) = OptionToken.side(option_token_address)
+    let (contract_option_type) = IOptionToken.option_type(option_token_address)
+    let (contract_strike) = IOptionToken.strike(option_token_address)
+    let (contract_maturity) = IOptionToken.maturity(option_token_address)
+    let (contract_option_side) = IOptionToken.side(option_token_address)
 
     with_attr error_message("Required contract doesnt match the address."):
         assert contract_option_type = option_type
@@ -418,7 +427,6 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
             amount = amount,
             premia = premia,
             fees = fees
-
         )
     else:
         _burn_option_token_short(
@@ -426,8 +434,9 @@ func burn_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
             option_token_address = option_token_address,
             amount = amount,
             premia = premia,
-            fees = fees
-
+            fees = fees,
+            option_type = option_type,
+            underlying_price = underlying_price
         )
     end
 
@@ -439,8 +448,7 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     option_token_address: felt,
     amount: felt,
     premia: felt,
-    fees: felt
-
+    fees: felt,
 ):
     alloc_locals
 
@@ -448,7 +456,7 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     let user_address = get_caller_address()
 
     # Burn the tokens
-    OptionToken.burn(option_token_address, user_address, amount)
+    IOptionToken.burn(option_token_address, user_address, amount)
 
     # Send (premia - fees)  to user
     let to_be_received_by_user = premia - fees
@@ -460,7 +468,7 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
         amount = to_be_received_by_user
     )
 
-    # FIXME: Should happen here or in OptionToken.burn() function?
+    # FIXME: Should happen here or in IOptionToken.burn() function?
     # pool updates its available capital (unlocks it)
     # increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
     return ()
@@ -471,7 +479,9 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     option_token_address: felt,
     amount: felt,
     premia: felt,
-    fees: felt
+    fees: felt,
+    option_type: felt,
+    underlying_price: felt,
 ):
     alloc_locals
 
@@ -479,42 +489,27 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     let user_address = get_caller_address()
 
     # Burn the tokens
-    OptionToken.burn(option_token_address, user_address, amount)
+    IOptionToken.burn(option_token_address, user_address, amount)
 
     # User pays (premia + fees)
     let to_be_paid_by_user = premia + fees
 
-    # FIXME: Calculate unlocked capital for user
     # Retrieve locked capital to be paid to user
-    # FIXME: amount has to be converted to quote token for PUT pool... amount := amount * strike_price
-    let unlocked_capital_for_user = amount
+    if option_type == OPTION_PUT:
+        let unlocked_capital_for_user = Math64x61.mul(underlying_price, amount)
+    else:
+        let unlocked_capital_for_user = amount
+    end
 
     # User receives back its locked capital, pays premia and fees
     let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user
 
-    let (is_negative) = is_nn(total_user_payment)
-
-    # If the amount is negative, user needs to pay us
-    if is_negative == 1:
-        # FIXME: throw an error with reasonable message instead of this transfer
-        let abs_payment = abs_value(total_user_payment)
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender = user_address,
-            recipient = current_contract_address,
-            amount = abs_payment
-        )
-
-    else:
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender = current_contract_address,
-            recipient = current_contract_address,
-            amount = total_user_payment
-        )
-
-    end
-
+    IERC20.transferFrom(
+        contract_address = currency_address,
+        sender = current_contract_address,
+        recipient = user_address,
+        amount = total_user_payment
+    )
     # FIXME: Should happen here?
     # pool updates it available capital
     # increase available capital by (premia - fees) (this might be happening in the amm.cairo)
