@@ -7,6 +7,7 @@ from interface_option_token import IOptionToken
 # from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
+from helpers import max
 from starkware.cairo.common.math import abs_value
 from starkware.cairo.common.math_cmp import is_nn
 from starkware.cairo.common.uint256 import (
@@ -514,7 +515,7 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     # pool updates it available capital
     # increase available capital by (premia - fees) (this might be happening in the amm.cairo)
     # NOTICE: the available capital does not get updated by amount, since it was never available for the pool
-    return ()
+   return ()
 end
 
 
@@ -528,33 +529,164 @@ end
     # for short put:
         # return amount - (max(0, amount * (strike_price - current_price)) in ETH)
 func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    amount: felt,
+    currency_address:felt,
+    option_token_address: felt,
     option_type: felt,
     option_side: felt,
-    strike_price: felt
+    strike_price: felt,
+    underlying_price: felt,
+    amount: felt,
+    maturity: felt
 ):
     # FIXME: tbd
     alloc_locals
 
+    # Make sure the contract is the one that user wishes to expire
+    let (contract_option_type) = IOptionToken.option_type(option_token_address)
+    let (contract_strike) = IOptionToken.strike(option_token_address)
+    let (contract_maturity) = IOptionToken.maturity(option_token_address)
+    let (contract_option_side) = IOptionToken.side(option_token_address)
+    let (current_block_time) = get_block_timestamp()
+
+    with_attr error_message("Required contract doesn't match the address."):
+        assert contract_option_type = option_type
+        assert contract_strike = strike
+        assert contract_maturity = maturity
+        assert contract_option_side = side
+    end
+
+    # Assert that the contract is ready to expire
+    let (is_ripe) = is_le(maturity, current_block_time)
+    with_attr error_message("Contract isn't ripe yet."):
+        assert is_ripe
+    end
+
+
     if option_side == TRADE_SIDE_LONG:
         _expire_option_token_long(
+            currency_address = currency_address,
+            option_token_address = option_token_address,
             amount = amount,
             option_type = option_type,
-            strike_price = strike_price
+            strike_price = strike_price,
+            underlying_price = underlying_price,
         )
 
     else:
         _expire_option_token_short(
+            currency_address = currency_address,
+            option_token_address = option_token_address,
             amount = amount,
             option_type = option_type,
-            strike_price = strike_price
-         )
+            strike_price = strike_price,
+            underlying_price = underlying_price,
+        )
 
     end
 
     return ()
 end
 
+func _expire_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
+    option_token_address: felt,
+    amount: felt,
+    option_type: felt,
+    strike_price: felt,
+    underlying_price: felt,
+):
+    alloc_locals
+
+    let (user_address) = get_caller_address()
+    let (current_contract_address) = get_contract_address()
+
+    if option_type == OPTION_CALL:
+        # User receives -> max(0, amount * (current_price - strike_price)) in base token
+
+        let price_diff = underlying_price - strike_price
+        let to_be_paid_quote = amount * price_diff
+        let to_be_paid_base = to_be_paid / underlying_price
+        let to_be_paid = max(0, to_be_paid_base)
+
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender =  current_contract_address,
+            recipient = user_address,
+            amount = to_be_paid
+        )
+
+        # FIXME: Update storage vars
+    else:
+        # User receives max(0, amount * (strike_price - current_price)) in base token
+
+        let price_diff = strike_price - underlying_price
+        let to_be_paid_quote = amount*price_diff
+        let to_be_paid_base = to_be_paid / underlying_price
+        let to_be_paid = max(0, to_be_paid_base)
+
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = current_contract_address,
+            recipient = user_address,
+            amount = to_be_paid
+        )
+
+        # FIXME: Update storage vars
+    end
+
+    return ()
+end
+
+func _expire_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
+    option_token_address: felt,
+    amount: felt,
+    option_type: felt,
+    strike_price: felt,
+    underlying_price: felt,
+):
+    alloc_locals
+
+    let (user_address) = get_caller_address()
+    let (current_contract_address) = get_contract_address()
+
+    if option_type == OPTION_CALL:
+        # User receives -> (amount - max(0, amount * (current_price - strike_price))) in base token
+
+        let price_diff = underlying_price - strike_price
+        let amount_x_diff_quote = amount * price_diff
+        let amount_x_diff_base = amount_x_diff_quote / underlying_price
+        let select_max = max(0, amount_x_diff_base)
+        let to_be_paid = amount - select_max
+
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender =  current_contract_address,
+            recipient = user_address,
+            amount = to_be_paid
+        )
+
+        # FIXME: Update storage vars
+    else:
+        # User receives (amount - max(0, amount * (strike_price - current_price))) in base token
+
+        let price_diff = strike_price - current_price
+        let to_be_paid_quote = amount*price_diff
+        let to_be_paid_base = to_be_paid / underlying_price
+        let to_be_paid = max(0, to_be_paid_base)
+
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = current_contract_address,
+            recipient = user_address,
+            amount = to_be_paid
+        )
+
+        # FIXME: Update storage vars
+    end
+
+    return ()
+end
 
 func expire_option_token_for_user{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
