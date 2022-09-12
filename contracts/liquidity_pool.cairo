@@ -534,17 +534,54 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     strike_price: felt
 ):
     # FIXME: tbd
+    alloc_locals
+
+    if option_side == TRADE_SIDE_LONG:
+        _expire_option_token_long(
+            amount = amount,
+            option_type = option_type,
+            strike_price = strike_price
+        )
+
+    else:
+        _expire_option_token_short(
+            amount = amount,
+            option_type = option_type,
+            strike_price = strike_price
+         )
+
+    end
+
     return ()
 end
 
 
 func expire_option_token_for_user{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+
     amount: felt,
     option_type: felt,
     option_side: felt,
-    strike_price: felt
+    strike_price: felt,
+
 ):
-    # FIXME: this could be called only by owner of the option token
+    alloc_locals
+
+    let (current_contract_address) = get_contract_address()
+    let (user_address) = get_caller_address()
+
+    let (user_tokens_owned) = IOptionToken.balanceOf(
+        contract_address = current_contract_address,
+        account = user_address
+    )
+
+    # Assert that user owns the option tokens
+    assert_nn(user_tokens_owned)
+
+
+
+
+    alloc_locals
+
     return ()
 end
 
@@ -556,5 +593,7 @@ func expire_option_token_for_pool{syscall_ptr : felt*, pedersen_ptr : HashBuilti
     strike_price: felt
 ):
     # FIXME: this could be called by anyone and it releases the locked capital for pool (in pool to pool)
+    alloc_locals
+
     return ()
 end
