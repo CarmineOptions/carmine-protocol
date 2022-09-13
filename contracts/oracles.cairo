@@ -10,57 +10,57 @@ from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
 from lib.math_64x61_extended import Math64x61_div_imprecise
 from lib.pow import pow10
 
-# List of available tickers:
-#  https://docs.empiric.network/using-empiric/supported-assets
+// List of available tickers:
+//  https://docs.empiric.network/using-empiric/supported-assets
 
-# Contract interface copied from docs
+// Contract interface copied from docs
 @contract_interface
-namespace IEmpiricOracle:
-    func get_value(key : felt, aggregation_mode : felt) -> (
-        value : felt, decimals : felt, last_updated_timestamp : felt, num_sources_aggregated : felt
-    ):
-    end
-end
+namespace IEmpiricOracle {
+    func get_value(key: felt, aggregation_mode: felt) -> (
+        value: felt, decimals: felt, last_updated_timestamp: felt, num_sources_aggregated: felt
+    ) {
+    }
+}
 
-# Function to convert base 10**decimals number from oracle to base 2**61
-# which is used throughout the AMM
-func convert_price{range_check_ptr}(price : felt, decimals : felt) -> (price : felt):
-    alloc_locals
+// Function to convert base 10**decimals number from oracle to base 2**61
+// which is used throughout the AMM
+func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt) {
+    alloc_locals;
 
-    let (is_convertable) = is_le(price, Math64x61.INT_PART)
-    if is_convertable == TRUE:
-        let (converted_price) = Math64x61.fromFelt(price)
-        let (pow10xM) = pow10(decimals)
-        let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM)
-        let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61)
-        return (price_64x61)
-    end
+    let is_convertable = is_le(price, Math64x61.INT_PART);
+    if (is_convertable == TRUE) {
+        let (converted_price) = Math64x61.fromFelt(price);
+        let (pow10xM) = pow10(decimals);
+        let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM);
+        let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61);
+        return (price_64x61,);
+    }
 
-    let (decimals_1, r) = unsigned_div_rem(decimals, 2)
-    let decimals_2 = decimals - decimals_1
+    let (decimals_1, r) = unsigned_div_rem(decimals, 2);
+    let decimals_2 = decimals - decimals_1;
 
-    let (pow_10_m1) = pow10(decimals_1)
-    let (c, remainder) = unsigned_div_rem(price, pow_10_m1)
+    let (pow_10_m1) = pow10(decimals_1);
+    let (c, remainder) = unsigned_div_rem(price, pow_10_m1);
 
-    let (a) = convert_price(c, decimals_2)
-    let (b) = convert_price(remainder, decimals)
+    let (a) = convert_price(c, decimals_2);
+    let (b) = convert_price(remainder, decimals);
 
-    let (res) = Math64x61.add(a, b)
+    let (res) = Math64x61.add(a, b);
 
-    # FIXME: THIS HAS TO VALIDATED THAT THE ROUNDING CAUSED BY THE IMPRECISE CALCULATIONS IS NOT TOO BIG
+    // FIXME: THIS HAS TO VALIDATED THAT THE ROUNDING CAUSED BY THE IMPRECISE CALCULATIONS IS NOT TOO BIG
 
-    return (res)
-end
+    return (res,);
+}
 
 @view
-func empiric_median_price{syscall_ptr : felt*, range_check_ptr}(key : felt) -> (price : felt):
-    alloc_locals
+func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: felt) {
+    alloc_locals;
 
     let (
         value, decimals, last_updated_timestamp, num_sources_aggregated
-    ) = IEmpiricOracle.get_value(EMPIRIC_ORACLE_ADDRESS, key, EMPIRIC_AGGREGATION_MODE)
+    ) = IEmpiricOracle.get_value(EMPIRIC_ORACLE_ADDRESS, key, EMPIRIC_AGGREGATION_MODE);
 
-    let (res) = convert_price(value, decimals)
+    let (res) = convert_price(value, decimals);
 
-    return (res)
-end
+    return (res,);
+}

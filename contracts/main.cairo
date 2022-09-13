@@ -1,4 +1,4 @@
-# Internals of the AMM
+// Internals of the AMM
 
 %lang starknet
 
