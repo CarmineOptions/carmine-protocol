@@ -252,8 +252,37 @@ end
 func option_token_unlocked_capital(option_token_adress: felt) -> (res: felt):
 end
 
-    // if option_type != correct option type -> fail
-    // ie for call options only pool with ETH is used and for PUT options only the USDC is used
+@storage_var
+func option_token_address(
+    option_side: felt,
+    option_type: felt,
+    maturity: felt,
+    strike_price: felt
+) -> (res: felt):
+end
+
+
+
+func get_option_token_address{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_side: felt,
+    option_type: felt,
+    maturity: felt,
+    strike_price: felt
+) -> (option_token_address: felt):
+    let (option_token_addr) = option_token_address.read(
+        option_side,
+        option_size,
+        maturity,
+        strike_price
+    )
+    return (option_token_address=option_token_addr)
+end
+
+# FIXME: do we have to move the functionality to amm.cairo or move most the functionality from amm.cairo here.
+    # asking because I'm not sure about the addresses being correctly put through
+    # ie if user calls amm.trade(...) that calls amm.do_trade(...) that calls different contract liquidity_pool.buy_call(...)
+    # how does the premium and fee end up in the liquidity pool???
+    # This might be nonsence, but I just don't know at the moment.
 
     // assuming we are in a CALL pool (ie ETH pool)
 
