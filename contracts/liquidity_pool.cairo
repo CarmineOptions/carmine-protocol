@@ -244,16 +244,13 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 // how does the premium and fee end up in the liquidity pool???
 // This might be nonsence, but I just don't know at the moment.
 
-// User increases its position (if user is long, it increases the size of its long,
-// if he/she is short, the short gets increased).
-// Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
-// This corresponds to something like "mint_option_token", but does more, it also changes internal state of the pool
-//   and realocates locked capital/premia and fees between user and the pool
-//   for example how much capital is available, how much is locked,...
-func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt, option_type: felt, option_side: felt
-) {
-    // FIXME: do we want to have the amount here as felt or do want it as uint256???
+@storage_var
+func option_token_locked_capital(option_token_address: felt) -> (res: felt):
+end
+
+@storage_var
+func option_token_unlocked_capital(option_token_adress: felt) -> (res: felt):
+end
 
     // if option_type != correct option type -> fail
     // ie for call options only pool with ETH is used and for PUT options only the USDC is used
@@ -343,8 +340,21 @@ func _mint_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
         amount = to_be_paid_by_user
     ) # Transaction will fail if there is not enough fund on user's account
 
-    # FIXME: Should the decreasing happen somewhere else? Ie IOptionToken.mint function or the amm?
-    # decrease available capital by (amount - premia - fees)... (this might be happening in the amm.cairo)
+    # Decrease available capital by (amount - premia - fees)
+    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address)
+    let (decrease_by) = amount - to_be_paid_by_user
+
+    let new_unlocked_balance = current_unlocked_balance - decrease_by
+
+    with_attr error_message("Not enough available capital."):
+        assert_nn(new_unlocked_balance)
+    end
+
+    option_token_unlocked_capital.write(
+        option_token_address,
+        new_unlocked_balance
+    )
+
     return ()
 end
 
@@ -547,6 +557,7 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     let (contract_maturity) = IOptionToken.maturity(option_token_address)
     let (contract_option_side) = IOptionToken.side(option_token_address)
     let (current_block_time) = get_block_timestamp()
+    let (current_contract_address) = get_contract_address()
 
     with_attr error_message("Required contract doesn't match the address."):
         assert contract_option_type = option_type
@@ -560,6 +571,17 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     with_attr error_message("Contract isn't ripe yet."):
         assert is_ripe
     end
+
+    let (user_tokens_owned) = IOptionToken.balanceOf(
+        contract_address = current_contract_address,
+        account = user_address
+    )
+
+    # Assert that user owns the option tokens
+    with_attr error_message("User doesn't own any tokens.")
+    assert_nn(user_tokens_owned)
+
+
 
 
     if option_side == TRADE_SIDE_LONG:
