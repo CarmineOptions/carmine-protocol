@@ -1,7 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from contracts.Math64x61 import Math64x61_FRACT_PART
+from math64x61 import Math64x61
 
 from contracts.constants import (
     TOKEN_A,
@@ -33,7 +33,7 @@ namespace ITestContract:
     ):
     end
 
-    func init_pool():
+    func init_pool(balance_call: felt, balance_put: felt):
     end
 
     func add_fake_tokens(accoutn_id : felt, amount_token_a : felt, amount_token_b : felt):
@@ -75,9 +75,9 @@ func test_init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     assert account_balance_b = 0
 
     # test several pool option balances
-    const STRIKE_1000 = Math64x61_FRACT_PART * 1000
-    const STRIKE_1100 = Math64x61_FRACT_PART * 1100
-    const STRIKE_1200 = Math64x61_FRACT_PART * 1200
+    const STRIKE_1000 = Math64x61.FRACT_PART * 1000
+    const STRIKE_1100 = Math64x61.FRACT_PART * 1100
+    const STRIKE_1200 = Math64x61.FRACT_PART * 1200
 
     const MATURITY_1 = 1644145200
     const MATURITY_2 = 1672527600
@@ -143,16 +143,20 @@ func test_init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     assert available_option_4 = 0
 
     # initialize pool
-    ITestContract.init_pool(CONTRACT_ADDRESS)
+    let (balance_call) = Math64x61.fromFelt(12345)
+    let (balance_put) = Math64x61.fromFelt(12345)
+
+    ITestContract.init_pool(CONTRACT_ADDRESS, balance_call, balance_put)
 
     # check pool balances
-    tempvar pool_balance = 12345 * Math64x61_FRACT_PART
+    tempvar test_pool_balance_call = 12345 * Math64x61.FRACT_PART
+    tempvar test_pool_balance_put = 12345 * Math64x61.FRACT_PART # 1241400 = 1200 * 12345
 
     let (pool_balance_call) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_CALL)
-    assert pool_balance_call = pool_balance
+    assert pool_balance_call = test_pool_balance_call
 
     let (pool_balance_put) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_PUT)
-    assert pool_balance_put = pool_balance
+    assert pool_balance_put = test_pool_balance_put
 
     # check account balance
     let (account_balance_a) = ITestContract.get_account_balance(
@@ -193,7 +197,7 @@ func test_init_pool{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     assert option_pool_5 = 0
 
     # check pool volatility
-    let pool_volatility = 1 * Math64x61_FRACT_PART
+    let pool_volatility = 1 * Math64x61.FRACT_PART
 
     let (pool_vol_1) = ITestContract.get_pool_volatility(CONTRACT_ADDRESS, OPTION_CALL, MATURITY_1)
     assert pool_vol_1 = pool_volatility
@@ -239,17 +243,20 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     tempvar CONTRACT_ADDRESS
     %{ ids.CONTRACT_ADDRESS = context.contract_a_address %}
 
-    # Initialize pool (again)
-    ITestContract.init_pool(CONTRACT_ADDRESS)
+    let (balance_call) = Math64x61.fromFelt(12345)
+    let (balance_put) = Math64x61.fromFelt(12345)
 
-    # Test pool balance
-    tempvar pool_balance = 12345 * Math64x61_FRACT_PART
+    ITestContract.init_pool(CONTRACT_ADDRESS, balance_call, balance_put)
+
+    # check pool balances
+    tempvar test_pool_balance_call = 12345 * Math64x61.FRACT_PART
+    tempvar test_pool_balance_put = 12345 * Math64x61.FRACT_PART # 1241400 = 1200 * 12345
 
     let (pool_balance_call) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_CALL)
-    assert pool_balance_call = pool_balance
+    assert pool_balance_call = test_pool_balance_call
 
     let (pool_balance_put) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_PUT)
-    assert pool_balance_put = pool_balance
+    assert pool_balance_put = test_pool_balance_put
 
     # Check account balance
     let ACCOUNT_ID_1 = 123456789
@@ -267,30 +274,30 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 
     # Add fake tokens
 
-    let amount_token_a_1 = 100 * Math64x61_FRACT_PART
-    let amount_token_b_1 = 90 * Math64x61_FRACT_PART
+    let amount_token_a_1 = 100 * Math64x61.FRACT_PART
+    let amount_token_b_1 = 90 * Math64x61.FRACT_PART
     ITestContract.add_fake_tokens(
         CONTRACT_ADDRESS, ACCOUNT_ID_1, amount_token_a_1, amount_token_b_1
     )
 
-    let amount_token_a_2 = 50 * Math64x61_FRACT_PART
-    let amount_token_b_2 = 40 * Math64x61_FRACT_PART
+    let amount_token_a_2 = 50 * Math64x61.FRACT_PART
+    let amount_token_b_2 = 40 * Math64x61.FRACT_PART
     ITestContract.add_fake_tokens(
         CONTRACT_ADDRESS, ACCOUNT_ID_2, amount_token_a_2, amount_token_b_2
     )
 
     # Check pool balance
-    tempvar pool_balance_1 = 12495 * Math64x61_FRACT_PART
+    tempvar pool_balance_1 = 12495 * Math64x61.FRACT_PART
     let (pool_balance_call) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_CALL)
     assert pool_balance_call = pool_balance_1
 
-    tempvar pool_balance_2 = 12475 * Math64x61_FRACT_PART
+    tempvar pool_balance_2 = 12475 * Math64x61.FRACT_PART
     let (pool_balance_put) = ITestContract.get_pool_balance(CONTRACT_ADDRESS, OPTION_PUT)
     assert pool_balance_put = pool_balance_2
 
     # Check account balance
-    let balance_a_1 = 100 * Math64x61_FRACT_PART
-    let balance_b_1 = 90 * Math64x61_FRACT_PART
+    let balance_a_1 = 100 * Math64x61.FRACT_PART
+    let balance_b_1 = 90 * Math64x61.FRACT_PART
 
     let (account_balance_a_1) = ITestContract.get_account_balance(
         CONTRACT_ADDRESS, ACCOUNT_ID_1, TOKEN_A
@@ -302,8 +309,8 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     )
     assert account_balance_b_1 = balance_b_1
 
-    let balance_a_2 = 50 * Math64x61_FRACT_PART
-    let balance_b_2 = 40 * Math64x61_FRACT_PART
+    let balance_a_2 = 50 * Math64x61.FRACT_PART
+    let balance_b_2 = 40 * Math64x61.FRACT_PART
 
     let (account_balance_a_2) = ITestContract.get_account_balance(
         CONTRACT_ADDRESS, ACCOUNT_ID_2, TOKEN_A
@@ -316,9 +323,9 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     assert account_balance_b_2 = balance_b_2
 
     # Check pool option balance
-    const STRIKE_1000 = Math64x61_FRACT_PART * 1000
-    const STRIKE_1100 = Math64x61_FRACT_PART * 1100
-    const STRIKE_1200 = Math64x61_FRACT_PART * 1200
+    const STRIKE_1000 = Math64x61.FRACT_PART * 1000
+    const STRIKE_1100 = Math64x61.FRACT_PART * 1100
+    const STRIKE_1200 = Math64x61.FRACT_PART * 1200
 
     const MATURITY_1 = 1644145200
     const MATURITY_2 = 1672527600
@@ -349,7 +356,7 @@ func test_add_fake_tokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     assert option_pool_5 = 0
 
     # Check pool volatility
-    let pool_volatility = 1 * Math64x61_FRACT_PART
+    let pool_volatility = 1 * Math64x61.FRACT_PART
 
     let (pool_vol_1) = ITestContract.get_pool_volatility(CONTRACT_ADDRESS, OPTION_CALL, MATURITY_1)
     assert pool_vol_1 = pool_volatility

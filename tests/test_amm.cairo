@@ -89,7 +89,10 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     let maturity_1 = 1672527600
 
     # initialize pools
-    init_pool()
+    let (pool_balance_call) = Math64x61.fromFelt(12345)
+    let (pool_balance_put) = Math64x61.fromFelt(12345)
+
+    init_pool(pool_balance_call, pool_balance_put)
     add_fake_tokens(account_id, hundred, hundred)
 
     # Trade 1 -------------------------------------------------------
@@ -114,11 +117,11 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # thats why we have such a difference here in comparison to the above trade
     # there is no locked capital here, since that is done by the user
     let (result_2) = get_pool_balance(OPTION_PUT)
-    let target_2 = 28134463574457816631959  # 12445 - 2 * 125.5... * 0.97
+    let target_2 = 28173057822536112443789  # 12445 - 2 * 125.5... * 0.97
     assert result_2 = target_2
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
-    _test_volatility(OPTION_PUT, maturity_01, 2305472503387516769)
+    _test_volatility(OPTION_PUT, maturity_01, 1986584717872234076)
     _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
     _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
@@ -149,7 +152,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     do_trade(account_id, OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, half)
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
-    _test_volatility(OPTION_PUT, maturity_01, 2305566983161341618)
+    _test_volatility(OPTION_PUT, maturity_01, 2071350250325837611)
     _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
     _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
@@ -185,7 +188,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_32) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + .5 * 125.5... * 1.03
-    let target_32 = 28283579780099304915573
+    let target_32 = 28304391752284495666398
     assert result_32 = target_32
 
     # Trade 4 -------------------------------------------------------
@@ -193,7 +196,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     do_trade(account_id, OPTION_PUT, strike_1000, maturity_01, TRADE_SIDE_LONG, two)
 
     _test_volatility(OPTION_CALL, maturity_01, 2306028306787561975)
-    _test_volatility(OPTION_PUT, maturity_01, 2305942971103526059)
+    _test_volatility(OPTION_PUT, maturity_01, 2474529908065107050)
     _test_volatility(OPTION_CALL, maturity_1, Math64x61.ONE)
     _test_volatility(OPTION_PUT, maturity_1, Math64x61.ONE)
 
@@ -229,7 +232,7 @@ func test_do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check
     # was taken from pool_option_balance
     let (result_42) = get_pool_balance(OPTION_PUT)
     # 12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.5... * 1.03 - 0.5*1000
-    let target_42 = 27727183503722603837152
+    let target_42 = 27739567380444046229159
     assert result_42 = target_42
 
     # End mocking oracle contract
