@@ -13,6 +13,11 @@ from contracts.amm import (
     set_pool_volatility,
     set_account_balance,
     set_available_options,
+    get_pool_balance,
+    get_account_balance,
+    get_pool_option_balance,
+    get_pool_volatility,
+    get_available_options,
 )
 from contracts.constants import (
     POOL_BALANCE_UPPER_BOUND,
@@ -65,7 +70,6 @@ func init_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     alloc_locals;
 
     // 1) set pool_balance
-    // let (balance) = Math64x61.fromFelt(12345)
     set_pool_balance(option_type=OPTION_CALL, balance=balance_call);
     set_pool_balance(option_type=OPTION_PUT, balance=balance_put);
 
