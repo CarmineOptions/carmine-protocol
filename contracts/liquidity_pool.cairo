@@ -393,7 +393,22 @@ func _mint_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
         amount = to_be_paid_by_user
     )
 
-    # FIXME: Should happen somewhere else?
+    # Increase available capital by (fees - premia)
+    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address)
+    let increase_unlocked_by = fees - premia
+    let new_unlocked_balance = current_unlocked_balance + increase_unlocked_by
+    option_token_unlocked_capital.write(
+        option_token_address,
+        new_unlocked_balance
+    )
+
+    let (current_locked_balance) = option_token_locked_capital.read(option_token_address)
+    let increase_locked_by = amount
+    let new_locked_balance = current_locked_balance + amount
+    option_token_locked_capital.write(
+        option_token_address,
+        new_locked_balance
+    )
     # user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
     # increase available capital by (fees - premia) (this might be happening in the amm.cairo)
     return ()
@@ -479,6 +494,15 @@ func _burn_option_token_long{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
         amount = to_be_received_by_user
     )
 
+    # Increase available capital by (amount - (premia + fees))
+    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address)
+    let increase_unlocked_by = (amount - premia) + fees
+    let new_unlocked_balance = current_unlocked_balance + increase_unlocked_by
+    option_token_locked_capital.write(
+        option_token_address,
+        new_locked_balance
+    )
+
     # FIXME: Should happen here or in IOptionToken.burn() function?
     # pool updates its available capital (unlocks it)
     # increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
@@ -507,7 +531,7 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
 
     # Retrieve locked capital to be paid to user
     if option_type == OPTION_PUT:
-        let unlocked_capital_for_user = Math64x61.mul(underlying_price, amount)
+        let unlocked_capital_for_user = Math64x61.mul(strike_price, amount)
     else:
         let unlocked_capital_for_user = amount
     end
@@ -520,6 +544,15 @@ func _burn_option_token_short{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
         sender = current_contract_address,
         recipient = user_address,
         amount = total_user_payment
+    )
+
+    # Increase available capital by (premia - fees)
+    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address)
+    let increase_unlocked_by = premia - fees
+    let new_unlocked_balance  = current_unlocked_balance + uncrease_unlocked_by
+    option_token_unlocked_capital.write(
+        option_token_address,
+        new_unlocked_balance
     )
     # FIXME: Should happen here?
     # pool updates it available capital
@@ -538,17 +571,17 @@ end
         # return max(0, amount * (strike_price - current_price)) in ETH
     # for short put:
         # return amount - (max(0, amount * (strike_price - current_price)) in ETH)
-func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    currency_address:felt,
+
+func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    currency_address: felt,
     option_token_address: felt,
     option_type: felt,
     option_side: felt,
     strike_price: felt,
     underlying_price: felt,
     amount: felt,
-    maturity: felt
+    maturity: felt,
 ):
-    # FIXME: tbd
     alloc_locals
 
     # Make sure the contract is the one that user wishes to expire
@@ -556,7 +589,6 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     let (contract_strike) = IOptionToken.strike(option_token_address)
     let (contract_maturity) = IOptionToken.maturity(option_token_address)
     let (contract_option_side) = IOptionToken.side(option_token_address)
-    let (current_block_time) = get_block_timestamp()
     let (current_contract_address) = get_contract_address()
 
     with_attr error_message("Required contract doesn't match the address."):
@@ -566,149 +598,89 @@ func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
         assert contract_option_side = side
     end
 
-    # Assert that the contract is ready to expire
+    # Make sure that user owns the option tokens
+    let (user_address) = get_caller_address()
+    let (user_tokens_owned) = IOptionToken.balanceOf(
+        contract_address = current_contract_address,
+        account = user_address
+   )
+    with_attr error_message("User doesn't own any tokens."):
+        assert_nn(user_tokens_owned)
+    end
+
+    # Make sure that the contract is ready to expire
+    let (current_block_time) = get_block_timestamp()
     let (is_ripe) = is_le(maturity, current_block_time)
     with_attr error_message("Contract isn't ripe yet."):
         assert is_ripe
     end
 
-    let (user_tokens_owned) = IOptionToken.balanceOf(
-        contract_address = current_contract_address,
-        account = user_address
+    let (long_value, short_value) = split_option_locked_capital(
+        option_type,
+        option_side,
+        strike_price,
+        underlying_price,
+        amount,
+        maturity,
     )
 
-    # Assert that user owns the option tokens
-    with_attr error_message("User doesn't own any tokens.")
-    assert_nn(user_tokens_owned)
-
-
-
-
-    if option_side == TRADE_SIDE_LONG:
-        _expire_option_token_long(
-            currency_address = currency_address,
-            option_token_address = option_token_address,
-            amount = amount,
-            option_type = option_type,
-            strike_price = strike_price,
-            underlying_price = underlying_price,
+    if option_side == LONG:
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = current_contract_address,
+            recipient = user_address,
+            amount = long_value
         )
-
+        adjust_available_capital(short_value)
     else:
-        _expire_option_token_short(
-            currency_address = currency_address,
-            option_token_address = option_token_address,
-            amount = amount,
-            option_type = option_type,
-            strike_price = strike_price,
-            underlying_price = underlying_price,
+        IERC20.transferFrom(
+            contract_address = currency_address,
+            sender = current_contract_address,
+            recipient = user_address,
+            amount = short_value
         )
-
+        adjust_available_capital(long_value)
     end
 
     return ()
 end
 
-func _expire_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt,
-    option_token_address: felt,
-    amount: felt,
+func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: felt,
+    option_side: felt,
+    option_size: felt,
     strike_price: felt,
     underlying_price: felt,
-):
+) -> (long_value: felt, short_value: felt):
     alloc_locals
 
-    let (user_address) = get_caller_address()
-    let (current_contract_address) = get_contract_address()
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0
 
     if option_type == OPTION_CALL:
-        # User receives -> max(0, amount * (current_price - strike_price)) in base token
-
+        # User receives max(0, amount * (current_price - strike_price)) in base token for long
+        # User receives (amount - long_amount) for short
         let price_diff = underlying_price - strike_price
         let to_be_paid_quote = amount * price_diff
         let to_be_paid_base = to_be_paid / underlying_price
-        let to_be_paid = max(0, to_be_paid_base)
+        let to_be_paid_buyer = max(0, to_be_paid_base)
+        let to_be_paid_seller = option_size * strike_price - to_be_paid_buyer
 
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender =  current_contract_address,
-            recipient = user_address,
-            amount = to_be_paid
-        )
-
-        # FIXME: Update storage vars
-    else:
-        # User receives max(0, amount * (strike_price - current_price)) in base token
-
-        let price_diff = strike_price - underlying_price
-        let to_be_paid_quote = amount*price_diff
-        let to_be_paid_base = to_be_paid / underlying_price
-        let to_be_paid = max(0, to_be_paid_base)
-
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender = current_contract_address,
-            recipient = user_address,
-            amount = to_be_paid
-        )
-
-        # FIXME: Update storage vars
+        return (to_be_paid_buyer, to_be_paid_seller)
     end
 
-    return ()
+    # For Put option
+    # User receives  max(0, amount * (strike_price - current_price)) in base token for long
+    # User receives (amount - long_amount) for short
+    let price_diff = strike_price - underlying_price
+    let amount_x_diff_quote = option_size * strike_price * price_diff
+    let amount_x_diff_base = amount_x_diff_quote / underlying_price
+    let to_be_paid_buyer = max(0, amount_x_diff_base)
+    let to_be_paid_sellet = option_size * strike_price - to_be_paid_buyer
+
+    return (to_be_paid_buyer, to_be_paid_seller)
 end
 
-func _expire_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt,
-    option_token_address: felt,
-    amount: felt,
-    option_type: felt,
-    strike_price: felt,
-    underlying_price: felt,
-):
-    alloc_locals
 
-    let (user_address) = get_caller_address()
-    let (current_contract_address) = get_contract_address()
-
-    if option_type == OPTION_CALL:
-        # User receives -> (amount - max(0, amount * (current_price - strike_price))) in base token
-
-        let price_diff = underlying_price - strike_price
-        let amount_x_diff_quote = amount * price_diff
-        let amount_x_diff_base = amount_x_diff_quote / underlying_price
-        let select_max = max(0, amount_x_diff_base)
-        let to_be_paid = amount - select_max
-
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender =  current_contract_address,
-            recipient = user_address,
-            amount = to_be_paid
-        )
-
-        # FIXME: Update storage vars
-    else:
-        # User receives (amount - max(0, amount * (strike_price - current_price))) in base token
-
-        let price_diff = strike_price - current_price
-        let to_be_paid_quote = amount*price_diff
-        let to_be_paid_base = to_be_paid / underlying_price
-        let to_be_paid = max(0, to_be_paid_base)
-
-        IERC20.transferFrom(
-            contract_address = currency_address,
-            sender = current_contract_address,
-            recipient = user_address,
-            amount = to_be_paid
-        )
-
-        # FIXME: Update storage vars
-    end
-
-    return ()
-end
 
 func expire_option_token_for_user{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
