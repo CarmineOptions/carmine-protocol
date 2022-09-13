@@ -22,6 +22,7 @@ from contracts.constants import (
     TRADE_SIDE_SHORT,
     get_opposite_side,
     STRIKE_PRICE_UPPER_BOUND,
+    RISK_FREE_RATE,
 )
 from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
@@ -345,8 +346,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // let (risk_free_rate_annualized) = Math64x61.div(three, hundred)
     let (risk_free_rate_annualized) = Math64x61.fromFelt(0);
 
-    // 6) Get premia
-    // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+    # 5) risk free rate
+    let risk_free_rate_annualized = RISK_FREE_RATE
+
+    # 6) Get premia
     let (call_premia, put_premia) = black_scholes(
         sigma=trade_volatility,
         time_till_maturity_annualized=time_till_maturity,
