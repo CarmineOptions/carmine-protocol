@@ -22,11 +22,11 @@ from contracts.constants import (
     get_opposite_side,
     STRIKE_PRICE_UPPER_BOUND,
     RISK_FREE_RATE,
+    EMPIRIC_ETH_USD_KEY
 )
 from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
-from contracts._cfg import EMPIRIC_ETH_USD_KEY
 from contracts.interface_liquidity_pool import ILiquidityPool
 
 
