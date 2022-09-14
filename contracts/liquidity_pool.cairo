@@ -3,8 +3,8 @@
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
-# commented out code already imported in amm.cairo
-# from starkware.cairo.common.cairo_builtins import HashBuiltin
+//  commented out code already imported in amm.cairo
+//  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
 from helpers import max
@@ -20,13 +20,13 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-#from constants import (
-#    OPTION_CALL,
-#    OPTION_PUT,
-#    TRADE_SIDE_LONG,
-#    TRADE_SIDE_SHORT,
-#    get_opposite_side
-#)
+from constants import (
+    OPTION_CALL,
+    OPTION_PUT,
+    TRADE_SIDE_LONG,
+    // TRADE_SIDE_SHORT,
+    // get_opposite_side
+)
 
 // @external
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):

@@ -4,10 +4,8 @@
 
 from starkware.cairo.common.bool import TRUE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-// from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.math import assert_nn_le, assert_nn
-// from starkware.cairo.common.math import assert_le, unsigned_div_rem
-from starkware.starknet.common.syscalls import get_block_timestamp  // storage_write
+from starkware.starknet.common.syscalls import get_block_timestamp
 from math64x61 import Math64x61
 
 from contracts.constants import (
@@ -352,15 +350,9 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (time_till_maturity) = _time_till_maturity(maturity);
 
     // 5) risk free rate
-    // let (three) = Math64x61.fromFelt(3)
-    // let (hundred) = Math64x61.fromFelt(100)
-    // let (risk_free_rate_annualized) = Math64x61.div(three, hundred)
-    let (risk_free_rate_annualized) = Math64x61.fromFelt(0);
+    let (risk_free_rate_annualized) = RISK_FREE_RATE;
 
-    # 5) risk free rate
-    let risk_free_rate_annualized = RISK_FREE_RATE
-
-    # 6) Get premia
+    // 6) Get premia
     let (call_premia, put_premia) = black_scholes(
         sigma=trade_volatility,
         time_till_maturity_annualized=time_till_maturity,
@@ -369,14 +361,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         risk_free_rate_annualized=risk_free_rate_annualized,
     );
 
-    // trade_volatility -> Math64x61
-    // time_till_maturity -> Math64x61
-    // strike_price -> Math64x61
-    // underlying_price -> Math64x61
-    // risk_free_rate_annualized -> Math64x61
-
-
-    # pool address and option token address
+    // 7) Make the trade
+    // pool address and option token address
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type)
 
     # FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
@@ -446,6 +432,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size, underlying_asset)
         return (premia=premia)
     else:
+        # FIXME: needs verification as above
         let (premia) = close_position(
             account_id,
             option_type,
