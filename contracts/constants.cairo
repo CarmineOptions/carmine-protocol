@@ -38,12 +38,12 @@ const FEE_PROPORTION_PERCENT = 3;
 
 func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt
-) -> (opposite_side : felt):
+) -> (opposite_side : felt) {
     assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0
-    if side == TRADE_SIDE_LONG:
+    if side == TRADE_SIDE_LONG {
         return (TRADE_SIDE_SHORT)
-    end
+    }
     return (TRADE_SIDE_LONG)
-end
+}
 
 const RISK_FREE_RATE = Math64x61.fromFelt(0)

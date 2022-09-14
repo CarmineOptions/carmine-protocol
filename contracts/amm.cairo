@@ -62,8 +62,8 @@ func available_options(option_type: felt, strike_price: felt, maturity: felt) ->
 @storage_var
 func pool_address_for_given_asset_and_option_type(asset: felt, option_type: felt) -> (
     address: felt
-):
-end
+) {
+}
 
 
 // ---------------storage_var handlers------------------
@@ -124,10 +124,10 @@ func set_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 @view
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : felt
-) -> (pool_balance : felt):
+) -> (pool_balance : felt) {
     let (pool_balance_) = pool_balance.read(option_type)
     return (pool_balance_)
-end
+}
 
 @view
 func get_pool_option_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -339,7 +339,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     // 7) Make the trade
     // pool address and option token address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type)
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type);
 
     // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
     let (option_token_address) = ILiquidityPool.get_option_token_address(
@@ -348,7 +348,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         option_type=option_type,
         maturity=maturity,
         strike_price=strike_price
-    )
+    );
     // 1.1) mint_option_token
     // FIXME: do we want to have here the premia and fees separately or combined???
     ILiquidityPool.mint_option_token(
@@ -362,7 +362,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         premia=total_premia_before_fees,
         fees=total_fees,
         underlying_price=underlying_price,
-    )
+    );
 
     return (premia=premia);
 }
@@ -377,8 +377,8 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_size : felt,
     underlying_asset: felt,
     open_position: felt, // True or False... determines if the user wants to open or close the position
-) -> (premia : felt):
-    if open_position == TRUE:
+) -> (premia : felt) {
+    if open_position == TRUE {
         // FIXME: with get_available_options check that option is available
 
         // option_type is from {OPTION_CALL, OPTION_PUT}
@@ -403,9 +403,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
         // 5) Check that option_size>0
 
-        let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size, underlying_asset)
-        return (premia=premia)
-    else:
+        let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size, underlying_asset);
+        return (premia=premia);
+    } else {
         // FIXME: needs verification as above
         let (premia) = close_position(
             account_id,
@@ -415,10 +415,10 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
             side,
             option_size,
             underlying_asset
-        )
-        return (premia=premia)
-    end
-end
+        );
+        return (premia=premia);
+    }
+}
 
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     account_id : felt,
@@ -429,7 +429,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     option_size : felt,
     underlying_asset: felt,
     open_position: felt,
-) -> (premia : felt):
+) -> (premia : felt) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
     // "user does not have opinion on the market state" - this may change down the line
@@ -472,7 +472,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 7) Make the trade
     // pool address and option token address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type)
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type);
 
     // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
     let (option_token_address) = ILiquidityPool.get_option_token_address(
@@ -481,7 +481,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         option_type=option_type,
         maturity=maturity,
         strike_price=strike_price
-    )
+    );
     // 1.1) burn_option_token
     // FIXME: do we want to have here the premia and fees separately or combined???
     ILiquidityPool.burn_option_token(
@@ -495,7 +495,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         premia=total_premia_before_fees,
         fees=total_fees,
         underlying_price=underlying_price,
-    )
+    );
 
     return (premia=premia);
-end
+}

@@ -102,50 +102,6 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_burn,);
 }
 
-    if reserves.low == 0:
-        return (underlying_amt)
-    end
-    let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
-    let (lpt_supply) = ILPToken.totalSupply(contract_address=lpt_addr)
-
-    let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves)
-    let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt)
-
-    assert to_mint_high.low = 0
-
-    let (to_div_low, to_div_high) = uint256_mul(rem, underlying_amt)
-
-    assert to_div_high.low = 0
-
-    let (to_mint_additional_quot, to_mint_additional_rem) = uint256_unsigned_div_rem(to_div_low, reserves)  # to_mint_additional_rem goes to liq pool // treasury
-    let (mint_total, carry) = uint256_add(to_mint_additional_quot, to_mint_low)
-
-    assert carry = 0
-    return (mint_total)
-end
-
-// computes what amt of underlying corresponds to a given amt of lpt.
-// Doesn't take into account whether this underlying is actually free to be withdrawn.
-// computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
-// notation used: ... = (a)*my_lpt = b
-func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    pooled_token_addr: felt,
-    lpt_amt: Uint256
-) -> (underlying_amt: Uint256):
-    alloc_locals
-    let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr)
-    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lpt_addr)
-    let (total_underlying_amt: Uint256) = lpool_balance.read(pooled_token_addr)
-    let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt)
-    let (b_low, b_high) = uint256_mul(a_quot, lpt_amt)
-    assert b_high.low = 0 // bits that overflow uint256 after multiplication
-    let (tmp_low, tmp_high) = uint256_mul(a_rem, lpt_amt)
-    assert tmp_high.low = 0
-    let (to_burn_additional_quot, to_burn_additional_rem) = uint256_unsigned_div_rem(tmp_low, total_lpt)
-    let (to_burn, carry) = uint256_add(to_burn_additional_quot, b_low)
-    assert carry = 0
-    return (to_burn)
-end
 
 // total balance of underlying in the pool
 // available balance for withdraw will be computed on-demand since
