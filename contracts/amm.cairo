@@ -30,12 +30,6 @@ from contracts._cfg import EMPIRIC_ETH_USD_KEY
 from contracts.interface_liquidity_pool import ILiquidityPool
 
 
-// FIXME: look into how the token sizes are dealt with across different protocols
-// A map from account and token type to the corresponding balance of that account in given pool.
-// Ie this describes how much of the given pool the given account owns.
-@storage_var
-func account_balance(account_id: felt, token_type: felt) -> (balance: felt) {
-}
 
 // A map from option type to the corresponding balance of the pool.
 @storage_var
@@ -72,7 +66,7 @@ func pool_address_for_given_asset_and_option_type(asset: felt, option_type: felt
 end
 
 
-# ---------------storage_var handlers------------------
+// ---------------storage_var handlers------------------
 
 func set_pool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: felt, balance: felt
@@ -134,14 +128,6 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
     let (pool_balance_) = pool_balance.read(option_type)
     return (pool_balance_)
 end
-
-@view
-func get_account_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account_id: felt, token_type: felt
-) -> (account_balance: felt) {
-    let (account_balance_) = account_balance.read(account_id, token_type);
-    return (account_balance_,);
-}
 
 @view
 func get_pool_option_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -306,16 +292,6 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);
 }
 
-func do_trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    account_id : felt,
-    option_type : felt,
-    strike_price : felt,
-    maturity : felt,
-    side : felt,
-    option_size : felt,
-    underlying_asset: felt,
-) -> (premia : felt):
-    # options_size is always denominated in base tokens (ETH in case of ETH/USDC)
 
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account_id: felt,
@@ -365,7 +341,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // pool address and option token address
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type)
 
-    # FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
+    // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
     let (option_token_address) = ILiquidityPool.get_option_token_address(
         contract_address=pool_address,
         option_side=side,
@@ -373,8 +349,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         maturity=maturity,
         strike_price=strike_price
     )
-    # 1.1) mint_option_token
-    # FIXME: do we want to have here the premia and fees separately or combined???
+    // 1.1) mint_option_token
+    // FIXME: do we want to have here the premia and fees separately or combined???
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
         option_token_address=option_token_address,
@@ -387,8 +363,6 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         fees=total_fees,
         underlying_price=underlying_price,
     )
-    # 1.2) burn_option_token
-        # !!! implemented in close_position function
 
     return (premia=premia);
 }
@@ -402,37 +376,37 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt,
     option_size : felt,
     underlying_asset: felt,
-    open_position: felt, # True or False
+    open_position: felt, // True or False... determines if the user wants to open or close the position
 ) -> (premia : felt):
     if open_position == TRUE:
-        # FIXME: with get_available_options check that option is available
+        // FIXME: with get_available_options check that option is available
 
-        # option_type is from {OPTION_CALL, OPTION_PUT}
-        # option_size is denominated in TOKEN_A (ETH)
-        # side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
-            # ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
-            # means that user is underwriting the option.
+        // option_type is from {OPTION_CALL, OPTION_PUT}
+        // option_size is denominated in TOKEN_A (ETH)
+        // side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
+            // ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
+            // means that user is underwriting the option.
 
-        # 1) Check that account_id has enough amount of given token to
-            # - to pay the fee
-            # - to pay the premia in case of size==TRADE_SIDE_LONG
-            # - to lock in capital in case of size==TRADE_SIDE_SHORT
-            # FIXME: do this once test or actual capital is used
+        // 1) Check that account_id has enough amount of given token to
+            // - to pay the fee
+            // - to pay the premia in case of size==TRADE_SIDE_LONG
+            // - to lock in capital in case of size==TRADE_SIDE_SHORT
+            // FIXME: do this once test or actual capital is used
 
-        # 2) Check that there is enough available capital in the given pool_balance
-            # - to pay the premia in case of size==TRADE_SIDE_LONG
-            # - to lock in capital in case of size==TRADE_SIDE_SHORT
+        // 2) Check that there is enough available capital in the given pool_balance
+            // - to pay the premia in case of size==TRADE_SIDE_LONG
+            // - to lock in capital in case of size==TRADE_SIDE_SHORT
 
-        # 3) Check that the strike_price > 0, check that the maturity haven't passed yet
+        // 3) Check that the strike_price > 0, check that the maturity haven't passed yet
 
-        # 4) Check that the strike_price x maturity option is at all available
+        // 4) Check that the strike_price x maturity option is at all available
 
-        # 5) Check that option_size>0
+        // 5) Check that option_size>0
 
         let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size, underlying_asset)
         return (premia=premia)
     else:
-        # FIXME: needs verification as above
+        // FIXME: needs verification as above
         let (premia) = close_position(
             account_id,
             option_type,
@@ -456,7 +430,72 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     underlying_asset: felt,
     open_position: felt,
 ) -> (premia : felt):
-    # FIXME: close position has to be implemented to return locked capital to the user
-    # (or not to lock additional capital in case of closing long)
-    return ()
+    // All of the unlocking of capital happens inside of the burn function below.
+    // Volatility is not updated since closing position is considered as
+    // "user does not have opinion on the market state" - this may change down the line
+
+    
+    // options_size is always denominated in base tokens (ETH in case of ETH/USDC)
+
+    alloc_locals;
+
+    // 0) Get current volatility
+    let (current_volatility) = get_pool_volatility(option_type, maturity);
+
+    // 1) Get price of underlying asset
+    let (underlying_price) = empiric_median_price(EMPIRIC_ETH_USD_KEY);
+
+    // 2) Calculate new volatility, calculate trade volatilit
+    let (option_size_in_pool_currency) = _get_option_size_in_pool_currency(
+        option_size, option_type, underlying_price
+    );
+    let (new_volatility, trade_volatility) = _get_new_volatility(
+        current_volatility, option_size_in_pool_currency, option_type, side
+    );
+
+    // 3) Update volatility does not happen in this function - look at docstring
+
+    // 4) Get time till maturity
+    let (time_till_maturity) = _time_till_maturity(maturity);
+
+    // 5) risk free rate
+    let (risk_free_rate_annualized) = RISK_FREE_RATE;
+
+    // 6) Get premia
+    let (call_premia, put_premia) = black_scholes(
+        sigma=trade_volatility,
+        time_till_maturity_annualized=time_till_maturity,
+        strike_price=strike_price,
+        underlying_price=underlying_price,
+        risk_free_rate_annualized=risk_free_rate_annualized,
+    );
+
+    // 7) Make the trade
+    // pool address and option token address
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type)
+
+    // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
+    let (option_token_address) = ILiquidityPool.get_option_token_address(
+        contract_address=pool_address,
+        option_side=side,
+        option_type=option_type,
+        maturity=maturity,
+        strike_price=strike_price
+    )
+    // 1.1) burn_option_token
+    // FIXME: do we want to have here the premia and fees separately or combined???
+    ILiquidityPool.burn_option_token(
+        contract_address=pool_address,
+        option_token_address=option_token_address,
+        amount=option_size,
+        option_side=side,
+        option_type=option_type,
+        maturity=maturity,
+        strike=strike_price,
+        premia=total_premia_before_fees,
+        fees=total_fees,
+        underlying_price=underlying_price,
+    )
+
+    return (premia=premia);
 end
