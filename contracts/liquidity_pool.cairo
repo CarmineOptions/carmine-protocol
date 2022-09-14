@@ -39,8 +39,8 @@ from constants import (
 // Provide/remove liquidity
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-// # lptoken_amt * exchange_rate = underlying_amt
-// # @returns Math64x61 fp num
+// lptoken_amt * exchange_rate = underlying_amt
+// @returns Math64x61 fp num
 // func get_lptoken_exchange_rate{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 //     pooled_token_addr: felt
 // ) -> (exchange_rate: felt):
@@ -124,10 +124,10 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (mint_total)
 end
 
-# computes what amt of underlying corresponds to a given amt of lpt.
-# Doesn't take into account whether this underlying is actually free to be withdrawn.
-# computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
-# notation used: ... = (a)*my_lpt = b
+// computes what amt of underlying corresponds to a given amt of lpt.
+// Doesn't take into account whether this underlying is actually free to be withdrawn.
+// computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
+// notation used: ... = (a)*my_lpt = b
 func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt,
     lpt_amt: Uint256
@@ -138,7 +138,7 @@ func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     let (total_underlying_amt: Uint256) = lpool_balance.read(pooled_token_addr)
     let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt)
     let (b_low, b_high) = uint256_mul(a_quot, lpt_amt)
-    assert b_high.low = 0 # bits that overflow uint256 after multiplication
+    assert b_high.low = 0 // bits that overflow uint256 after multiplication
     let (tmp_low, tmp_high) = uint256_mul(a_rem, lpt_amt)
     assert tmp_high.low = 0
     let (to_burn_additional_quot, to_burn_additional_rem) = uint256_unsigned_div_rem(tmp_low, total_lpt)
@@ -147,9 +147,9 @@ func get_underlying_for_lptokens{syscall_ptr : felt*, pedersen_ptr : HashBuiltin
     return (to_burn)
 end
 
-# total balance of underlying in the pool
-# available balance for withdraw will be computed on-demand since
-# compute is cheap, storage is expensive on StarkNet currently
+// total balance of underlying in the pool
+// available balance for withdraw will be computed on-demand since
+// compute is cheap, storage is expensive on StarkNet currently
 @storage_var
 func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
 }
@@ -231,7 +231,7 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 //     pooled_token_addr: felt,
 //     amt: Uint256
 // ):
-//     # FIXME: TBD
+//     // FIXME: TBD
 // end
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -290,16 +290,16 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     fees: felt,
     underlying_price: felt,
 ) {
-    // currency_address: felt,  # adress of token staked in the pool (ETH/USDC/...)
+    // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
     // option_token_address: felt,
-    // amount: felt,  # in base tokens (ETH in case of ETH/USDC)
+    // amount: felt,  // in base tokens (ETH in case of ETH/USDC)
     // option_side: felt,
     // option_type: felt,
-    // maturity: felt,  # felt in seconds
-    // strike: felt,  # in Math64x61
-    // premia: felt,  # in Math64x61 in either base or quote token
-    // fees: felt,  # in Math64x61 in either base or quote token
-    // underlying_price: felt, # in Math64x61
+    // maturity: felt,  // felt in seconds
+    // strike: felt,  // in Math64x61
+    // premia: felt,  // in Math64x61 in either base or quote token
+    // fees: felt,  // in Math64x61 in either base or quote token
+    // underlying_price: felt, // in Math64x61
 
     // FIXME: do we want to have the amount here as felt or do want it as uint256???
     alloc_locals;

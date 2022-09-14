@@ -270,7 +270,7 @@ namespace OptionToken {
             let (holder_value) = get_value_for_holder(final_price);
 
             // liquidity pool value is locked capital minus holder value
-            // options_size = amount  # in terms of base token (ETH in case ETH/USD)
+            // options_size = amount  // in terms of base token (ETH in case ETH/USD)
             if (option_type == OPTION_CALL) {
                 // holder_value is already in the same currency as amount... in base token
                 let (call_lp_value) = amount - holder_value;
