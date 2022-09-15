@@ -19,7 +19,7 @@ from starkware.cairo.common.uint256 import (
 )
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
-
+k
 from constants import (
     OPTION_CALL,
     OPTION_PUT,
@@ -602,7 +602,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
             recipient=user_address,
             amount=long_value,
         );
-        adjust_available_capital(short_value);
+        adjust_available_capital(short_value, option_token_address);
     } else {
         IERC20.transferFrom(
             contract_address=currency_address,
@@ -610,10 +610,23 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
             recipient=user_address,
             amount=short_value,
         );
-        adjust_available_capital(long_value);
+        adjust_available_capital(long_value, option_token_address);
     }
 
     return ();
+}
+
+func adjust_available_capital(adjust_by: felt, option_token_address: felt) {
+    let (current_locked_capital) = option_token_locked_capital.read(option_token_address);
+    let new_locked_capital = current_locked_capital - adjust_by;
+
+    with_attr error_message("Not enough capital to expire option") {
+        assert_nn(new_locked_capital)
+    };
+
+    option_token_locked_capital.write(option_token_address, new_locked_balance);
+
+    return ()
 }
 
 func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
