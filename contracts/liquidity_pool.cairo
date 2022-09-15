@@ -202,11 +202,11 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 // This might be nonsence, but I just dont know at the moment.
 
 @storage_var
-func option_token_locked_capital(option_token_address: felt) -> (res: felt) {
+func option_token_locked_capital() -> (res: felt) {
 }
 
 func get_option_token_unlocked_capital(option_token_adress: felt) -> (unlocked_capital: felt) {
-    let (locked_capital) = option_token_locked_capital.read(option_token_address);
+    let (locked_capital) = option_token_locked_capital.read();
 
     let (own_addr) = get_contract_address();
     let (contract_balance) = IERC20.balanceOf(
@@ -333,7 +333,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Decrease available capital by (amount - premia - fees)
     // We have storage_var only for locked, and unlocked is retrieved by subtracting
     // locked capital from total balance, to to decrease unlocked capital, increase locked
-    let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
+    let (current_locked_balance) = option_token_locked_capital.read();
     let (increase_by) = amount - to_be_paid_by_user;
 
     let new_locked_balance = current_locked_balance + increase_by;
@@ -345,7 +345,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         assert_nn(new_unlocked_balance);
     }
 
-    option_token_locked_capital.write(option_token_address, new_locked_balance);
+    option_token_locked_capital.write(new_locked_balance);
 
     return ();
 }
@@ -387,7 +387,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     
     // Increase available capital by (fees - premia)
-    let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
+    let (current_locked_balance) = option_token_locked_capital.read();
     let decrease_locked_by = fees - premia;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
@@ -395,7 +395,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         assert_nn(new_locked_balance)
     }
        
-    option_token_locked_capital.write(option_token_address, new_locked_balance);
+    option_token_locked_capital.write(new_locked_balance);
 
     // user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
     // increase available capital by (fees - premia) (this might be happening in the amm.cairo)
@@ -479,11 +479,11 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     );
 
     // Increase available capital by (amount - (premia + fees))
-    let (current_locked_balance) = option_token_locked_capital.read(option_token_address):
+    let (current_locked_balance) = option_token_locked_capital.read():
     let decrease_locked_by = (amount - premia) + fees;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
-    option_token_locked_capital.write(option_token_address, new_locked_balance);
+    option_token_locked_capital.write(new_locked_balance);
 
     return ();
 }
@@ -526,7 +526,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     );
 
     // Increase available capital by (premia - fees)
-    let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
+    let (current_locked_balance) = option_token_locked_capital.read();
     let decrease_locked_by = premia - fees;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
@@ -534,7 +534,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         assert_nn(new_locked_balance)
     }
 
-    option_token_locked_capital.write(option_token_address, new_locked_balance);
+    option_token_locked_capital.write(new_locked_balance);
     // NOTICE: the available capital does not get updated by amount, since it was never available for the pool
     return ();
 }
@@ -617,14 +617,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 func adjust_available_capital(adjust_by: felt, option_token_address: felt) {
-    let (current_locked_capital) = option_token_locked_capital.read(option_token_address);
+    let (current_locked_capital) = option_token_locked_capital.read();
     let new_locked_capital = current_locked_capital - adjust_by;
 
     with_attr error_message("Not enough capital to expire option") {
         assert_nn(new_locked_capital)
     }
 
-    option_token_locked_capital.write(option_token_address, new_locked_balance);
+    option_token_locked_capital.write(new_locked_balance);
 
     return ()
 }
@@ -691,10 +691,11 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     strike_price: felt,
     option_token_address: felt,
     maturity: felt,
+    underlying_price: felt
 
 ) {
-    // FIXME: this could be called by anyone and it releases the locked capital for pool (in pool to pool)
     alloc_locals;
+   
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
     let (contract_strike) = IOptionToken.strike(option_token_address);
@@ -708,7 +709,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert contract_maturity = maturity;
         assert contract_option_side = side;
     }
-
+    // FIXME: Account for option type
     // Make sure the contract is ready to expire
     let (current_block_time) = get_block_timestamp();
     let (is_ripe) = is_le(maturity, current_block_time);
@@ -716,6 +717,15 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert is_ripe = 1;
     }
 
+    // Increase available capital
+    let (current_locked_balance) = option_token_locked_capital.read();
+    let new_locked_balance = current_locked_balance - amount;
+    
+    with_attr error_message("Not enough capital") {
+        assert_nn(new_locked_balance)
+    }
+
+    option_token_locked_capital.write(new_locked_balance);
 
     return ();
 }
