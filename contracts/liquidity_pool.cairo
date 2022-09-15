@@ -226,10 +226,10 @@ func option_token_address(
 
 
 func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_side: felt, option_type: felt, maturity: felt, strike_price: felt
+    option_side: felt, maturity: felt, strike_price: felt
 ) -> (option_token_address: felt) {
     let (option_token_addr) = option_token_address.read(
-        option_side, option_size, maturity, strike_price
+        option_side, maturity, strike_price
     );
     return (option_token_address=option_token_addr);
 }
@@ -604,14 +604,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         option_type, option_side, strike_price, underlying_price, amount, maturity
     );
 
-    if (option_side == LONG) {
+    if (option_side == TRADE_SIDE_LONG) {
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
             recipient=user_address,
             amount=long_value,
         );
-        adjust_available_capital(short_value, option_token_address);
+        adjust_available_capital(short_value);
     } else {
         IERC20.transferFrom(
             contract_address=currency_address,
@@ -619,13 +619,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
             recipient=user_address,
             amount=short_value,
         );
-        adjust_available_capital(long_value, option_token_address);
+        adjust_available_capital(long_value);
     }
 
     return ();
 }
 
-func adjust_available_capital(adjust_by: felt, option_token_address: felt) {
+func adjust_available_capital(adjust_by: felt) {
     let (current_locked_capital) = option_token_locked_capital.read();
     let new_locked_capital = current_locked_capital - adjust_by;
 
@@ -673,26 +673,6 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_be_paid_buyer, to_be_paid_seller);
 }
 
-func expire_option_token_for_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt, option_type: felt, option_side: felt, strike_price: felt
-) {
-    alloc_locals;
-
-    let (current_contract_address) = get_contract_address();
-    let (user_address) = get_caller_address();
-
-    let (user_tokens_owned) = IOptionToken.balanceOf(
-        contract_address=current_contract_address, account=user_address
-    );
-
-    // Assert that user owns the option tokens
-    assert_nn(user_tokens_owned);
-
-    alloc_locals;
-
-    return ();
-}
-
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     amount: felt,
     option_type: felt,
@@ -718,6 +698,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert contract_maturity = maturity;
         assert contract_option_side = side;
     }
+
     // FIXME: Account for option type
     // Make sure the contract is ready to expire
     let (current_block_time) = get_block_timestamp();
@@ -726,15 +707,15 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert is_ripe = 1;
     }
 
-    // Increase available capital
-    let (current_locked_balance) = option_token_locked_capital.read();
-    let new_locked_balance = current_locked_balance - amount;
-    
-    with_attr error_message("Not enough capital") {
-        assert_nn(new_locked_balance)
-    }
+    let (long_value, short_value)  = split(option_locked_capital(
+        option_type, option_side, strike_price, underlying_price, amount, maturity
+    );
 
-    option_token_locked_capital.write(new_locked_balance);
+    if (option_side == TRADE_SIDE_LONG) {
+        adjust_available_capital(long_value);
+    } else {
+        adjust_available_capital(short_value);
+    }
 
     return ();
 }
