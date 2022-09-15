@@ -30,21 +30,21 @@ func test_Math64x61_div_imprecise{range_check_ptr}() {
     alloc_locals;
     let decimals = 18;
     let (pow10xM) = pow(10, decimals);
-    let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM);
+    let pow10xM_to_64x61 = Math64x61.fromFelt(pow10xM);
 
     // test ETH price 1480.23 * 10**18
     let eth_test = 1480230000000000000000;
-    let (eth_res) = Math64x61_div_imprecise(eth_test, pow10xM_to_64x61);
+    let eth_res = Math64x61_div_imprecise(eth_test, pow10xM_to_64x61);
     assert eth_res = 1480;
 
     // test BTC price 21567.86 * 10**18
     let btc_test = 21567860000000000000000;
-    let (btc_res) = Math64x61_div_imprecise(btc_test, pow10xM_to_64x61);
+    let btc_res = Math64x61_div_imprecise(btc_test, pow10xM_to_64x61);
     assert btc_res = 21567;
 
     // test some random coin worth 0.58 dollars
     let rand_test = 580000000000000000;
-    let (rand_res) = Math64x61_div_imprecise(rand_test, pow10xM_to_64x61);
+    let rand_res = Math64x61_div_imprecise(rand_test, pow10xM_to_64x61);
     assert rand_res = 0;  // FIXME: this should not be zero
 
     return ();
