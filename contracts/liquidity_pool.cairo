@@ -56,6 +56,8 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 ) -> (lpt_amt: Uint256) {
     alloc_locals;
     let (own_addr) = get_contract_address();
+    // FIXME: reserves have to be calculated as value of pool's holdings
+    // reserves = available unlocked capital + value of pool's position
     let (reserves: Uint256) = IERC20.balanceOf(
         contract_address=pooled_token_addr, account=own_addr
     );
@@ -124,6 +126,7 @@ func deposit_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 ) {
     let (caller_addr) = get_caller_address();
     let (own_addr) = get_contract_address();
+
     let (balance_before: Uint256) = IERC20.balanceOf(
         contract_address=pooled_token_addr, account=own_addr
     );
@@ -213,11 +216,18 @@ func get_option_token_unlocked_capital(option_token_adress: felt) -> (unlocked_c
     return (unlocked_capital = unlocked_capital);
 }
 
+// Maping from option params to option address
 @storage_var
 func option_token_address(
-    option_side: felt, option_type: felt, maturity: felt, strike_price: felt
+    option_side: felt, maturity: felt, strike_price: felt
 ) -> (res: felt) {
 }
+
+// Mapping from option params to pool's position
+@storage_var
+func option_position(option_side: felt, maturity: felt, strike_price: felt) -> (res: felt) {
+}
+
 
 
 func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -661,6 +671,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     terminal_price: felt
 ) {
     alloc_locals;
+
+    let (option_size) = 
    
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
