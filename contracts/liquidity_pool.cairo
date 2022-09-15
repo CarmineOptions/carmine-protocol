@@ -333,7 +333,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Decrease available capital by (amount - premia - fees)
     // We have storage_var only for locked, and unlocked is retrieved by subtracting
     // locked capital from total balance, to to decrease unlocked capital, increase locked
-    let (current_locked_balance) = option_token_locked_capital.read(option_token_address)
+    let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
     let (increase_by) = amount - to_be_paid_by_user;
 
     let new_locked_balance = current_locked_balance + increase_by;
@@ -343,7 +343,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         let (unlocked_balance) = get_option_token_unlocked_capital(option_token_address);
         let (new_unlocked_balance) = unlocked_balance - increase_by;
         assert_nn(new_unlocked_balance);
-    }
+    };
 
     option_token_locked_capital.write(option_token_address, new_locked_balance);
 
@@ -393,7 +393,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     with_attr error_message("Not enough capital") {
         assert_nn(new_locked_balance)
-    }
+    };
        
     option_token_locked_capital.write(option_token_address, new_locked_balance);
 
@@ -432,7 +432,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         assert contract_strike = strike;
         assert contract_maturity = maturity;
         assert contract_option_side = side;
-    }
+    };
 
     if (option_side == TRADE_SIDE_LONG) {
         _burn_option_token_long(
@@ -452,7 +452,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             option_type=option_type,
             underlying_price=underlying_price,
         );
-    }
+    };
 
     return ();
 }
@@ -513,7 +513,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let unlocked_capital_for_user = Math64x61.mul(strike_price, amount);
     } else {
         let unlocked_capital_for_user = amount;
-    }
+    };
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user;
@@ -532,7 +532,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     with_attr error_message("Not enough capital") {
         assert_nn(new_locked_balance)
-    }
+    };
 
     option_token_locked_capital.write(option_token_address, new_locked_balance);
     // NOTICE: the available capital does not get updated by amount, since it was never available for the pool
@@ -582,14 +582,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     );
     with_attr error_message("User doesn't own any tokens.") {
         assert_nn(user_tokens_owned);
-    }
+    };
 
     // Make sure that the contract is ready to expire
     let (current_block_time) = get_block_timestamp();
     let (is_ripe) = is_le(maturity, current_block_time);
     with_attr error_message("Contract isn't ripe yet.") {
         assert is_ripe = 1;
-    }
+    };
 
     let (long_value, short_value) = split_option_locked_capital(
         option_type, option_side, strike_price, underlying_price, amount, maturity
