@@ -194,24 +194,36 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 // Trade options
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+
 // FIXME: do we have to move the functionality to amm.cairo or move most the functionality from amm.cairo here.
-// asking because I'm not sure about the addresses being correctly put through
+// asking because Im not sure about the addresses being correctly put through
 // ie if user calls amm.trade(...) that calls amm.do_trade(...) that calls different contract liquidity_pool.buy_call(...)
 // how does the premium and fee end up in the liquidity pool???
-// This might be nonsence, but I just don't know at the moment.
+// This might be nonsence, but I just dont know at the moment.
+
 @storage_var
 func option_token_locked_capital(option_token_address: felt) -> (res: felt) {
 }
 
-@storage_var
-func option_token_unlocked_capital(option_token_adress: felt) -> (res: felt) {
+func get_option_token_unlocked_capital(option_token_adress: felt) -> (unlocked_capital: felt) {
+    let (locked_capital) = option_token_locked_capital.read(option_token_address);
+
+    let (own_addr) = get_contract_address();
+    let (contract_balance) = IERC20.balanceOf(
+        contract_address = option_token_address,
+        account = own_addr
+    );
+    let unlocked_capital = contract_balance - locked_capital;
+    return (unlocked_capital = unlocked_capital)
 }
 
 @storage_var
 func option_token_address(
     option_side: felt, option_type: felt, maturity: felt, strike_price: felt
 ) -> (res: felt) {
+
 }
+
 
 func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_side: felt, option_type: felt, maturity: felt, strike_price: felt
@@ -223,10 +235,10 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 // FIXME: do we have to move the functionality to amm.cairo or move most the functionality from amm.cairo here.
-// asking because I'm not sure about the addresses being correctly put through
+// asking because Im not sure about the addresses being correctly put through
 // ie if user calls amm.trade(...) that calls amm.do_trade(...) that calls different contract liquidity_pool.buy_call(...)
 // how does the premium and fee end up in the liquidity pool???
-// This might be nonsence, but I just don't know at the moment.
+// This might be nonsence, but I just dont know at the moment.
 
 // User increases its position (if user is long, it increases the size of its long,
 // if he/she is short, the short gets increased).
@@ -316,19 +328,24 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         sender=user_address,
         recipient=current_contract_address,
         amount=to_be_paid_by_user,
-    );  // Transaction will fail if there is not enough fund on user' s account
+    );  // Transaction will fail if there is not enough fund on users account
 
     // Decrease available capital by (amount - premia - fees)
-    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address);
-    let (decrease_by) = amount - to_be_paid_by_user;
+    // We have storage_var only for locked, and unlocked is retrieved by subtracting
+    // locked capital from total balance, to to decrease unlocked capital, increase locked
+    let (current_locked_balance) = option_token_locked_capital.read(option_token_address)
+    let (increase_by) = amount - to_be_paid_by_user;
 
-    let new_unlocked_balance = current_unlocked_balance - decrease_by;
+    let new_locked_balance = current_locked_balance + increase_by;
 
+    // Check that there is enough unlocked capital
     with_attr error_message("Not enough available capital.") {
+        let (unlocked_balance) = get_option_token_unlocked_capital(option_token_address);
+        let (new_unlocked_balance) = unlocked_balance - increase_by;
         assert_nn(new_unlocked_balance);
     }
 
-    option_token_unlocked_capital.write(option_token_address, new_unlocked_balance);
+    option_token_locked_capital.write(option_token_address, new_locked_balance);
 
     return ();
 }
@@ -368,16 +385,18 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         amount=to_be_paid_by_user,
     );
 
+    
     // Increase available capital by (fees - premia)
-    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address);
-    let increase_unlocked_by = fees - premia;
-    let new_unlocked_balance = current_unlocked_balance + increase_unlocked_by;
-    option_token_unlocked_capital.write(option_token_address, new_unlocked_balance);
-
     let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
-    let increase_locked_by = amount;
-    let new_locked_balance = current_locked_balance + amount;
+    let decrease_locked_by = fees - premia;
+    let new_locked_balance = current_locked_balance - decrease_locked_by;
+
+    with_attr error_message("Not enough capital") {
+        assert_nn(new_locked_balance)
+    }
+       
     option_token_locked_capital.write(option_token_address, new_locked_balance);
+
     // user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
     // increase available capital by (fees - premia) (this might be happening in the amm.cairo)
     return ();
@@ -460,14 +479,12 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     );
 
     // Increase available capital by (amount - (premia + fees))
-    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address);
-    let increase_unlocked_by = (amount - premia) + fees;
-    let new_unlocked_balance = current_unlocked_balance + increase_unlocked_by;
+    let (current_locked_balance) = option_token_locked_capital.read(option_token_address):
+    let decrease_locked_by = (amount - premia) + fees;
+    let new_locked_balance = current_locked_balance - decrease_locked_by;
+
     option_token_locked_capital.write(option_token_address, new_locked_balance);
 
-    // FIXME: Should happen here or in IOptionToken.burn() function?
-    // pool updates its available capital (unlocks it)
-    // increase available capital by (amount - premia + fees)... (this might be happening in the amm.cairo)
     return ();
 }
 
@@ -509,13 +526,15 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     );
 
     // Increase available capital by (premia - fees)
-    let (current_unlocked_balance) = option_token_unlocked_capital.read(option_token_address);
-    let increase_unlocked_by = premia - fees;
-    let new_unlocked_balance = current_unlocked_balance + uncrease_unlocked_by;
-    option_token_unlocked_capital.write(option_token_address, new_unlocked_balance);
-    // FIXME: Should happen here?
-    // pool updates it available capital
-    // increase available capital by (premia - fees) (this might be happening in the amm.cairo)
+    let (current_locked_balance) = option_token_locked_capital.read(option_token_address);
+    let decrease_locked_by = premia - fees;
+    let new_locked_balance = current_locked_balance - decrease_locked_by;
+
+    with_attr error_message("Not enough capital") {
+        assert_nn(new_locked_balance)
+    }
+
+    option_token_locked_capital.write(option_token_address, new_locked_balance);
     // NOTICE: the available capital does not get updated by amount, since it was never available for the pool
     return ();
 }
