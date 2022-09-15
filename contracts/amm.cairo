@@ -170,7 +170,7 @@ func _select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, r
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     if (option_type == OPTION_CALL) {
-        let (adjusted_call_premia) = Math64x61.div(call_premia, underlying_price);
+        let adjusted_call_premia = Math64x61.div(call_premia, underlying_price);
         return (premia=adjusted_call_premia);
     }
     return (premia=put_premia);
@@ -181,11 +181,11 @@ func _calc_new_pool_balance_with_premia{
 }(side: felt, current_pool_balance: felt, total_premia: felt) -> (pool_balance: felt) {
     if (side == TRADE_SIDE_LONG) {
         // User goes long and pays premia to the pool_balance
-        let (long_pool_balance) = Math64x61.add(current_pool_balance, total_premia);
+        let long_pool_balance = Math64x61.add(current_pool_balance, total_premia);
         return (long_pool_balance,);
     }
     // User goes short and pool pays premia to the user
-    let (short_pool_balance) = Math64x61.sub(current_pool_balance, total_premia);
+    let short_pool_balance = Math64x61.sub(current_pool_balance, total_premia);
     return (short_pool_balance,);
 }
 
@@ -196,14 +196,14 @@ func _time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: felt) ->
     local syscall_ptr: felt* = syscall_ptr;  // Reference revoked fix
 
     let (currtime) = get_block_timestamp();  // is number of seconds... unix timestamp
-    let (currtime_math) = Math64x61.fromFelt(currtime);
-    let (maturity_math) = Math64x61.fromFelt(maturity);
-    let (secs_in_year) = Math64x61.fromFelt(60 * 60 * 24 * 365);
+    let currtime_math = Math64x61.fromFelt(currtime);
+    let maturity_math = Math64x61.fromFelt(maturity);
+    let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
 
-    let (secs_left) = Math64x61.sub(maturity_math, currtime_math);
+    let secs_left = Math64x61.sub(maturity_math, currtime_math);
     assert_nn(secs_left);
 
-    let (time_till_maturity) = Math64x61.div(secs_left, secs_in_year);
+    let time_till_maturity = Math64x61.div(secs_left, secs_in_year);
     return (time_till_maturity,);
 }
 
@@ -230,22 +230,22 @@ func _calc_new_pool_balance_with_locked_capital{
     if (side == TRADE_SIDE_SHORT) {
         // pool unlocks locked capital in size of to_be_traded
         if (option_type == OPTION_CALL) {
-            let (to_be_traded_call_short) = Math64x61.add(current_pool_balance, to_be_traded);
+            let to_be_traded_call_short = Math64x61.add(current_pool_balance, to_be_traded);
             return (to_be_traded_call_short,);
         }
-        let (to_be_traded_put) = Math64x61.mul(to_be_traded, strike_price);
-        let (to_be_traded_put_short) = Math64x61.add(current_pool_balance, to_be_traded_put);
+        let to_be_traded_put = Math64x61.mul(to_be_traded, strike_price);
+        let to_be_traded_put_short = Math64x61.add(current_pool_balance, to_be_traded_put);
         return (to_be_traded_put_short,);
     }
     // here the side = TRADE_SIDE_LONG
     if (option_type == OPTION_CALL) {
         assert_nn_le(to_be_minted, current_pool_balance - 1);
-        let (to_be_minted_call_long) = Math64x61.sub(current_pool_balance, to_be_minted);
+        let to_be_minted_call_long = Math64x61.sub(current_pool_balance, to_be_minted);
         return (to_be_minted_call_long,);
     }
-    let (to_be_minted_put) = Math64x61.mul(to_be_minted, strike_price);
+    let to_be_minted_put = Math64x61.mul(to_be_minted, strike_price);
     assert_nn_le(to_be_minted_put, current_pool_balance - 1);
-    let (to_be_minted_put_long) = Math64x61.sub(current_pool_balance, to_be_minted_put);
+    let to_be_minted_put_long = Math64x61.sub(current_pool_balance, to_be_minted_put);
     return (to_be_minted_put_long,);
 }
 
@@ -257,10 +257,10 @@ func _add_premia_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
     // if side == TRADE_SIDE_SHORT (user receives premia) the fees are subtracted from the premia
     if (side == TRADE_SIDE_LONG) {
-        let (premia_fees_add) = Math64x61.add(total_premia_before_fees, total_fees);
+        let premia_fees_add = Math64x61.add(total_premia_before_fees, total_fees);
         return (premia_fees_add,);
     }
-    let (premia_fees_sub) = Math64x61.sub(total_premia_before_fees, total_fees);
+    let premia_fees_sub = Math64x61.sub(total_premia_before_fees, total_fees);
     return (premia_fees_sub,);
 }
 
@@ -268,10 +268,10 @@ func _get_vol_update_denominator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     relative_option_size: felt, side: felt
 ) -> (relative_option_size: felt) {
     if (side == TRADE_SIDE_LONG) {
-        let (long_denominator) = Math64x61.sub(Math64x61.ONE, relative_option_size);
+        let long_denominator = Math64x61.sub(Math64x61.ONE, relative_option_size);
         return (long_denominator,);
     }
-    let (short_denominator) = Math64x61.add(Math64x61.ONE, relative_option_size);
+    let short_denominator = Math64x61.add(Math64x61.ONE, relative_option_size);
     return (short_denominator,);
 }
 
@@ -283,16 +283,16 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (current_pool_balance) = get_pool_balance(option_type);
     assert_nn_le(Math64x61.ONE, current_pool_balance);
     assert_nn_le(option_size, current_pool_balance);
-    let (relative_option_size) = Math64x61.div(option_size, current_pool_balance);
+    let relative_option_size = Math64x61.div(option_size, current_pool_balance);
 
     // alpha – rate of change assumed to be 1
     let (denominator) = _get_vol_update_denominator(relative_option_size, side);
-    let (volatility_scale) = Math64x61.div(Math64x61.ONE, denominator);
-    let (new_volatility) = Math64x61.mul(current_volatility, volatility_scale);
+    let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
+    let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
 
-    let (volsum) = Math64x61.add(current_volatility, new_volatility);
-    let (two) = Math64x61.fromFelt(2);
-    let (trade_volatility) = Math64x61.div(volsum, two);
+    let volsum = Math64x61.add(current_volatility, new_volatility);
+    let two = Math64x61.fromFelt(2);
+    let trade_volatility = Math64x61.div(volsum, two);
 
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);
 }
@@ -303,7 +303,7 @@ func _get_option_size_in_pool_currency{
     if (option_type == OPTION_CALL) {
         return (option_size,);
     }
-    let (adjusted_option_size) = Math64x61.mul(option_size, underlying_price);
+    let adjusted_option_size = Math64x61.mul(option_size, underlying_price);
     return (adjusted_option_size,);
 }
 
@@ -340,10 +340,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (time_till_maturity) = _time_till_maturity(maturity);
 
     // 5) risk free rate
-    // let (three) = Math64x61.fromFelt(3)
-    // let (hundred) = Math64x61.fromFelt(100)
-    // let (risk_free_rate_annualized) = Math64x61.div(three, hundred)
-    let (risk_free_rate_annualized) = Math64x61.fromFelt(0);
+    // let three = Math64x61.fromFelt(3)
+    // let hundred = Math64x61.fromFelt(100)
+    // let risk_free_rate_annualized = Math64x61.div(three, hundred)
+    let risk_free_rate_annualized = Math64x61.fromFelt(0);
 
     // 6) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
@@ -368,7 +368,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
-    let (total_premia_before_fees) = Math64x61.mul(premia, option_size);
+    let total_premia_before_fees = Math64x61.mul(premia, option_size);
 
     // 7) Get fees
     // fees are already in the currency same as premia
@@ -405,8 +405,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     // available_option_balance is always >= 0
     // FIXME test, check and potentially repair... that the option_balances are correctly updated
-    let (to_be_traded) = Math64x61.min(available_option_balance, option_size);
-    let (to_be_minted) = Math64x61.sub(option_size, to_be_traded);
+    let to_be_traded = Math64x61.min(available_option_balance, option_size);
+    let to_be_minted = Math64x61.sub(option_size, to_be_traded);
 
     // 3) Update the pool_option_balance
     // decrease by to_be_traded (same side as is input "side")
@@ -419,9 +419,9 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // keeps short and puts it into the pool
     //   -> increase the "opposite_sied" of pool_option_balance
 
-    let (new_pool_option_balance) = Math64x61.sub(available_option_balance, to_be_traded);
+    let new_pool_option_balance = Math64x61.sub(available_option_balance, to_be_traded);
     set_pool_option_balance(option_type, strike_price, maturity, side, new_pool_option_balance);
-    let (new_opposite_pool_option_balance) = Math64x61.add(
+    let new_opposite_pool_option_balance = Math64x61.add(
         available_opposite_option_balance, to_be_minted
     );
     set_pool_option_balance(
