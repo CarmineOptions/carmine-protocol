@@ -570,9 +570,9 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     with_attr error_message("Required contract doesn't match the address.") {
         assert contract_option_type = option_type;
-        assert contract_strike = strike;
+        assert contract_strike = strike_price;
         assert contract_maturity = maturity;
-        assert contract_option_side = side;
+        assert contract_option_side = option_side;
     }
 
     // Make sure that user owns the option tokens
@@ -685,10 +685,30 @@ func expire_option_token_for_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 }
 
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt, option_type: felt, option_side: felt, strike_price: felt
+    amount: felt,
+    option_type: felt,
+    option_side: felt,
+    strike_price: felt,
+    option_token_address: felt,
+    maturity: felt,
+
 ) {
     // FIXME: this could be called by anyone and it releases the locked capital for pool (in pool to pool)
     alloc_locals;
+    // Make sure the contract is the one that user wishes to expire
+    let (contract_option_type) = IOptionToken.option_type(option_token_address);
+    let (contract_strike) = IOptionToken.strike(option_token_address);
+    let (contract_maturity) = IOptionToken.maturity(option_token_address);
+    let (contract_option_side) = IOptionToken.side(option_token_address);
+    let (current_contract_address) = get_contract_address();
+
+    with_attr error_message("Required contract doesn't match the address.") {
+        assert contract_option_type = option_type;
+        assert contract_strike = strike;
+        assert contract_maturity = maturity;
+        assert contract_option_side = side;
+    }
+    
 
     return ();
 }
