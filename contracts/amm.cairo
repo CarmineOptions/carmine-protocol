@@ -5,6 +5,7 @@
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
+from starkware.cairo.common.math_cmp import is_le
 from starkware.starknet.common.syscalls import get_block_timestamp
 from math64x61 import Math64x61
 
@@ -407,6 +408,34 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     return (premia=premia);
 }
 
+func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    side : OptionSide,
+    option_size : Math64x61_,
+    underlying_asset: felt,
+    open_position: Bool, // True or False... determines if the user wants to open or close the position
+) -> () {
+    let (terminal_price) = FIXME;
+
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
+        underlying_asset,
+        option_type
+    );
+
+    ILiquidityPool.expire_option_token(
+        contract_address=pool_address,
+        option_type=option_type,
+        option_side=side,
+        strike_price=strike_price,
+        terminal_price=terminal_price,
+        amount=option_size,
+        maturity=maturity,
+    );
+    return ();
+}
+
 
 @external
 func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -450,19 +479,30 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         assert (open_position - TRUE) * (open_position - fALSE) = 0;
     }
 
-    // Check that maturity hasn't passed
-    // FIXME: in case open_position==FALSE the user might want to expire the option
-    let (currtime) = get_block_timestamp();
-    with_attr error_message("Given maturity has already expired") {
-        assert_le(currtime, maturity);
-    }
-    with_attr error_message("Trading of given maturity has been stopped before expiration") {
-        assert_le(currtime, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
-    }
-
     // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
     with_attr error_message("Option size is not positive") {
         assert_le(1, option_size);
+    }
+
+    // Check that maturity hasn't matured in case of open_position=TRUE
+    // If open_position=FALSE it means the user wants to close or settle the option
+    let (current_block_time) = get_block_timestamp();
+    if open_position == TRUE {
+        with_attr error_message("Given maturity has already expired") {
+            assert_le(current_block_time, maturity);
+        }
+        with_attr error_message("Trading of given maturity has been stopped before expiration") {
+            assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+        }
+    } else {
+        let (is_not_ripe) = is_le(current_block_time, maturity);
+        let (cannot_be_closed) = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
+        let (cannot_be_closed_or_settled) = is_not_ripe * cannot_be_closed
+        with_attr error_message(
+            "Closing positions or settling option of given maturity is not possible just before expiration"
+        ) {
+            assert cannot_be_closed_or_settled = 0;
+        }
     }
 
     // Check that account has enough amount of given token to pay for premia and/or locked capital.
@@ -483,15 +523,28 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         );
         return (premia=premia);
     } else {
-        // FIXME: add the call to expire option
-        let (premia) = close_position(
-            option_type,
-            strike_price,
-            maturity,
-            side,
-            option_size,
-            underlying_asset
-        );
-        return (premia=premia);
+        let (can_be_closed) = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+        if can_be_closed == TRUE {
+            let (premia) = close_position(
+                option_type,
+                strike_price,
+                maturity,
+                side,
+                option_size,
+                underlying_asset
+            );
+            return (premia=premia);
+        } else {
+            expire_option_token(
+                option_type=option_type,
+                strike_price=strike_price,
+                maturity=maturity,
+                side=side,
+                option_size=option_size,
+                underlying_asset=underlying_asset,
+                open_position=open_position
+            )
+            return (premia=0)
+        }
     }
 }

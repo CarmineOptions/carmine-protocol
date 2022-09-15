@@ -9,7 +9,7 @@ from interface_option_token import IOptionToken
 
 from helpers import max
 from starkware.cairo.common.math import abs_value
-from starkware.cairo.common.math_cmp import is_nn
+from starkware.cairo.common.math_cmp import is_nn, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -537,8 +537,6 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // return amount - (max(0, amount * (strike_price - current_price)) in ETH)
 
 func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt,
-    option_token_address: felt,
     option_type: felt,
     option_side: felt,
     strike_price: felt,
@@ -547,6 +545,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     maturity: felt,
 ) {
     alloc_locals;
+
+    let (option_token_address) = get_option_token_address(
+        option_side=side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    let (currency_address) = FIXME
 
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
