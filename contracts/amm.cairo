@@ -300,7 +300,6 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    // FIXME: switch from separate premia and fees to using combined number here
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
         amount=option_size,
@@ -308,8 +307,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         option_type=option_type,
         maturity=maturity,
         strike=strike_price,
-        premia=total_premia_before_fees,
-        fees=total_fees,
+        premia_including_fees=total_premia,
         underlying_price=underlying_price,
     );
 
@@ -390,7 +388,6 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_premia) = _add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    // FIXME: switch from separate premia and fees to using combined number her
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,
         amount=option_size,
@@ -398,8 +395,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         option_type=option_type,
         maturity=maturity,
         strike=strike_price,
-        premia=total_premia_before_fees,
-        fees=total_fees,
+        premia_including_fees=total_premia,
         underlying_price=underlying_price,
     );
 
