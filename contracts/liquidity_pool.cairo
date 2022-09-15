@@ -47,7 +47,7 @@ from constants import (
 //     let (lpt_supply) = totalSupply()
 //     let (own_addr) = get_contract_address()
 //     let (reserves) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
-//     let (exchange_rate) = Math64x61_div(lpt_supply, reserves)
+//     let exchange_rate = Math64x61_div(lpt_supply, reserves)
 //     return (exchange_rate)
 // end
 

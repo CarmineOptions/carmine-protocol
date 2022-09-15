@@ -79,18 +79,18 @@ func test_do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     // set some constants
     const account_id = 123456789;
-    let (hundred) = Math64x61.fromFelt(100);
-    let (strike_1000) = Math64x61.fromFelt(1000);
-    let (strike_1100) = Math64x61.fromFelt(1100);
-    let (two) = Math64x61.fromFelt(2);
-    let (half) = Math64x61.div(Math64x61.ONE, two);
-    let (one_and_half) = Math64x61.add(Math64x61.ONE, half);
+    let hundred = Math64x61.fromFelt(100);
+    let strike_1000 = Math64x61.fromFelt(1000);
+    let strike_1100 = Math64x61.fromFelt(1100);
+    let two = Math64x61.fromFelt(2);
+    let half = Math64x61.div(Math64x61.ONE, two);
+    let one_and_half = Math64x61.add(Math64x61.ONE, half);
     let maturity_01 = 1644145200;
     let maturity_1 = 1672527600;
 
     // initialize pools
-    let (pool_balance_call) = Math64x61.fromFelt(12345);
-    let (pool_balance_put) = Math64x61.fromFelt(12345);
+    let pool_balance_call = Math64x61.fromFelt(12345);
+    let pool_balance_put = Math64x61.fromFelt(12345);
 
     init_pool(pool_balance_call, pool_balance_put);
     add_fake_tokens(account_id, hundred, hundred);

@@ -29,10 +29,10 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt
 
     let is_convertable = is_le(price, Math64x61.INT_PART);
     if (is_convertable == TRUE) {
-        let (converted_price) = Math64x61.fromFelt(price);
+        let converted_price = Math64x61.fromFelt(price);
         let (pow10xM) = pow10(decimals);
-        let (pow10xM_to_64x61) = Math64x61.fromFelt(pow10xM);
-        let (price_64x61) = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61);
+        let pow10xM_to_64x61 = Math64x61.fromFelt(pow10xM);
+        let price_64x61 = Math64x61_div_imprecise(converted_price, pow10xM_to_64x61);
         return (price_64x61,);
     }
 
@@ -45,7 +45,7 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt
     let (a) = convert_price(c, decimals_2);
     let (b) = convert_price(remainder, decimals);
 
-    let (res) = Math64x61.add(a, b);
+    let res = Math64x61.add(a, b);
 
     // FIXME: THIS HAS TO VALIDATED THAT THE ROUNDING CAUSED BY THE IMPRECISE CALCULATIONS IS NOT TOO BIG
 
