@@ -425,20 +425,35 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         strike_price,
         maturity
     );
-    assert option_is_available = TRUE;
+    with_attr error_message("Option is not available") {
+        assert option_is_available = TRUE;
+    }
 
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    with_attr error_message("Given option_type is not available") {
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
 
-    assert (option_side - TRADE_SIDE_LONG) * (option_side - OPTION_PUT) = 0;
+    with_attr error_message("Given option_side is not available") {
+        assert (option_side - TRADE_SIDE_LONG) * (option_side - TRADE_SIDE_SHORT) = 0;
+    }
 
-    assert (open_position - TRUE) * (open_position - FALSE) = 0;
+    with_attr error_message("open_position is not bool") {
+        assert (open_position - TRUE) * (open_position - fALSE) = 0;
+    }
 
     // Check that maturity hasn't passed
     let (currtime) = get_block_timestamp();
-    assert_le(currtime, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+    with_attr error_message("Given maturity has already expired") {
+        assert_le(currtime, maturity);
+    }
+    with_attr error_message("Trading of given maturity has been stopped before expiration") {
+        assert_le(currtime, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+    }
 
     // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
-    assert_le(1, option_size);
+    with_attr error_message("Option size is not positive") {
+        assert_le(1, option_size);
+    }
 
     // Check that account has enough amount of given token to pay for premia and/or locked capital.
     // If this is not the case, the transaction fails, because the tokens can't be transfered.
