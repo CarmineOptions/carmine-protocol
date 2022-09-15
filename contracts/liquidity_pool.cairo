@@ -542,7 +542,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     option_type: felt,
     option_side: felt,
     strike_price: felt,
-    underlying_price: felt,
+    terminal_price: felt, // terminal price is price at which option is being settled
     amount: felt,
     maturity: felt,
 ) {
@@ -578,8 +578,9 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         assert is_ripe = 1;
     }
 
+    // long_value and short_value are both in terms of locked capital
     let (long_value, short_value) = split_option_locked_capital(
-        option_type, option_side, strike_price, underlying_price, amount, maturity
+        option_type, option_side, strike_price, strike_price, terminal_price
     );
 
     if (option_side == TRADE_SIDE_LONG) {
@@ -621,32 +622,31 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     option_side: felt,
     option_size: felt,
     strike_price: felt,
-    underlying_price: felt,
+    terminal_price: felt, // terminal price is price at which option is being settled
 ) -> (long_value: felt, short_value: felt) {
     alloc_locals;
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     if (option_type == OPTION_CALL) {
-        // User receives max(0, amount * (current_price - strike_price)) in base token for long
-        // User receives (amount - long_amount) for short
-        let price_diff = underlying_price - strike_price;
-        let to_be_paid_quote = amount * price_diff;
-        let to_be_paid_base = to_be_paid / underlying_price;
+        // User receives max(0, option_size * (terminal_price - strike_price) / terminal_price) in base token for long
+        // User receives (option_size - long_profit) for short
+        let price_diff = terminal_price - strike_price;
+        let to_be_paid_quote = option_size * price_diff;
+        let to_be_paid_base = to_be_paid / terminal_price;
         let to_be_paid_buyer = max(0, to_be_paid_base);
-        let to_be_paid_seller = option_size * strike_price - to_be_paid_buyer;
+        let to_be_paid_seller = option_size - to_be_paid_buyer;
 
         return (to_be_paid_buyer, to_be_paid_seller);
     }
 
     // For Put option
-    // User receives  max(0, amount * (strike_price - current_price)) in base token for long
-    // User receives (amount - long_amount) for short
-    let price_diff = strike_price - underlying_price;
-    let amount_x_diff_quote = option_size * strike_price * price_diff;
-    let amount_x_diff_base = amount_x_diff_quote / underlying_price;
-    let to_be_paid_buyer = max(0, amount_x_diff_base);
-    let to_be_paid_sellet = option_size * strike_price - to_be_paid_buyer;
+    // User receives  max(0, option_size * (strike_price - terminal_price)) in base token for long
+    // User receives (option_size * strike_price - long_profit) for short
+    let price_diff = strike_price - terminal_price;
+    let amount_x_diff_quote = option_size * price_diff;
+    let to_be_paid_buyer = max(0, amount_x_diff_quote);
+    let to_be_paid_seller = option_size * strike_price - to_be_paid_buyer;
 
     return (to_be_paid_buyer, to_be_paid_seller);
 }
@@ -658,8 +658,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     strike_price: felt,
     option_token_address: felt,
     maturity: felt,
-    underlying_price: felt
-
+    terminal_price: felt
 ) {
     alloc_locals;
    
@@ -685,8 +684,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert is_ripe = 1;
     }
 
-    let (long_value, short_value)  = split(option_locked_capital(
-        option_type, option_side, strike_price, underlying_price, amount, maturity
+    let (long_value, short_value)  = split_option_locked_capital(
+        option_type, option_side, option_size, strike_price, terminal_price
     );
 
     if (option_side == TRADE_SIDE_LONG) {

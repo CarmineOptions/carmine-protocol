@@ -235,6 +235,11 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
+// ############################
+// AMM Trade, Close and Expire
+// ############################
+
+
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: OptionType,
     strike_price: Math64x61_,
@@ -446,6 +451,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     }
 
     // Check that maturity hasn't passed
+    // FIXME: in case open_position==FALSE the user might want to expire the option
     let (currtime) = get_block_timestamp();
     with_attr error_message("Given maturity has already expired") {
         assert_le(currtime, maturity);
@@ -477,6 +483,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         );
         return (premia=premia);
     } else {
+        // FIXME: add the call to expire option
         let (premia) = close_position(
             option_type,
             strike_price,
