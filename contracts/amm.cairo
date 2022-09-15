@@ -2,9 +2,9 @@
 
 %lang starknet
 
-from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import assert_nn_le, assert_nn
+from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
 from starkware.starknet.common.syscalls import get_block_timestamp
 from math64x61 import Math64x61
 
@@ -16,6 +16,7 @@ from contracts.constants import (
     TRADE_SIDE_LONG,
     TRADE_SIDE_SHORT,
     RISK_FREE_RATE,
+    STOP_TRADING_BEFORE_MATURITY_SECONDS,
     EMPIRIC_ETH_USD_KEY
 )
 from contracts.fees import get_fees
@@ -95,7 +96,7 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
 
 @view
 func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: OptionType, strike_price: Math64x61_, maturity: Int
+    underlying_asset: felt, option_type: OptionType, strike_price: Math64x61_, maturity: Int
 ) -> (option_availability: felt) {
     // FIXME: get this information from liquidity pool
     let (option_availability_) = available_options.read(option_type, strike_price, maturity);
@@ -108,7 +109,10 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 // ############################
 
 func _select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    call_premia: Math64x61_, put_premia: Math64x61_, option_type: OptionType, underlying_price: Math64x61_
+    call_premia: Math64x61_,
+    put_premia: Math64x61_,
+    option_type: OptionType,
+    underlying_price: Math64x61_
 ) -> (premia: Math64x61_) {
     // Call and Put premia on input are in quote tokens (in USDC in case of ETH/USDC)
     // This function puts them into their respective currency
@@ -233,7 +237,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     alloc_locals;
 
     // 0) Get pool address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type);
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
+        underlying_asset,
+        option_type
+    );
 
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(pool_address, maturity);
@@ -308,57 +315,6 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (premia=premia);
 }
 
-@external
-func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    option_type : OptionType,
-    strike_price : Math64x61_,
-    maturity : Int,
-    side : OptionSide,
-    option_size : Math64x61_,
-    underlying_asset: felt,
-    open_position: Bool, // True or False... determines if the user wants to open or close the position
-) -> (premia : Math64x61_) {
-    if open_position == TRUE {
-        // FIXME: with get_available_options check that option is available
-
-        // option_type is from {OPTION_CALL, OPTION_PUT}
-        // option_size is denominated in TOKEN_A (ETH)
-        // side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
-            // ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
-            // means that user is underwriting the option.
-
-        // 1) Check that account has enough amount of given token to
-            // - to pay the fee
-            // - to pay the premia in case of size==TRADE_SIDE_LONG
-            // - to lock in capital in case of size==TRADE_SIDE_SHORT
-            // FIXME: do this once test or actual capital is used
-
-        // 2) Check that there is enough available capital in the given pool_balance
-            // - to pay the premia in case of size==TRADE_SIDE_LONG
-            // - to lock in capital in case of size==TRADE_SIDE_SHORT
-
-        // 3) Check that the strike_price > 0, check that the maturity haven't passed yet
-
-        // 4) Check that the strike_price x maturity option is at all available
-
-        // 5) Check that option_size>0
-
-        let (premia) = do_trade(option_type, strike_price, maturity, side, option_size, underlying_asset);
-        return (premia=premia);
-    } else {
-        // FIXME: needs verification as above
-        let (premia) = close_position(
-            option_type,
-            strike_price,
-            maturity,
-            side,
-            option_size,
-            underlying_asset
-        );
-        return (premia=premia);
-    }
-}
-
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -375,7 +331,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     alloc_locals;
 
     // 0) Get pool address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(underlying_asset, option_type);
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
+        underlying_asset,
+        option_type
+    );
 
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(pool_address, maturity);
@@ -447,4 +406,66 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
 
     return (premia=premia);
+}
+
+
+@external
+func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    side : OptionSide,
+    option_size : Math64x61_,
+    underlying_asset: felt,
+    open_position: Bool, // True or False... determines if the user wants to open or close the position
+) -> (premia : Math64x61_) {
+    let (option_is_available) = get_available_options(
+        underlying_asset,
+        option_type,
+        strike_price,
+        maturity
+    );
+    assert option_is_available = TRUE;
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    assert (option_side - TRADE_SIDE_LONG) * (option_side - OPTION_PUT) = 0;
+
+    assert (open_position - TRUE) * (open_position - FALSE) = 0;
+
+    // Check that maturity hasn't passed
+    let (currtime) = get_block_timestamp();
+    assert_le(currtime, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+
+    // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
+    assert_le(1, option_size);
+
+    // Check that account has enough amount of given token to pay for premia and/or locked capital.
+    // If this is not the case, the transaction fails, because the tokens can't be transfered.
+
+    // Check that there is enough available capital in the given pool.
+    // If this is not the case, the transaction fails, because the tokens can't be transfered.
+
+    if open_position == TRUE {
+
+        let (premia) = do_trade(
+            option_type,
+            strike_price,
+            maturity,
+            side,
+            option_size,
+            underlying_asset
+        );
+        return (premia=premia);
+    } else {
+        let (premia) = close_position(
+            option_type,
+            strike_price,
+            maturity,
+            side,
+            option_size,
+            underlying_asset
+        );
+        return (premia=premia);
+    }
 }

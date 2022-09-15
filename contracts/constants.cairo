@@ -59,7 +59,9 @@ const TOKEN_DAI_ADDRESS = ...
 // ############################
 
 const FEE_PROPORTION_PERCENT = 3;
-const RISK_FREE_RATE = Math64x61.fromFelt(0)
+const RISK_FREE_RATE = Math64x61.fromFelt(0);
+// Stops trading x amount of seconds before given option matures.
+const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
 
 
 // ############################
