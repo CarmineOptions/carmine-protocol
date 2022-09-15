@@ -39,19 +39,19 @@ const TRADE_SIDE_SHORT = 1;
 func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     side : felt
 ) -> (opposite_side : felt) {
-    assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0
-    if side == TRADE_SIDE_LONG {
-        return (TRADE_SIDE_SHORT)
+    assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0;
+    if (side == TRADE_SIDE_LONG) {
+        return (TRADE_SIDE_SHORT,);
     }
-    return (TRADE_SIDE_LONG)
+    return (TRADE_SIDE_LONG,);
 }
 
 // ############################
 // Token addresses
 // ############################
 
-const TOKEN_ETH_ADDRESS = ...
-const TOKEN_DAI_ADDRESS = ...
+const TOKEN_ETH_ADDRESS = 123;
+const TOKEN_DAI_ADDRESS = 456;
 
 
 // ############################
@@ -59,7 +59,7 @@ const TOKEN_DAI_ADDRESS = ...
 // ############################
 
 const FEE_PROPORTION_PERCENT = 3;
-const RISK_FREE_RATE = Math64x61.fromFelt(0);
+const RISK_FREE_RATE = 0; // Same as Math64x61.fromFelt(0)
 // Stops trading x amount of seconds before given option matures.
 const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
 

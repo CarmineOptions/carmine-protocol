@@ -7,7 +7,7 @@ from math64x61 import Math64x61
 from contracts.amm import (
     _time_till_maturity,
     do_trade,
-    get_pool_balance,
+    get_pool_available_balance,
     get_pool_option_balance,
     get_pool_volatility,
 )
@@ -24,9 +24,10 @@ from contracts.constants import (
     TRADE_SIDE_SHORT,
     get_opposite_side,
     STRIKE_PRICE_UPPER_BOUND,
+    EMPIRIC_ORACLE_ADDRESS,
+    EMPIRIC_ETH_USD_KEY
 )
 from contracts.initialize_amm import init_pool, add_fake_tokens
-from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY
 from contracts.oracles import empiric_median_price
 
 @external
@@ -100,7 +101,7 @@ func test_do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     // Assuming the BS model is correctly computed
     // 12445 + premia + locked capital = 12445 + 0.1255... - 1
-    let (result_1) = get_pool_balance(OPTION_CALL);
+    let (result_1) = get_pool_available_balance(OPTION_CALL);
     let target_1 = 28694208692467424729200;  // 12444.129360850251
     assert result_1 = target_1;
 
@@ -116,7 +117,7 @@ func test_do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     // The PUT is in quote token (CALL in base token... base/quote = ETH/USDC),
     // thats why we have such a difference here in comparison to the above trade
     // there is no locked capital here, since that is done by the user
-    let (result_2) = get_pool_balance(OPTION_PUT);
+    let (result_2) = get_pool_available_balance(OPTION_PUT);
     let target_2 = 28173057822536112443789;  // 12445 - 2 * 125.5... * 0.97
     assert result_2 = target_2;
 
@@ -180,13 +181,13 @@ func test_do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     // Test pool_balance
     // Call pool did not change
-    let (result_31) = get_pool_balance(OPTION_CALL);
+    let (result_31) = get_pool_available_balance(OPTION_CALL);
     let target_31 = target_1;
     assert result_31 = target_31;
 
     // Put pool increased by premia a didn't change by locked capital since the option
     // was taken from pool_option_balance
-    let (result_32) = get_pool_balance(OPTION_PUT);
+    let (result_32) = get_pool_available_balance(OPTION_PUT);
     // 12445 - 2 * 125.58804990779984 * 0.97 + .5 * 125.5... * 1.03
     let target_32 = 28304391752284495666398;
     assert result_32 = target_32;
@@ -224,13 +225,13 @@ func test_do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     // Test pool_balance
     // Call pool did not change
-    let (result_41) = get_pool_balance(OPTION_CALL);
+    let (result_41) = get_pool_available_balance(OPTION_CALL);
     let target_41 = target_1;
     assert result_41 = target_41;
 
     // Put pool increased by premia and didn't change by locked capital since the option
     // was taken from pool_option_balance
-    let (result_42) = get_pool_balance(OPTION_PUT);
+    let (result_42) = get_pool_available_balance(OPTION_PUT);
     // 12445 - 2 * 125.58804990779984 * 0.97 + 2.5 * 125.5... * 1.03 - 0.5*1000
     let target_42 = 27739567380444046229159;
     assert result_42 = target_42;

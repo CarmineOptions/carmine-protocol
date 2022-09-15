@@ -92,7 +92,7 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
     let (pool_balance_) = ILiquidityPool.get_option_token_unlocked_capital(
         contract_address=pool_address
     );
-    return (pool_balance_)
+    return (pool_balance_,);
 }
 
 
@@ -106,8 +106,8 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         maturity=maturity,
         strike_price=strike_price
     );
-    # FIXME: create unit test for this
-    if option_address == 0 {
+    // FIXME: create unit test for this
+    if (option_address == 0) {
         return (FALSE,);
     }
 
@@ -232,7 +232,8 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     underlying_asset: felt
 ) -> (empiric_key: felt) {
-    return (EMPIRIC_ETH_USD_KEY,)
+    return (EMPIRIC_ETH_USD_KEY,);
+}
 
 
 func _get_option_size_in_pool_currency{
@@ -273,7 +274,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (current_volatility) = get_pool_volatility(pool_address, maturity);
 
     // 2) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(underlying_asset)
+    let (empiric_key) = get_empiric_key(underlying_asset);
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatilit
@@ -349,7 +350,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     alloc_locals;
 
-    let (opposite_side) = get_opposite_side(side)
+    let (opposite_side) = get_opposite_side(side);
 
     // 0) Get pool address
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(
@@ -361,7 +362,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (current_volatility) = get_pool_volatility(pool_address, maturity);
 
     // 2) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(underlying_asset)
+    let (empiric_key) = get_empiric_key(underlying_asset);
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatilit
@@ -418,7 +419,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     return (premia=premia);
 }
 
-func expire_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
@@ -497,7 +498,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     // Check that maturity hasn't matured in case of open_position=TRUE
     // If open_position=FALSE it means the user wants to close or settle the option
     let (current_block_time) = get_block_timestamp();
-    if open_position == TRUE {
+    if (open_position == TRUE) {
         with_attr error_message("Given maturity has already expired") {
             assert_le(current_block_time, maturity);
         }
@@ -507,7 +508,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     } else {
         let (is_not_ripe) = is_le(current_block_time, maturity);
         let (cannot_be_closed) = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
-        let (cannot_be_closed_or_settled) = is_not_ripe * cannot_be_closed
+        let (cannot_be_closed_or_settled) = is_not_ripe * cannot_be_closed;
         with_attr error_message(
             "Closing positions or settling option of given maturity is not possible just before expiration"
         ) {
@@ -521,8 +522,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     // Check that there is enough available capital in the given pool.
     // If this is not the case, the transaction fails, because the tokens can't be transfered.
 
-    if open_position == TRUE {
-
+    if (open_position == TRUE) {
         let (premia) = do_trade(
             option_type,
             strike_price,
@@ -534,7 +534,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         return (premia=premia);
     } else {
         let (can_be_closed) = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
-        if can_be_closed == TRUE {
+        if (can_be_closed == TRUE) {
             let (premia) = close_position(
                 option_type,
                 strike_price,
@@ -545,7 +545,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
             );
             return (premia=premia);
         } else {
-            expire_option_token(
+            settle_option_token(
                 option_type=option_type,
                 strike_price=strike_price,
                 maturity=maturity,
@@ -553,8 +553,8 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 option_size=option_size,
                 underlying_asset=underlying_asset,
                 open_position=open_position
-            )
-            return (premia=0)
+            );
+            return (premia=0);
         }
     }
 }

@@ -9,7 +9,7 @@ from interface_option_token import IOptionToken
 
 from helpers import max
 from starkware.cairo.common.math import abs_value
-from starkware.cairo.common.math_cmp import is_nn, is_le
+from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -19,14 +19,14 @@ from starkware.cairo.common.uint256 import (
 )
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
-k
-from constants import (
-    OPTION_CALL,
-    OPTION_PUT,
-    TRADE_SIDE_LONG,
-    // TRADE_SIDE_SHORT,
-    // get_opposite_side
-)
+
+// from constants import (
+//     OPTION_CALL,
+//     OPTION_PUT,
+//     TRADE_SIDE_LONG,
+//     TRADE_SIDE_SHORT,
+//     get_opposite_side
+// )
 
 // @external
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
@@ -210,7 +210,7 @@ func get_option_token_unlocked_capital(option_token_adress: felt) -> (unlocked_c
         account = own_addr
     );
     let unlocked_capital = contract_balance - locked_capital;
-    return (unlocked_capital = unlocked_capital)
+    return (unlocked_capital = unlocked_capital);
 }
 
 @storage_var
@@ -379,7 +379,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let new_locked_balance = current_locked_balance - premia_including_fees;
 
     with_attr error_message("Not enough capital") {
-        assert_nn(new_locked_balance)
+        assert_nn(new_locked_balance);
     }
        
     pool_locked_capital.write(new_locked_balance);
@@ -465,7 +465,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     );
 
     // Increase available capital by (amount - (premia + fees))
-    let (current_locked_balance) = pool_locked_capital.read():
+    let (current_locked_balance) = pool_locked_capital.read();
     let decrease_locked_by = (amount - premia) + fees;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
@@ -512,7 +512,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let new_locked_balance = current_locked_balance - premia_including_fees;
 
     with_attr error_message("Not enough capital") {
-        assert_nn(new_locked_balance)
+        assert_nn(new_locked_balance);
     }
 
     pool_locked_capital.write(new_locked_balance);
@@ -545,7 +545,8 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         maturity=maturity,
         strike_price=strike_price
     );
-    let (currency_address) = FIXME
+    // FIXME
+    let (currency_address) = 123;
 
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
@@ -608,12 +609,12 @@ func adjust_available_capital(adjust_by: felt) {
     let new_locked_capital = current_locked_capital - adjust_by;
 
     with_attr error_message("Not enough capital to expire option") {
-        assert_nn(new_locked_capital)
+        assert_nn(new_locked_capital);
     }
 
     pool_locked_capital.write(new_locked_balance);
 
-    return ()
+    return ();
 }
 
 func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(

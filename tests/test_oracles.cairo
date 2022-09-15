@@ -4,10 +4,11 @@ from starkware.cairo.common.pow import pow
 from starkware.cairo.common.math_cmp import is_le
 
 from math64x61 import Math64x61
+from lib.math_64x61_extended import Math64x61_div_imprecise
 
 from contracts.oracles import convert_price, empiric_median_price
-from lib.math_64x61_extended import Math64x61_div_imprecise
-from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMPIRIC_AGGREGATION_MODE
+from contracts.constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMPIRIC_AGGREGATION_MODE
+
 
 @external
 func test_convert_price{range_check_ptr}() {
