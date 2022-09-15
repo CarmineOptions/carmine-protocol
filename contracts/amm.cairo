@@ -81,7 +81,6 @@ func set_pool_address_for_given_asset_and_option_type{
 // Pool information handlers
 // ############################
 
-// FIXME: available options are set in contracts/liquidity_pool.cairo since it contains storage_var for it
 
 @view
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -89,18 +88,29 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
 ) -> (pool_balance: felt) {
     // Returns total locked capital in the pool minus the locked capital
     // (ie capital available to locking).
-    // FIXME: get this information from liquidity pool
+    let (pool_balance_) = ILiquidityPool.get_option_token_unlocked_capital(
+        contract_address=pool_address
+    );
     return (pool_balance_)
 }
 
 
 @view
-func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    underlying_asset: felt, option_type: OptionType, strike_price: Math64x61_, maturity: Int
+func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    pool_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
 ) -> (option_availability: felt) {
-    // FIXME: get this information from liquidity pool
-    let (option_availability_) = available_options.read(option_type, strike_price, maturity);
-    return (option_availability_,);
+    let (option_address) = ILiquidityPool.get_option_token_address(
+        contract_address=pool_address,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    # FIXME: create unit test for this
+    if option_address == 0 {
+        return (FALSE,);
+    }
+
+    return (TRUE,);
 }
 
 
@@ -187,6 +197,7 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     option_type: OptionType,
     side: OptionSide,
     underlying_price: Math64x61_,
+    pool_address: Address
 ) -> (new_volatility: Math64x61_, trade_volatility: Math64x61_) {
     // Calculates two volatilities, one for trade that is happening
     // and the other to update the volatility param (storage_var).
@@ -199,7 +210,7 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         option_size, option_type, underlying_price
     );
 
-    let (current_pool_balance) = get_pool_available_balance(option_type);
+    let (current_pool_balance) = get_pool_available_balance(pool_address);
     assert_nn_le(Math64x61.ONE, current_pool_balance);
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
     let (relative_option_size) = Math64x61.div(option_size_in_pool_currency, current_pool_balance);
@@ -251,7 +262,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     // 3) Calculate new volatility, calculate trade volatilit
     let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price
+        current_volatility, option_size, option_type, side, underlying_price, pool_address
     );
 
     // 4) Update volatility
@@ -289,19 +300,9 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-
-    // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
-    let (option_token_address) = ILiquidityPool.get_option_token_address(
-        contract_address=pool_address,
-        option_side=side,
-        option_type=option_type,
-        maturity=maturity,
-        strike_price=strike_price
-    );
     // FIXME: switch from separate premia and fees to using combined number here
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
-        option_token_address=option_token_address,
         amount=option_size,
         option_side=side,
         option_type=option_type,
@@ -345,7 +346,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 3) Calculate new volatility, calculate trade volatilit
     let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price
+        current_volatility, option_size, option_type, side, underlying_price, pool_address
     );
 
     // 4) Update volatility
@@ -383,18 +384,9 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    // FIXME: consider dropping the option_token_address and finding it inside of the liquidity_pool.mint_option_token
-    let (option_token_address) = ILiquidityPool.get_option_token_address(
-        contract_address=pool_address,
-        option_side=side,
-        option_type=option_type,
-        maturity=maturity,
-        strike_price=strike_price
-    );
     // FIXME: switch from separate premia and fees to using combined number her
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,
-        option_token_address=option_token_address,
         amount=option_size,
         option_side=side,
         option_type=option_type,
@@ -419,9 +411,13 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     underlying_asset: felt,
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> (premia : Math64x61_) {
-    let (option_is_available) = get_available_options(
+    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
         underlying_asset,
-        option_type,
+        option_type
+    );
+    let (option_is_available) = is_option_available(
+        pool_address,
+        side,
         strike_price,
         maturity
     );

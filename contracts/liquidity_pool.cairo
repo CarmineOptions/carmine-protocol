@@ -248,7 +248,6 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 //   for example how much capital is available, how much is locked,...
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    option_token_address: felt,
     amount: felt,
     option_side: felt,
     option_type: felt,
@@ -259,7 +258,6 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     underlying_price: felt,
 ) {
     // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
-    // option_token_address: felt,
     // amount: felt,  // in base tokens (ETH in case of ETH/USDC)
     // option_side: felt,
     // option_type: felt,
@@ -271,6 +269,12 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // FIXME: do we want to have the amount here as felt or do want it as uint256???
     alloc_locals;
+
+    let (option_token_address) = get_option_token_address(
+        option_side=side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
 
     // Make sure the contract is the one that user wishes to trade
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
@@ -409,7 +413,6 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is available, how much is locked,...
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_token_address: felt,
     amount: felt,
     option_side: felt,
     option_type: felt,
@@ -420,6 +423,12 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     underlying_price: felt,
 ) {
     alloc_locals;
+
+    let (option_token_address) = get_option_token_address(
+        option_side=side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
 
     // Make sure the contract is the one that user wishes to trade
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
