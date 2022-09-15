@@ -253,7 +253,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_side: felt,
     option_type: felt,
     maturity: felt,
-    strike: felt,
+    strike_price: felt,
     premia: felt,
     fees: felt,
     underlying_price: felt,
@@ -280,9 +280,9 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     with_attr error_message("Required contract doesn't match the address.") {
         assert contract_option_type = option_type;
-        assert contract_strike = strike;
+        assert contract_strike = strike_price;
         assert contract_maturity = maturity;
-        assert contract_option_side = side;
+        assert contract_option_side = option_side;
     }
 
     if (option_side == TRADE_SIDE_LONG) {
@@ -414,7 +414,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_side: felt,
     option_type: felt,
     maturity: felt,
-    strike: felt,
+    strike_price: felt,
     premia: felt,
     fees: felt,
     underlying_price: felt,
@@ -429,9 +429,9 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     with_attr error_message("Required contract doesnt match the address.") {
         assert contract_option_type = option_type;
-        assert contract_strike = strike;
+        assert contract_strike = strike_price;
         assert contract_maturity = maturity;
-        assert contract_option_side = side;
+        assert contract_option_side = option_side;
     };
 
     if (option_side == TRADE_SIDE_LONG) {
