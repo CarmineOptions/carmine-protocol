@@ -329,7 +329,13 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // Volatility is not updated since closing position is considered as
     // "user does not have opinion on the market state" - this may change down the line
 
+    // When the user is closing side is the side of the token being closed... for calculations
+    // we need opposite side, since the user is doing "opposite" action
+    // to acquiring the option token.
+
     alloc_locals;
+
+    let (opposite_side) = get_opposite_side(side)
 
     // 0) Get pool address
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(
@@ -346,7 +352,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 3) Calculate new volatility, calculate trade volatilit
     let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price, pool_address
+        current_volatility, option_size, option_type, opposite_side, underlying_price, pool_address
     );
 
     // 4) Update volatility
@@ -378,17 +384,17 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 8) Get fees
     // fees are already in the currency same as premia
-    // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    // if opposite_side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
+    // if opposite_side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
     let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
+    let (total_premia) = _add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
     // FIXME: switch from separate premia and fees to using combined number her
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,
         amount=option_size,
-        option_side=side,
+        option_side=opposite_side,
         option_type=option_type,
         maturity=maturity,
         strike=strike_price,
@@ -411,6 +417,12 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     underlying_asset: felt,
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> (premia : Math64x61_) {
+    // side is dependent on open_position...
+    //  if open_position=TRUE -> side is what the user want's to do as action
+    //  if open_position=False -> side is what the user want's to close
+    //      (side of the token that user holds)
+    //      This is very important is in close_position an opposite side is used
+
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(
         underlying_asset,
         option_type

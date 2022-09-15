@@ -253,8 +253,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_type: felt,
     maturity: felt,
     strike_price: felt,
-    premia: felt,
-    fees: felt,
+    premia_including_fees: felt,
     underlying_price: felt,
 ) {
     // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
@@ -263,8 +262,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // option_type: felt,
     // maturity: felt,  // felt in seconds
     // strike: felt,  // in Math64x61
-    // premia: felt,  // in Math64x61 in either base or quote token
-    // fees: felt,  // in Math64x61 in either base or quote token
+    // premia_including_fees: felt,  // in Math64x61 in either base or quote token
     // underlying_price: felt, // in Math64x61
 
     // FIXME: do we want to have the amount here as felt or do want it as uint256???
@@ -294,16 +292,14 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
-            premia=premia,
-            fees=fees,
+            premia_including_fees=premia_including_fees,
         );
     } else {
         _mint_option_token_short(
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
-            premia=premia,
-            fees=fees,
+            premia_including_fees=premia_including_fees,
             option_type=option_type,
             underlying_price=underlying_price,
         );
@@ -323,22 +319,19 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Mint tokens
     IOptionToken.mint(option_token_address, user_address, amount);
 
-    // User will pay (premia + fees)
-    let to_be_paid_by_user = premia + fees;
-
     // Move premia and fees from user to the pool
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
         recipient=current_contract_address,
-        amount=to_be_paid_by_user,
+        amount=premia_including_fees,
     );  // Transaction will fail if there is not enough fund on users account
 
-    // Decrease available capital by (amount - premia - fees)
+    // Decrease available capital by (amount - premia_including_fees)
     // We have storage_var only for locked, and unlocked is retrieved by subtracting
     // locked capital from total balance, to to decrease unlocked capital, increase locked
     let (current_locked_balance) = option_token_locked_capital.read();
-    let (increase_by) = amount - to_be_paid_by_user;
+    let (increase_by) = amount - premia_including_fees;
 
     let new_locked_balance = current_locked_balance + increase_by;
 
@@ -358,8 +351,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     currency_address: felt,
     option_token_address: felt,
     amount: felt,
-    premia: felt,
-    fees: felt,
+    premia_including_fees: felt,
     option_type: felt,
     underlying_price: felt,
 ) {
@@ -371,14 +363,11 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // Mint tokens
     IOptionToken.mint(option_token_address, user_address, amount);
 
-    // User will pay (amount - (premia - fees)))
-    let premia_less_fees = premia - fees;
-
     if (option_type == OPTION_PUT) {
         let amount_quote = Math64x61.mul(amount, underlying_price);
-        let to_be_paid_by_user = amount - premia_less_fees;
+        let to_be_paid_by_user = amount_quote - premia_including_fees;
     } else {
-        let to_be_paid_by_user = amount - premia_less_fees;
+        let to_be_paid_by_user = amount - premia_including_fees;
     }
 
     // Move (amount minus (premia minus fees)) from user to the pool
@@ -418,8 +407,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_type: felt,
     maturity: felt,
     strike_price: felt,
-    premia: felt,
-    fees: felt,
+    premia_including_fees: felt,
     underlying_price: felt,
 ) {
     alloc_locals;
@@ -448,16 +436,14 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
-            premia=premia,
-            fees=fees,
+            premia_including_fees=premia_including_fees,
         );
     } else {
         _burn_option_token_short(
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
-            premia=premia,
-            fees=fees,
+            premia_including_fees=premia_including_fees,
             option_type=option_type,
             underlying_price=underlying_price,
         );
@@ -467,7 +453,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt, option_token_address: felt, amount: felt, premia: felt, fees: felt
+    currency_address: felt, option_token_address: felt, amount: felt, premia_including_fees: felt
 ) {
     alloc_locals;
 
@@ -477,14 +463,11 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Burn the tokens
     IOptionToken.burn(option_token_address, user_address, amount);
 
-    // Send (premia - fees)  to user
-    let to_be_received_by_user = premia - fees;
-
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=current_contract_address,
         recipient=user_address,
-        amount=to_be_received_by_user,
+        amount=premia_including_fees,
     );
 
     // Increase available capital by (amount - (premia + fees))
@@ -501,8 +484,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     currency_address: felt,
     option_token_address: felt,
     amount: felt,
-    premia: felt,
-    fees: felt,
+    premia_including_fees: felt,
     option_type: felt,
     underlying_price: felt,
 ) {
@@ -514,9 +496,6 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // Burn the tokens
     IOptionToken.burn(option_token_address, user_address, amount);
 
-    // User pays (premia + fees)
-    let to_be_paid_by_user = premia + fees;
-
     // Retrieve locked capital to be paid to user
     if (option_type == OPTION_PUT) {
         let unlocked_capital_for_user = Math64x61.mul(strike_price, amount);
@@ -525,7 +504,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     }
 
     // User receives back its locked capital, pays premia and fees
-    let total_user_payment = unlocked_capital_for_user - to_be_paid_by_user;
+    let total_user_payment = unlocked_capital_for_user - premia_including_fees;
 
     IERC20.transferFrom(
         contract_address=currency_address,
@@ -534,10 +513,9 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         amount=total_user_payment,
     );
 
-    // Increase available capital by (premia - fees)
+    // Increase available capital by premia_including_fees
     let (current_locked_balance) = option_token_locked_capital.read();
-    let decrease_locked_by = premia - fees;
-    let new_locked_balance = current_locked_balance - decrease_locked_by;
+    let new_locked_balance = current_locked_balance - premia_including_fees;
 
     with_attr error_message("Not enough capital") {
         assert_nn(new_locked_balance)
