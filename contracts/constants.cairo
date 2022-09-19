@@ -81,3 +81,10 @@ const EMPIRIC_BNB_USD_KEY = 27705915699721060;
 const EMPIRIC_ADA_USD_KEY = 27413441311765348;
 const EMPIRIC_XRP_USD_KEY = 33902823363408740;
 const EMPIRIC_MATIC_USD_KEY = 2017717457628037477220;
+
+
+func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    underlying_asset: felt
+) -> (empiric_key: felt) {
+    return (EMPIRIC_ETH_USD_KEY,);
+}

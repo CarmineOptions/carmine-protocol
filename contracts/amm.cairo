@@ -18,7 +18,8 @@ from contracts.constants import (
     TRADE_SIDE_SHORT,
     RISK_FREE_RATE,
     STOP_TRADING_BEFORE_MATURITY_SECONDS,
-    EMPIRIC_ETH_USD_KEY
+    EMPIRIC_ETH_USD_KEY,
+    get_empiric_key,
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
@@ -183,13 +184,6 @@ func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let trade_volatility = Math64x61.div(volsum, two);
 
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);
-}
-
-
-func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    underlying_asset: felt
-) -> (empiric_key: felt) {
-    return (EMPIRIC_ETH_USD_KEY,);
 }
 
 
