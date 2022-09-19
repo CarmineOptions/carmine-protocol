@@ -30,16 +30,66 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 
 
 
+
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+// Storage vars
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+@storage_var
+func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt) {
+}
+
+
 // Stores current value of volatility for given pool (option type) and maturity.
 @storage_var
 func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 }
 
 
+// List of available options (mapping from 1 to n to available strike x maturity,
+// for n+1 returns zeros).
+@storage_var
+func available_options(order_i: felt) -> (option_side: felt, maturity: felt, strike_price: felt) {
+}
 
-// ############################
-// storage_var handlers
-// ############################
+
+// Maping from option params to option address
+@storage_var
+func option_token_address(
+    option_side: felt, maturity: felt, strike_price: felt
+) -> (res: felt) {
+}
+
+
+// Mapping from option params to pool's position
+@storage_var
+func option_position(option_side: felt, maturity: felt, strike_price: felt) -> (res: felt) {
+}
+
+
+// total balance of underlying in the pool (owned by the pool)
+// available balance for withdraw will be computed on-demand since
+// compute is cheap, storage is expensive on StarkNet currently
+@storage_var
+func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
+}
+
+
+// Locked capital owned by the pool... above is lpool_balance describing total capital owned
+// by the pool. Ie lpool_balance = pool_locked_capital + pool's unused capital
+// Note: capital locked by users is not accounted for here.
+    // Simple example:
+    // - start pool with no position
+    // - user sells option (user locks capital), pool pays premia and does not lock capital
+    // - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unused capital"
+@storage_var
+func pool_locked_capital() -> (res: felt) {
+}
+
+
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+// storage_var handlers and helpers
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 @view
@@ -64,7 +114,43 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
-// ############################
+func get_available_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    option_token_adress: felt
+) -> (unlocked_capital: felt) {
+    // Returns capital that is available for immediate extraction/use.
+    // This is for example ETH in case of ETH/USD CALL options.
+
+    let (locked_capital) = pool_locked_capital.read();
+
+    let (own_addr) = get_contract_address();
+    let (contract_balance) = IERC20.balanceOf(
+        contract_address = option_token_address,
+        account = own_addr
+    );
+    let unlocked_capital = contract_balance - locked_capital;
+    return (unlocked_capital = unlocked_capital);
+}
+
+
+func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    option_side: felt, maturity: felt, strike_price: felt
+) -> (option_token_address: felt) {
+    let (option_token_addr) = option_token_address.read(
+        option_side, maturity, strike_price
+    );
+    return (option_token_address=option_token_addr);
+}
+
+
+func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+) -> (value_of_position: Uint256) {
+    // Returns a total value of pools position (sum of value of all options held by pool).
+
+    //FIXME
+}
+
+
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 // @external
@@ -90,29 +176,29 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 //     return (exchange_rate)
 // end
 
+
 func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt, underlying_amt: Uint256
 ) -> (lpt_amt: Uint256) {
     alloc_locals;
     let (own_addr) = get_contract_address();
-    // FIXME: reserves have to be calculated as value of pool's holdings
-    // reserves = available unlocked capital + value of pool's position
-    let (reserves: Uint256) = IERC20.balanceOf(
-        contract_address=pooled_token_addr, account=own_addr
-    );
 
-    if (reserves.low == 0) {
+    let (free_capital) = get_available_capital();
+    let (value_of_position) = get_value_of_pool_position();
+    let (value_of_pool) = uint256_add(free_capital, value_of_position);
+
+    if (value_of_pool.low == 0) {
         return (underlying_amt,);
     }
     let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr);
     let (lpt_supply) = ILPToken.totalSupply(contract_address=lpt_addr);
-    let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, reserves);
+    let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, value_of_pool);
     let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt);
     assert to_mint_high.low = 0;
     let (to_div_low, to_div_high) = uint256_mul(rem, underlying_amt);
     assert to_div_high.low = 0;
     let (to_mint_additional_quot, to_mint_additional_rem) = uint256_unsigned_div_rem(
-        to_div_low, reserves
+        to_div_low, value_of_pool
     );  // to_mint_additional_rem goes to liq pool // treasury
     let (mint_total, carry) = uint256_add(to_mint_additional_quot, to_mint_low);
     assert carry = 0;
@@ -127,9 +213,14 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     pooled_token_addr: felt, lpt_amt: Uint256
 ) -> (underlying_amt: Uint256) {
     alloc_locals;
+
     let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr);
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lpt_addr);
-    let (total_underlying_amt: Uint256) = lpool_balance.read(pooled_token_addr);
+
+    let (free_capital) = get_available_capital();
+    let (value_of_position) = get_value_of_pool_position();
+    let (total_underlying_amt) = uint256_add(free_capital, value_of_position);
+
     let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt);
     let (b_low, b_high) = uint256_mul(a_quot, lpt_amt);
     assert b_high.low = 0;  // bits that overflow uint256 after multiplication
@@ -143,18 +234,6 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_burn,);
 }
 
-
-// total balance of underlying in the pool (owned by the pool)
-// available balance for withdraw will be computed on-demand since
-// compute is cheap, storage is expensive on StarkNet currently
-@storage_var
-func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
-}
-
-@storage_var
-func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt) {
-}
-
 // mints LPToken
 // assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
 // amt is amt of underlying token to deposit
@@ -166,10 +245,6 @@ func deposit_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     let (caller_addr) = get_caller_address();
     let (own_addr) = get_contract_address();
 
-    let (balance_before: Uint256) = IERC20.balanceOf(
-        contract_address=pooled_token_addr, account=own_addr
-    );
-
     let (current_balance) = lpool_balance.read(pooled_token_addr);
 
     IERC20.transferFrom(
@@ -179,9 +254,6 @@ func deposit_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt);
     assert carry = 0;
     lpool_balance.write(pooled_token_addr, new_pb);
-    // let (new_cb: Uint256, carry: felt) = uint256_add(balance_before, amt)
-    // assert carry = 0
-    // contract_balance.write(new_cb)
 
     let (mint_amt) = get_lptokens_for_underlying(pooled_token_addr, amt);
     let (caller_addr) = get_caller_address();
@@ -198,16 +270,19 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     let (caller_addr_) = get_caller_address();
     local caller_addr = caller_addr_;
     let (own_addr) = get_contract_address();
+
     let (balance_before: Uint256) = IERC20.balanceOf(
         contract_address=pooled_token_addr, account=own_addr
     );
 
     let (current_balance: Uint256) = lpool_balance.read(pooled_token_addr);
 
-    // with_attr error_message("Not enough funds in pool"):
-    //    assert_nn(current_balance - amt)
-    //    assert_nn(balance_before - amt)
-    // end
+    with_attr error_message(
+        "Not enough available funds in pool, wait till funds are freeed from locked capital."
+    ):
+        assert_nn(current_balance - amt)
+        assert_nn(balance_before - amt)
+    end
 
     let (new_pb: Uint256) = uint256_sub(current_balance, amt);
     lpool_balance.write(pooled_token_addr, new_pb);
@@ -223,66 +298,12 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     return ();
 }
 
-// FIXME: has to calculate value of the entire pool (available capital + value of options) and return proportion of it
-// @external
-// func remove_liquidity{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-//     pooled_token_addr: felt,
-//     amt: Uint256
-// ):
-//     // FIXME: TBD
-// end
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // Trade options
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-// Locked capital owned by the pool... above is lpool_balance describing total capital owned by the pool
-// ie lpool_balance = pool_locked_capital + pool's unused capital
-@storage_var
-func pool_locked_capital() -> (res: felt) {
-}
-
-func get_option_token_unlocked_capital(option_token_adress: felt) -> (unlocked_capital: felt) {
-    let (locked_capital) = pool_locked_capital.read();
-
-    let (own_addr) = get_contract_address();
-    let (contract_balance) = IERC20.balanceOf(
-        contract_address = option_token_address,
-        account = own_addr
-    );
-    let unlocked_capital = contract_balance - locked_capital;
-    return (unlocked_capital = unlocked_capital);
-}
-
-// Maping from option params to option address
-@storage_var
-func option_token_address(
-    option_side: felt, maturity: felt, strike_price: felt
-) -> (res: felt) {
-}
-
-// Mapping from option params to pool's position
-@storage_var
-func option_position(option_side: felt, maturity: felt, strike_price: felt) -> (res: felt) {
-}
-
-
-
-func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_side: felt, maturity: felt, strike_price: felt
-) -> (option_token_address: felt) {
-    let (option_token_addr) = option_token_address.read(
-        option_side, maturity, strike_price
-    );
-    return (option_token_address=option_token_addr);
-}
-
-// FIXME: do we have to move the functionality to amm.cairo or move most the functionality from amm.cairo here.
-// asking because Im not sure about the addresses being correctly put through
-// ie if user calls amm.trade(...) that calls amm.do_trade(...) that calls different contract liquidity_pool.buy_call(...)
-// how does the premium and fee end up in the liquidity pool???
-// This might be nonsence, but I just dont know at the moment.
 
 // User increases its position (if user is long, it increases the size of its long,
 // if he/she is short, the short gets increased).
@@ -353,7 +374,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt, option_token_address: felt, amount: felt, premia: felt, fees: felt
+    currency_address: felt, option_token_address: felt, amount: felt, premia_including_fees: felt
 ) {
     alloc_locals;
 
@@ -375,13 +396,16 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // We have storage_var only for locked, and unlocked is retrieved by subtracting
     // locked capital from total balance, to to decrease unlocked capital, increase locked
     let (current_locked_balance) = pool_locked_capital.read();
-    let (increase_by) = amount - premia_including_fees;
+    // FIXME: pool is locking in capital only if there is no previous position to cover the user's
+    // long... ie if pool's does not have sufficient long to "pass down to user", it has to lock in
+    // capital
+    let (increase_by) = amount - premia_including_fees; // FIXME amount here is in terms of ETH always
 
     let new_locked_balance = current_locked_balance + increase_by;
 
     // Check that there is enough unlocked capital
     with_attr error_message("Not enough available capital.") {
-        let (unlocked_balance) = get_option_token_unlocked_capital(option_token_address);
+        let (unlocked_balance) = get_available_capital(option_token_address);
         let (new_unlocked_balance) = unlocked_balance - increase_by;
         assert_nn(new_unlocked_balance);
     }
@@ -421,11 +445,14 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         recipient=current_contract_address,
         amount=to_be_paid_by_user,
     );
-
     
     // Increase available capital by (fees - premia)
     let (current_locked_balance) = pool_locked_capital.read();
     let new_locked_balance = current_locked_balance - premia_including_fees;
+
+    // FIXME: free up locked capital if the pool was short (the user that is trading to be short
+    // is providing the locked capital instead of pool - in case the pool had a short position)
+    // ie update new_locked_balance before writing it
 
     with_attr error_message("Not enough capital") {
         assert_nn(new_locked_balance);
@@ -453,6 +480,8 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     premia_including_fees: felt,
     underlying_price: felt,
 ) {
+    // option_side is the side of the token being closed
+
     alloc_locals;
 
     let (option_token_address) = get_option_token_address(
@@ -498,6 +527,10 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt, option_token_address: felt, amount: felt, premia_including_fees: felt
 ) {
+    // option_side is the side of the token being closed
+    // user is closing its long position -> freeing up pool's locked capital
+    // (but only if pool is short, otherwise the locked capital was covered by other user)
+
     alloc_locals;
 
     let current_contract_address = get_contract_address();
@@ -531,6 +564,8 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     option_type: felt,
     underlying_price: felt,
 ) {
+    // option_side is the side of the token being closed
+
     alloc_locals;
 
     let current_contract_address = get_contract_address();

@@ -186,7 +186,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // Volatility is not updated since closing position is considered as
     // "user does not have opinion on the market state" - this may change down the line
 
-    // When the user is closing side is the side of the token being closed... for calculations
+    // When the user is closing, side is the side of the token being closed... for calculations
     // we need opposite side, since the user is doing "opposite" action
     // to acquiring the option token.
 
