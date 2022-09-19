@@ -28,53 +28,10 @@ from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int,
 
 
 
-// Stores current value of volatility for given pool (option type) and maturity.
-@storage_var
-func pool_volatility(pool_address: Address, maturity: Int) -> (volatility: Math64x61_) {
-}
-
-
 @storage_var
 func pool_address_for_given_asset_and_option_type(asset: felt, option_type: OptionType) -> (
     address: Address
 ) {
-}
-
-
-// ############################
-// storage_var handlers
-// ############################
-
-
-@view
-func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    pool_address: Address, maturity: Int
-) -> (pool_volatility: Math64x61_) {
-    let (pool_volatility_) = pool_volatility.read(pool_address, maturity);
-    return (pool_volatility_,);
-}
-
-
-func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    pool_address: Address, maturity: Int, volatility: Math64x61_
-) {
-    // volatility has to be above 1 (in terms of Math64x61.FRACT_PART units...
-    // ie volatility = 1 is very very close to 0 and 100% volatility would be
-    // volatility=Math64x61.FRACT_PART)
-    assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
-    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
-    pool_volatility.write(pool_address, maturity, volatility);
-    return ();
-}
-
-
-@external
-func set_pool_address_for_given_asset_and_option_type{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(
-    asset: felt, option_type: OptionType, pool_address: Address
-) {
-    // FIXME: @svetylko
 }
 
 
@@ -271,7 +228,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 1) Get current volatility
-    let (current_volatility) = get_pool_volatility(pool_address, maturity);
+    let (current_volatility) = ILiquidityPool.get_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity
+    );
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);
@@ -283,7 +243,11 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 4) Update volatility
-    set_pool_volatility(pool_address, maturity, new_volatility);
+    let (current_volatility) = ILiquidityPool.set_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity,
+        volatility=new_volatility
+    );
 
     // 5) Get time till maturity
     let (time_till_maturity) = _time_till_maturity(maturity);
@@ -359,7 +323,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
 
     // 1) Get current volatility
-    let (current_volatility) = get_pool_volatility(pool_address, maturity);
+    let (current_volatility) = ILiquidityPool.get_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity
+    );
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);

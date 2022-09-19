@@ -28,6 +28,45 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 //     get_opposite_side
 // )
 
+
+
+// Stores current value of volatility for given pool (option type) and maturity.
+@storage_var
+func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
+}
+
+
+
+// ############################
+// storage_var handlers
+// ############################
+
+
+@view
+func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    maturity: Int
+) -> (pool_volatility: Math64x61_) {
+    let (pool_volatility_) = pool_volatility.read(pool_address, maturity);
+    return (pool_volatility_,);
+}
+
+
+func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    maturity: Int, volatility: Math64x61_
+) {
+    // volatility has to be above 1 (in terms of Math64x61.FRACT_PART units...
+    // ie volatility = 1 is very very close to 0 and 100% volatility would be
+    // volatility=Math64x61.FRACT_PART)
+    assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
+    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
+    pool_volatility.write(pool_address, maturity, volatility);
+    return ();
+}
+
+
+// ############################
+
+
 // @external
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
 // sets pair, liquidity currency and hence the option type
