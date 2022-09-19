@@ -26,7 +26,12 @@ from contracts.interface_liquidity_pool import ILiquidityPool
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
 from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address)
-
+from contracts.option_pricing_helpers import (
+    select_and_adjust_premia,
+    get_time_till_maturity,
+    add_premia_fees,
+    get_new_volatility
+)
 
 
 @storage_var
@@ -74,131 +79,6 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 
 // ############################
-// AMM logic - helpers
-// ############################
-
-func _select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    call_premia: Math64x61_,
-    put_premia: Math64x61_,
-    option_type: OptionType,
-    underlying_price: Math64x61_
-) -> (premia: Math64x61_) {
-    // Call and Put premia on input are in quote tokens (in USDC in case of ETH/USDC)
-    // This function puts them into their respective currency
-    // (and selects the premia based on option_type)
-    //  - call premia into base token (ETH in case of ETH/USDC)
-    //  - put premia stays the same, ie in quote tokens (USDC in case of ETH/USDC)
-
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-
-    if (option_type == OPTION_CALL) {
-        let adjusted_call_premia = Math64x61.div(call_premia, underlying_price);
-        return (premia=adjusted_call_premia);
-    }
-    return (premia=put_premia);
-}
-
-
-func _time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) -> (
-    time_till_maturity: Math64x61_
-) {
-    // Calculates time till maturity in terms of Math64x61 type
-    // Inputted maturity if not in the same type -> has to converted... and it is number
-    // of seconds corresponding to unix timestamp
-
-    alloc_locals;
-    local syscall_ptr: felt* = syscall_ptr;  // Reference revoked fix
-
-    let (currtime) = get_block_timestamp();  // is number of seconds... unix timestamp
-    let currtime_math = Math64x61.fromFelt(currtime);
-    let maturity_math = Math64x61.fromFelt(maturity);
-    let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
-
-    let secs_left = Math64x61.sub(maturity_math, currtime_math);
-    assert_nn(secs_left);
-
-    let time_till_maturity = Math64x61.div(secs_left, secs_in_year);
-    return (time_till_maturity,);
-}
-
-
-func _add_premia_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    side: OptionSide, total_premia_before_fees: Math64x61_, total_fees: Math64x61_
-) -> (total_premia: Math64x61_) {
-    // Sums fees and premia... in case of long = premia+fees, short = premia-fees
-
-    assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0;
-
-    // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    // if side == TRADE_SIDE_SHORT (user receives premia) the fees are subtracted from the premia
-    if (side == TRADE_SIDE_LONG) {
-        let premia_fees_add = Math64x61.add(total_premia_before_fees, total_fees);
-        return (premia_fees_add,);
-    }
-    let premia_fees_sub = Math64x61.sub(total_premia_before_fees, total_fees);
-    return (premia_fees_sub,);
-}
-
-func _get_vol_update_denominator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    relative_option_size: Math64x61_, side: OptionSide
-) -> (relative_option_size: Math64x61_) {
-    if (side == TRADE_SIDE_LONG) {
-        let long_denominator = Math64x61.sub(Math64x61.ONE, relative_option_size);
-        return (long_denominator,);
-    }
-    let short_denominator = Math64x61.add(Math64x61.ONE, relative_option_size);
-    return (short_denominator,);
-}
-
-func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    current_volatility: Math64x61_,
-    option_size: Math64x61_,
-    option_type: OptionType,
-    side: OptionSide,
-    underlying_price: Math64x61_,
-    pool_address: Address
-) -> (new_volatility: Math64x61_, trade_volatility: Math64x61_) {
-    // Calculates two volatilities, one for trade that is happening
-    // and the other to update the volatility param (storage_var).
-    // Docs are here
-    // https://carmine-finance.gitbook.io/carmine-options-amm/mechanics-deeper-look/option-pricing-mechanics#volatility-updates
-
-    alloc_locals;
-
-    let (option_size_in_pool_currency) = _get_option_size_in_pool_currency(
-        option_size, option_type, underlying_price
-    );
-
-    let (current_pool_balance) = get_pool_available_balance(pool_address);
-    assert_nn_le(Math64x61.ONE, current_pool_balance);
-    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
-    let relative_option_size = Math64x61.div(option_size, current_pool_balance);
-
-    // alpha – rate of change assumed to be 1
-    let (denominator) = _get_vol_update_denominator(relative_option_size, side);
-    let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
-    let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
-
-    let volsum = Math64x61.add(current_volatility, new_volatility);
-    let two = Math64x61.fromFelt(2);
-    let trade_volatility = Math64x61.div(volsum, two);
-
-    return (new_volatility=new_volatility, trade_volatility=trade_volatility);
-}
-
-
-func _get_option_size_in_pool_currency{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(option_size: felt, option_type: felt, underlying_price: felt) -> (relative_option_size: felt) {
-    if (option_type == OPTION_CALL) {
-        return (option_size,);
-    }
-    let adjusted_option_size = Math64x61.mul(option_size, underlying_price);
-    return (adjusted_option_size,);
-}
-
-
-// ############################
 // AMM Trade, Close and Expire
 // ############################
 
@@ -232,8 +112,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatilit
-    let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price, pool_address
+    let (current_pool_balance) = get_pool_available_balance(pool_address);
+    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+
+    let (new_volatility, trade_volatility) = get_new_volatility(
+        current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
     );
 
     // 4) Update volatility
@@ -244,7 +128,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 5) Get time till maturity
-    let (time_till_maturity) = _time_till_maturity(maturity);
+    let (time_till_maturity) = get_time_till_maturity(maturity);
 
     // 6) risk free rate
     let (risk_free_rate_annualized) = RISK_FREE_RATE;
@@ -261,7 +145,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
     // and in quote tokens (USDC in case of ETH/USDC) for put option.
-    let (premia) = _select_and_adjust_premia(
+    let (premia) = select_and_adjust_premia(
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
@@ -272,7 +156,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
     // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
     let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
+    let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
     ILiquidityPool.mint_option_token(
@@ -327,7 +211,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatilit
-    let (new_volatility, trade_volatility) = _get_new_volatility(
+    let (new_volatility, trade_volatility) = get_new_volatility(
         current_volatility, option_size, option_type, opposite_side, underlying_price, pool_address
     );
 
@@ -335,7 +219,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // Update volatility does not happen in this function - look at docstring
 
     // 5) Get time till maturity
-    let (time_till_maturity) = _time_till_maturity(maturity);
+    let (time_till_maturity) = get_time_till_maturity(maturity);
 
     // 6) risk free rate
     let (risk_free_rate_annualized) = RISK_FREE_RATE;
@@ -352,7 +236,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
     // and in quote tokens (USDC in case of ETH/USDC) for put option.
-    let (premia) = _select_and_adjust_premia(
+    let (premia) = select_and_adjust_premia(
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
@@ -363,7 +247,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // if opposite_side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
     // if opposite_side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
     let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = _add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
+    let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
     ILiquidityPool.burn_option_token(
