@@ -20,5 +20,5 @@ jobs:
 
       - name: Build
         run: protostar build
-#     - name: Test
-#       run: protostar test
+      - name: Test
+        run: protostar test
