@@ -38,6 +38,28 @@ func select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 
+func convert_amount_to_option_currency_from_base{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    amount: Math64x61_,
+    option_type: OptionType,
+    underlying_price: Math64x61_
+) -> (premia: Math64x61_) {
+    // Amount is in base tokens (in ETH in case of ETH/USDC)
+    // This function puts amount into the currency required by given option_type
+    //  - for call into base token (ETH in case of ETH/USDC)
+    //  - for put into quote token (USDC in case of ETH/USDC)
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    if (option_type == OPTION_PUT) {
+        let adjusted_amount = Math64x61.mul(amount, underlying_price);
+        return (premia=adjusted_amount);
+    }
+    return (premia=amount);
+}
+
+
 func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) -> (
     time_till_maturity: Math64x61_
 ) {

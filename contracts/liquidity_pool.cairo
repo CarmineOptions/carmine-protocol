@@ -314,6 +314,7 @@ func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
     amount: felt,
+    amount_in_pool_currency: felt,
     option_side: felt,
     option_type: felt,
     maturity: felt,
@@ -473,6 +474,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 //   for example how much capital is available, how much is locked,...
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     amount: felt,
+    amount_in_pool_currency: felt,
     option_side: felt,
     option_type: felt,
     maturity: felt,
@@ -508,6 +510,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
+            amount_in_pool_currency=amount_in_pool_currency,
             premia_including_fees=premia_including_fees,
         );
     } else {
@@ -515,6 +518,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             currency_address=currency_address,
             option_token_address=option_token_address,
             amount=amount,
+            amount_in_pool_currency=amount_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_type=option_type,
             underlying_price=underlying_price,
@@ -525,7 +529,11 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt, option_token_address: felt, amount: felt, premia_including_fees: felt
+    currency_address: felt,
+    option_token_address: felt,
+    amount: felt,
+    amount_in_pool_currency: felt,
+    premia_including_fees: felt,
 ) {
     // option_side is the side of the token being closed
     // user is closing its long position -> freeing up pool's locked capital
@@ -560,6 +568,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     currency_address: felt,
     option_token_address: felt,
     amount: felt,
+    amount_in_pool_currency: felt,
     premia_including_fees: felt,
     option_type: felt,
     underlying_price: felt,

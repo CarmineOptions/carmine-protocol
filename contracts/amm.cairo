@@ -30,7 +30,8 @@ from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
     add_premia_fees,
-    get_new_volatility
+    get_new_volatility,
+    convert_amount_to_option_currency_from_base
 )
 
 
@@ -159,9 +160,15 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
+    let (amount_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        underlying_price
+    )
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
         amount=option_size,
+        amount_in_pool_currency=amount_in_pool_currency,
         option_side=side,
         option_type=option_type,
         maturity=maturity,
@@ -250,9 +257,15 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
+    let (amount_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        underlying_price
+    )
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,
         amount=option_size,
+        amount_in_pool_currency=amount_in_pool_currency,
         option_side=opposite_side,
         option_type=option_type,
         maturity=maturity,
