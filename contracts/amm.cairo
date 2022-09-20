@@ -163,7 +163,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (amount_in_pool_currency) = convert_amount_to_option_currency_from_base(
         option_size,
         option_type,
-        underlying_price
+        strike_price
     )
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
@@ -260,7 +260,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (amount_in_pool_currency) = convert_amount_to_option_currency_from_base(
         option_size,
         option_type,
-        underlying_price
+        strike_price
     )
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,

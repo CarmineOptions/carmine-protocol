@@ -43,8 +43,8 @@ func convert_amount_to_option_currency_from_base{
 }(
     amount: Math64x61_,
     option_type: OptionType,
-    underlying_price: Math64x61_
-) -> (premia: Math64x61_) {
+    strike_price: Math64x61_
+) -> (converted_amount: Math64x61_) {
     // Amount is in base tokens (in ETH in case of ETH/USDC)
     // This function puts amount into the currency required by given option_type
     //  - for call into base token (ETH in case of ETH/USDC)
@@ -53,10 +53,10 @@ func convert_amount_to_option_currency_from_base{
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     if (option_type == OPTION_PUT) {
-        let adjusted_amount = Math64x61.mul(amount, underlying_price);
-        return (premia=adjusted_amount);
+        let adjusted_amount = Math64x61.mul(amount, strike_price);
+        return (converted_amount=adjusted_amount);
     }
-    return (premia=amount);
+    return (converted_amount=amount);
 }
 
 
