@@ -354,6 +354,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     }
 
     if (option_side == TRADE_SIDE_LONG) {
+        // FIXME: add amount_in_pool_currency
         _mint_option_token_long(
             currency_address=currency_address,
             option_token_address=option_token_address,
@@ -361,6 +362,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             premia_including_fees=premia_including_fees,
         );
     } else {
+        // FIXME: add amount_in_pool_currency
         _mint_option_token_short(
             currency_address=currency_address,
             option_token_address=option_token_address,
@@ -400,6 +402,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // FIXME: pool is locking in capital only if there is no previous position to cover the user's
     // long... ie if pool's does not have sufficient long to "pass down to user", it has to lock in
     // capital
+    // LOOK INTO BURN_OPTION_TOKEN FIXMEs FOR BETTER DESCRIPTION
     let (increase_by) = amount - premia_including_fees; // FIXME amount here is in terms of ETH always
 
     let new_locked_balance = current_locked_balance + increase_by;
@@ -454,6 +457,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // FIXME: free up locked capital if the pool was short (the user that is trading to be short
     // is providing the locked capital instead of pool - in case the pool had a short position)
     // ie update new_locked_balance before writing it
+    // LOOK INTO BURN_OPTION_TOKEN FIXMEs FOR BETTER DESCRIPTION
 
     with_attr error_message("Not enough capital") {
         assert_nn(new_locked_balance);
@@ -554,9 +558,16 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees,
     );
 
-    // Increase available capital by (amount - (premia + fees))
+    // Increase available capital by (amount_in_pool_currency - (premia + fees))
+    // FIXME:
+    //  - in case the pool is long: the burn it increases pool's long
+    //       -> the locked capital was locked by users and not pool -> do not decrease pool_locked_capital by the amount_in_pool_currency
+    //  - in case the pool is short: the burn decreases the pool's short
+    //      -> decrease the pool_locked_capital by the min(size of pool's short, amount_in_pool_currency)
+    //          since the pool's short might not be covering all of the long
+    // keep the description above (or a similar version)
     let (current_locked_balance) = pool_locked_capital.read();
-    let decrease_locked_by = (amount - premia) + fees;
+    let decrease_locked_by = amount_in_pool_currency - premia_including_fees;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
     pool_locked_capital.write(new_locked_balance);
@@ -583,15 +594,8 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // Burn the tokens
     IOptionToken.burn(option_token_address, user_address, amount);
 
-    // Retrieve locked capital to be paid to user
-    if (option_type == OPTION_PUT) {
-        let unlocked_capital_for_user = Math64x61.mul(strike_price, amount);
-    } else {
-        let unlocked_capital_for_user = amount;
-    }
-
     // User receives back its locked capital, pays premia and fees
-    let total_user_payment = unlocked_capital_for_user - premia_including_fees;
+    let total_user_payment = amount_in_pool_currency - premia_including_fees;
 
     IERC20.transferFrom(
         contract_address=currency_address,
@@ -601,6 +605,16 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     );
 
     // Increase available capital by premia_including_fees
+    // FIXME:
+    //  - in case the pool is long: the burn decreases pool's long... up to a size of the pool's long
+    //      -> if the amount_in_pool_currency > pool's long -> the pool starts to accumulate
+    //          the short and has to lock in it's own capital... -> lock capital
+    //      -> there might be a case, when there is not enough capital to be locked
+    //          -> fail the transaction
+    //  - in case the pool is short: the burn increases the pool's short
+    //      -> increase the pool's locked capital by the amount_in_pool_currency
+    //      -> there might be a case, when there is not enough capital to be locked
+    // keep the description above (or a similar version)
     let (current_locked_balance) = pool_locked_capital.read();
     let new_locked_balance = current_locked_balance - premia_including_fees;
 
@@ -677,6 +691,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     );
 
     if (option_side == TRADE_SIDE_LONG) {
+        // User is long, pool is short
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
@@ -685,6 +700,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         );
         adjust_available_capital(short_value);
     } else {
+        // User is short, pool is long
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
@@ -698,6 +714,22 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 func adjust_available_capital(adjust_by: felt) {
+    // FIXME: pool_locked_capital gets updated... but the lpool_balance and option_balance have to be updated too
+    // option_balance by the option_size
+    // lpool_balance is total staked capital which has to be decreased by the "opposite" of adjust_by...
+    //      in case of pool being short
+    //          -> decrease the lpool_balance by the long_value
+    //          -> decrease the pool_locked_capital by the option_size in terms of pool's currency (ETH vs USD)
+    //          -> available capital = lpool_balance - pool_locked_capital...
+    //              diff of available capital is (-long_value--amount_in_pool_currency) = amount_in_pool_currency-long_value = short_value
+    //      in case of pool being long
+    //          -> capital was locked by user
+    //          -> increase lpool_balance long_value
+    //          -> there was nothing locked from pool's side -> do not touch pool_locked_capital
+    //          -> avalable capital should increase by the profit from the long option in total...
+    //                  available capital = lpool_balance - pool_locked_capital
+    //                      -> diff_capital = diff_lpool_balance - diff_pool_locked_capital
+    //                      -> diff_capital = long_value - 0
     let (current_locked_capital) = pool_locked_capital.read();
     let new_locked_capital = current_locked_capital - adjust_by;
 
