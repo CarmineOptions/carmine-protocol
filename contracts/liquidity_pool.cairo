@@ -180,6 +180,9 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt, underlying_amt: Uint256
 ) -> (lpt_amt: Uint256) {
+    // Takes in underlying_amt in quote or base tokens (based on the pool being put/call).
+    // Returns how much lp tokens correspond to capital of size underlying_amt
+
     alloc_locals;
     let (own_addr) = get_contract_address();
 
@@ -212,6 +215,10 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt, lpt_amt: Uint256
 ) -> (underlying_amt: Uint256) {
+    // Takes in lpt_amt in terms of amount of lp tokens.
+    // Returns how much underlying in quote or base tokens (based on the pool being put/call)
+    // corresponds to given lp tokens.
+
     alloc_locals;
 
     let (lpt_addr: felt) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr);
@@ -234,66 +241,83 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_burn,);
 }
 
-// mints LPToken
-// assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
-// amt is amt of underlying token to deposit
-// FIXME: could we call this deposit_liquidity
+// FIXME: add unittest that
+// amount = get_underlying_for_lptokens(addr, get_lptokens_for_underlying(addr, amount))
+//ie that what you get for lptoken is what you need to get same amount of lptokens
+
+
+// Mints LPToken
+// Assumes the underlying token is already approved (directly call approve() on the token being
+// deposited to allow this contract to claim them)
+// amt is amount of underlying token to deposit (either in base or quote based on call or put pool)
 @external
-func deposit_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: felt, amt: Uint256
 ) {
     let (caller_addr) = get_caller_address();
     let (own_addr) = get_contract_address();
 
-    let (current_balance) = lpool_balance.read(pooled_token_addr);
-
+    // Transfer tokens to pool.
+    // We can do this optimistically;
+    // any later exceptions revert the transaction anyway. saves some sanity checks
     IERC20.transferFrom(
         contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amt
-    );  // we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
+    );
 
+    // update the lpool_balance by the provided capital
+    let (current_balance) = lpool_balance.read(pooled_token_addr);
     let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt);
     assert carry = 0;
     lpool_balance.write(pooled_token_addr, new_pb);
 
+    // Calculates how many lp tokens will be minted for given amount of provided capital.
     let (mint_amt) = get_lptokens_for_underlying(pooled_token_addr, amt);
-    let (caller_addr) = get_caller_address();
+    // Transfers the capital
     let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr);
+    // Mint LP tokens
     ILPToken.mint(contract_address=lpt_addr, to=caller_addr, amount=mint_amt);
     return ();
 }
 
 @external
-func withdraw_lp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    pooled_token_addr: felt, amt: Uint256
+func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: felt, lp_token_amount: Uint256
 ) {
+    // lp_token_amount is in terms of lp tokens, not underlying as deposit_liquidity
+
     alloc_locals;
     let (caller_addr_) = get_caller_address();
     local caller_addr = caller_addr_;
     let (own_addr) = get_contract_address();
 
-    let (balance_before: Uint256) = IERC20.balanceOf(
-        contract_address=pooled_token_addr, account=own_addr
-    );
-
-    let (current_balance: Uint256) = lpool_balance.read(pooled_token_addr);
+    // Get the amount of underlying that corresponds to given amount of lp tokens
+    let (underlying_amount) = get_underlying_for_lptokens(pooled_token_addr, lp_token_amount);
 
     with_attr error_message(
-        "Not enough available funds in pool, wait till funds are freeed from locked capital."
+        "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
     ):
-        assert_nn(current_balance - amt)
-        assert_nn(balance_before - amt)
+        let (free_capital) = get_available_capital();
+        assert_nn(free_capital - underlying_amount);
     end
 
-    let (new_pb: Uint256) = uint256_sub(current_balance, amt);
-    lpool_balance.write(pooled_token_addr, new_pb);
-
+    // Transfer underlying (base or quote depending on call/put)
+    // We can do this transfer optimistically;
+    // any later exceptions revert the transaction anyway. saves some sanity checks
     IERC20.transferFrom(
-        contract_address=pooled_token_addr, sender=own_addr, recipient=caller_addr, amount=amt
-    );  // we can do this optimistically; any later exceptions revert the transaction anyway. saves some sanity checks
+        contract_address=pooled_token_addr,
+        sender=own_addr,
+        recipient=caller_addr,
+        amount=underlying_amount
+    );
 
-    let (burn_amt) = get_underlying_for_lptokens(pooled_token_addr, amt);
+    // Burn LP tokens
     let (lpt_addr) = lptoken_addr_for_given_pooled_token.read(pooled_token_addr);
-    ILPToken.burn(contract_address=lpt_addr, account=caller_addr, amount=burn_amt);
+    ILPToken.burn(contract_address=lpt_addr, account=caller_addr, amount=lp_token_amount);
+
+    // Update that the capital in the pool (including the locked capital).
+    let (current_balance: Uint256) = lpool_balance.read(pooled_token_addr);
+    let (new_pb: Uint256) = uint256_sub(current_balance, underlying_amount);
+    lpool_balance.write(pooled_token_addr, new_pb);
 
     return ();
 }
