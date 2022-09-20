@@ -742,9 +742,11 @@ func adjust_capital(
     long_value: felt, 
     short_value: felt,
     adjust_by: felt,
-    trade_side: felt,
     pooled_token_addr: felt,
     amount_in_pool_currency: felt,
+    option_side: felt,
+    maturity: felt,
+    strike_price: felt
     ) {
     alloc_locals
 
@@ -754,8 +756,13 @@ func adjust_capital(
 
     let (current_lpool_balance) = lpool_balance.read(pooled_token_addr);
     let (current_locked_balance) = pool_locked_capital.read();
+    let (current_pool_position) = option_position.read(option_side, maturity, strike_price);
 
-    if (pool_side == 0) {
+    // Check the pool's position
+    let (is_non_neg) = is_nn(current_pool_position);    
+
+    if (is_non_neg == 1) {
+        // Pool is LONG
         // Capital locked by user
         // Increase lpool_balance by long_value
         // Nothing locked by pool -> locked capital not affected
@@ -768,6 +775,7 @@ func adjust_capital(
         lpool_balance.write(pooled_token_addr, new_lpool_balance);
        
     } else {
+        // Pool is SHORT
         // Decrease the lpool_balance by the long_value
         // Increase the pool_locked_capital by the option size in terms of pools currency (ETH vs USD)
         // Unlocked capital = lpool_balance - pool_locked_capital
