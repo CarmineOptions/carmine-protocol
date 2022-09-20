@@ -222,6 +222,8 @@ More oracles coming in the future (Stork, https://github.com/smartcontractkit/ch
 
 For proxy pattern, we decided to utilize OpenZeppelin library. Detailed explanation can be found here:
 
+NOTE: To prevent any errors, deploy a new wallet with `starknet deploy_account --account new_account`, otherwise you might not be able to declare/deploy and use the proxy pattern. 
+
 https://github.com/OpenZeppelin/cairo-contracts/blob/main/docs/Proxies.md
 
 Components: 
