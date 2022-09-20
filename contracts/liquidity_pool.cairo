@@ -803,7 +803,6 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert contract_option_side = side;
     }
 
-    // FIXME: Account for option type
     // Make sure the contract is ready to expire
     let (current_block_time) = get_block_timestamp();
     let (is_ripe) = is_le(maturity, current_block_time);
