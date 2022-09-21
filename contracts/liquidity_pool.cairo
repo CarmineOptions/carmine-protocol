@@ -124,6 +124,7 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     let (locked_capital) = pool_locked_capital.read();
 
     let (own_addr) = get_contract_address();
+    // FIXME: fix this...
     let (contract_balance) = IERC20.balanceOf(
         contract_address = option_token_address,
         account = own_addr
@@ -738,7 +739,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return ();
 }
 
-func adjust_capital(
+func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     long_value: felt, 
     short_value: felt,
     adjust_by: felt,
@@ -747,7 +748,7 @@ func adjust_capital(
     option_side: felt,
     maturity: felt,
     strike_price: felt
-    ) {
+) {
     alloc_locals
 
     let (pool_side) = get_opposite_side(trade_side); 
