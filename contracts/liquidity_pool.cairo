@@ -514,8 +514,8 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is unlocked, how much is locked,...
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt,
-    amount_in_pool_currency: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
     option_side: felt,
     option_type: felt,
     maturity: felt,
@@ -550,16 +550,16 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         _burn_option_token_long(
             currency_address=currency_address,
             option_token_address=option_token_address,
-            amount=amount,
-            amount_in_pool_currency=amount_in_pool_currency,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
         );
     } else {
         _burn_option_token_short(
             currency_address=currency_address,
             option_token_address=option_token_address,
-            amount=amount,
-            amount_in_pool_currency=amount_in_pool_currency,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_type=option_type,
             underlying_price=underlying_price,
@@ -572,8 +572,8 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
     option_token_address: felt,
-    amount: felt,
-    amount_in_pool_currency: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
     premia_including_fees: felt,
 ) {
     // option_side is the side of the token being closed
@@ -586,7 +586,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let user_address = get_caller_address();
 
     // Burn the tokens
-    IOptionToken.burn(option_token_address, user_address, amount);
+    IOptionToken.burn(option_token_address, user_address, option_size);
 
     IERC20.transferFrom(
         contract_address=currency_address,
@@ -595,16 +595,16 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees,
     );
 
-    // Increase unlocked capital by (amount_in_pool_currency - (premia + fees))
+    // Increase unlocked capital by (option_size_in_pool_currency - (premia + fees))
     // FIXME 9:
     //  - in case the pool is long: the burn it increases pool's long
-    //       -> the locked capital was locked by users and not pool -> do not decrease pool_locked_capital by the amount_in_pool_currency
+    //       -> the locked capital was locked by users and not pool -> do not decrease pool_locked_capital by the option_size_in_pool_currency
     //  - in case the pool is short: the burn decreases the pool's short
-    //      -> decrease the pool_locked_capital by the min(size of pool's short, amount_in_pool_currency)
+    //      -> decrease the pool_locked_capital by the min(size of pool's short, option_size_in_pool_currency)
     //          since the pool's short might not be covering all of the long
     // keep the description above (or a similar version)
     let (current_locked_balance) = pool_locked_capital.read();
-    let decrease_locked_by = amount_in_pool_currency - premia_including_fees;
+    let decrease_locked_by = option_size_in_pool_currency - premia_including_fees;
     let new_locked_balance = current_locked_balance - decrease_locked_by;
 
     pool_locked_capital.write(new_locked_balance);
@@ -615,8 +615,8 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
     option_token_address: felt,
-    amount: felt,
-    amount_in_pool_currency: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
     premia_including_fees: felt,
     option_type: felt,
     underlying_price: felt,
@@ -629,10 +629,10 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let user_address = get_caller_address();
 
     // Burn the tokens
-    IOptionToken.burn(option_token_address, user_address, amount);
+    IOptionToken.burn(option_token_address, user_address, option_size);
 
     // User receives back its locked capital, pays premia and fees
-    let total_user_payment = amount_in_pool_currency - premia_including_fees;
+    let total_user_payment = option_size_in_pool_currency - premia_including_fees;
 
     IERC20.transferFrom(
         contract_address=currency_address,
@@ -644,12 +644,12 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // Increase unlocked capital by premia_including_fees
     // FIXME 10:
     //  - in case the pool is long: the burn decreases pool's long... up to a size of the pool's long
-    //      -> if the amount_in_pool_currency > pool's long -> the pool starts to accumulate
+    //      -> if the option_size_in_pool_currency > pool's long -> the pool starts to accumulate
     //          the short and has to lock in it's own capital... -> lock capital
     //      -> there might be a case, when there is not enough capital to be locked
     //          -> fail the transaction
     //  - in case the pool is short: the burn increases the pool's short
-    //      -> increase the pool's locked capital by the amount_in_pool_currency
+    //      -> increase the pool's locked capital by the option_size_in_pool_currency
     //      -> there might be a case, when there is not enough capital to be locked
     // keep the description above (or a similar version)
     let (current_locked_balance) = pool_locked_capital.read();
@@ -660,19 +660,9 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     }
 
     pool_locked_capital.write(new_locked_balance);
-    // NOTICE: the unlocked capital does not get updated by amount, since it was never available for the pool
+    // NOTICE: the unlocked capital does not get updated by option_size, since it was never available for the pool
     return ();
 }
-
-// Once the option has expired return corresponding capital to the option owner
-// for long call:
-// return max(0, amount * (current_price - strike_price)) in ETH
-// for short call:
-// return amount - (max(0, amount * (current_price - strike_price)) in ETH)
-// for long put:
-// return max(0, amount * (strike_price - current_price)) in ETH
-// for short put:
-// return amount - (max(0, amount * (strike_price - current_price)) in ETH)
 
 
 func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
