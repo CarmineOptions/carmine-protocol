@@ -21,13 +21,13 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-// from constants import (
-//     OPTION_CALL,
-//     OPTION_PUT,
-//     TRADE_SIDE_LONG,
-//     TRADE_SIDE_SHORT,
-//     get_opposite_side
-// )
+from constants import (
+    OPTION_CALL,
+    OPTION_PUT,
+    TRADE_SIDE_LONG,
+    TRADE_SIDE_SHORT,
+    get_opposite_side
+)
 
 
 
@@ -38,6 +38,18 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 
 @storage_var
 func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt) {
+}
+
+
+// Option type that this pool corresponds to.
+@storage_var
+func option_type_() -> (option_type: felt) {
+}
+
+
+// Address of the underlying token (for example address of ETH or USD or...).
+@storage_var
+func underlying_token_addres() -> (res: felt) {
 }
 
 
@@ -71,6 +83,7 @@ func option_position(option_side: felt, maturity: felt, strike_price: felt) -> (
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
+// FIXME: do we need pooled_token_addr??? if not drop it, if yes, add it all over the place
 @storage_var
 func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
 }
@@ -663,14 +676,17 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // for short put:
 // return amount - (max(0, amount * (strike_price - current_price)) in ETH)
 
+
 func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: felt,
     option_side: felt,
     strike_price: felt,
     terminal_price: felt, // terminal price is price at which option is being settled
-    amount: felt,
+    option_size: felt,
     maturity: felt,
 ) {
+    // EXPIRES OPTIONS ONLY FOR USERS (OPTION TOKEN HOLDERS) NOT FOR POOL.
+
     alloc_locals;
 
     let (option_token_address) = get_option_token_address(
@@ -680,6 +696,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     );
     // FIXME
     let (currency_address) = 123;
+
+    let (current_pool_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+    with_attr error_message("Pool hasn't released the locked capital for users -> call expire_option_token_for_pool to release it.") {
+        // Even though the transaction might go through with no problems, there is a chance
+        // of it failing or chance for pool manipulation.
+        assert current_pool_position = 0;
+    }
 
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
@@ -713,67 +736,66 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     // long_value and short_value are both in terms of locked capital
     let (long_value, short_value) = split_option_locked_capital(
-        option_type, option_side, strike_price, strike_price, terminal_price
+        option_type, option_side, option_size, strike_price, terminal_price
     );
 
     if (option_side == TRADE_SIDE_LONG) {
-        // User is long, pool is short
-        // User receives amount belonging to long (holder/buyer of the option).
+        // User is long
+        // When user was long there is a possibility, that the pool is short,
+        // which means that pool has locked in some capital.
+        // We assume pool is able to "expire" it's functions pretty quickly so the updates
+        // of storage_vars has already happened.
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
             recipient=user_address,
             amount=long_value,
         );
-        // Pool is short (underwriter) and receives "what is left",
-        // receives the remaining value from locked capital.
-        adjust_capital(short_value);
     } else {
-        // User is short, pool is long
-        // User is short (underwriter) and receives "what is left",
-        // receives the remaining value from locked capital.
+        // User is short
+        // User locked in capital (no locking happened from pool - no locked capital and similar
+        // storage vars were updated).
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
             recipient=user_address,
             amount=short_value,
         );
-        // Pool receives amount belonging to long (holder/buyer of the option).
-        adjust_capital(long_value);
     }
 
     return ();
 }
 
-func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+
+func adjust_capital_for_pools_expired_options{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
     long_value: felt,
     short_value: felt,
-    adjust_by: felt,
-    pooled_token_addr: felt,
-    amount_in_pool_currency: felt,
+    option_size: felt,
     option_side: felt,
     maturity: felt,
     strike_price: felt
 ) {
-    // This function is a helper function used only for expiring options.
+    // This function is a helper function used only for expiring POOL'S options.
+    // option_side is from perspektive of the pool
 
     alloc_locals
 
-    let (pool_side) = get_opposite_side(trade_side);
-
     // lpool_balance is total staked capital which has to be decreased by the "opposite" of adjust_by...
 
-    let (current_lpool_balance) = lpool_balance.read(pooled_token_addr);
+    let (current_lpool_balance) = lpool_balance.read();
     let (current_locked_balance) = pool_locked_capital.read();
     let (current_pool_position) = option_position.read(option_side, maturity, strike_price);
 
-    // Check the pool's position
-    let (is_non_neg) = is_nn(current_pool_position);    
+    let (new_pool_position) = current_pool_position - option_size
+    option_position.write(option_side, maturity, strike_price, new_pool_position);
 
-    if (is_non_neg == 1) {
+    if (option_side == TRADE_SIDE_LONG) {
         // Pool is LONG
-        // Capital locked by user
-        // Increase lpool_balance by long_value
+        // Capital locked by user(s)
+        // Increase lpool_balance by long_value, since pool either made profit (profit >=0).
+        //      The cost (premium) was paid before.
         // Nothing locked by pool -> locked capital not affected
         // Unlocked capital should increas by profit from long option, in total:
         //      Unlocked capital = lpool_balance - pool_locked_capital
@@ -784,15 +806,32 @@ func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
         lpool_balance.write(pooled_token_addr, new_lpool_balance);
     } else {
         // Pool is SHORT
-        // Decrease the lpool_balance by the long_value
-        // Increase the pool_locked_capital by the option size in terms of pools currency (ETH vs USD)
-        // Unlocked capital = lpool_balance - pool_locked_capital
-        // diff of unlocked capital is (-long_value + amount_in_pool_currency) = amount_in_pool_currency - long_value = short_value
+        // Decrease the lpool_balance by the long_value.
+        //      The extraction of long_value might have not happened yet from transacting the tokens.
+        //      But from perspective of accounting it is happening now.
+        //          -> diff lpool_balance = -long_value
+        // Decrease the pool_locked_capital by the locked capital. Locked capital for this option
+        // (option_size * strike in terms of pool's currency (ETH vs USD))
+        //          -> locked capital = long_value + short_value
+        //          -> diff pool_locked_capital = - locked capital
+        //      You may ask why not just the short_value. That is because the total capital
+        //      (locked + unlocked) is decreased by long_value as in the point above (loss from short).
+        //      The unlocked capital is increased by short_value - what gets returned from locked.
+        //      To check the math
+        //          -> lpool_balance = pool_locked_capital + unlocked
+        //          -> diff lpool_balance = diff pool_locked_capital + diff unlocked
+        //          -> -long_value = -locked capital + short_value
+        //          -> -long_value = -(long_value + short_value) + short_value
+        //          -> -long_value = -long_value - short_value + short_value
+        //          -> -long_value +long_value = - short_value + short_value
+        //          -> 0=0
+        // The long value is left in the pool for the long owner to collect it.
 
         let new_lpool_balance = current_lpool_balance - long_value;
-        let new_locked_balance = current_locked_capital + amount_in_pool_currency;
+        let new_locked_balance = current_locked_balance - short_value - long_value;
 
         with_attr error_message("Not enough capital in the pool") {
+            // This will never happen since the capital to pay the users is always locked.
             assert_nn(new_lpool_balance);
             assert_nn(new_locked_balance);
         }
@@ -802,6 +841,7 @@ func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     }
     return ();
 }
+
 
 func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: felt,
@@ -837,32 +877,27 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_be_paid_buyer, to_be_paid_seller);
 }
 
+
+@external
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    amount: felt,
-    option_type: felt,
     option_side: felt,
     strike_price: felt,
-    option_token_address: felt,
     maturity: felt,
-    terminal_price: felt
 ) {
+
     alloc_locals;
 
-    let (option_size) = 
-   
-    // Make sure the contract is the one that user wishes to expire
-    let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    let (contract_strike) = IOptionToken.strike(option_token_address);
-    let (contract_maturity) = IOptionToken.maturity(option_token_address);
-    let (contract_option_side) = IOptionToken.side(option_token_address);
-    let (current_contract_address) = get_contract_address();
+    let (option_type) = option_type_.read();
 
-    with_attr error_message("Required contract doesn't match the address.") {
-        assert contract_option_type = option_type;
-        assert contract_strike = strike;
-        assert contract_maturity = maturity;
-        assert contract_option_side = side;
+    // pool's position... has to be nonnegative since the position is per side (long/short)
+    let (option_size) = option_position.read(option_side, maturity, strike_price);
+    assert_nn(option_size);
+    if (option_size == 0){
+        // Pool's position is zero, there is nothing to expire.
+        // This also checks that the option exists (if it doesn't storage_var returns 0).
+        return ();
     }
+    // From now on we know that pool's position is positive -> option_size > 0.
 
     // Make sure the contract is ready to expire
     let (current_block_time) = get_block_timestamp();
@@ -871,15 +906,21 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert is_ripe = 1;
     }
 
+    // Get terminal price of the option.
+    let (terminal_price) = FIXME;
+
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
     );
 
-    if (option_side == TRADE_SIDE_LONG) {
-        adjust_capital(long_value);
-    } else {
-        adjust_capital(short_value);
-    }
+    adjust_capital_for_pools_expired_options(
+        long_value=long_value,
+        short_value=short_value,
+        option_size=option_size,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
 
     return ();
 }

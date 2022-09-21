@@ -299,7 +299,7 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
         option_side=side,
         strike_price=strike_price,
         terminal_price=terminal_price,
-        amount=option_size,
+        option_size=option_size,
         maturity=maturity,
     );
     return ();
