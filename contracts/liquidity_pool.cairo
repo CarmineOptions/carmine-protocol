@@ -718,21 +718,27 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     if (option_side == TRADE_SIDE_LONG) {
         // User is long, pool is short
+        // User receives amount belonging to long (holder/buyer of the option).
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
             recipient=user_address,
             amount=long_value,
         );
+        // Pool is short (underwriter) and receives "what is left",
+        // receives the remaining value from locked capital.
         adjust_capital(short_value);
     } else {
         // User is short, pool is long
+        // User is short (underwriter) and receives "what is left",
+        // receives the remaining value from locked capital.
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=current_contract_address,
             recipient=user_address,
             amount=short_value,
         );
+        // Pool receives amount belonging to long (holder/buyer of the option).
         adjust_capital(long_value);
     }
 
@@ -740,7 +746,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    long_value: felt, 
+    long_value: felt,
     short_value: felt,
     adjust_by: felt,
     pooled_token_addr: felt,
@@ -749,9 +755,11 @@ func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     maturity: felt,
     strike_price: felt
 ) {
+    // This function is a helper function used only for expiring options.
+
     alloc_locals
 
-    let (pool_side) = get_opposite_side(trade_side); 
+    let (pool_side) = get_opposite_side(trade_side);
 
     // lpool_balance is total staked capital which has to be decreased by the "opposite" of adjust_by...
 
@@ -774,7 +782,6 @@ func adjust_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
 
         let new_lpool_balance = current_lpool_balance + long_value;
         lpool_balance.write(pooled_token_addr, new_lpool_balance);
-       
     } else {
         // Pool is SHORT
         // Decrease the lpool_balance by the long_value
