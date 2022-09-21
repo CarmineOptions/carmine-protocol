@@ -21,13 +21,14 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-from constants import (
+from contracts.constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
     TRADE_SIDE_SHORT,
     get_opposite_side
 )
+from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
 
 
 
@@ -406,6 +407,8 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_type=option_type,
+            maturity=maturity,
+            strike_price=strike_price,
             underlying_price=underlying_price,
         );
     }
@@ -464,6 +467,8 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     option_size_in_pool_currency: felt,
     premia_including_fees: felt,
     option_type: felt,
+    maturity: felt,
+    strike_price: felt,
     underlying_price: felt,
 ) {
     alloc_locals;
@@ -484,23 +489,41 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         amount=to_be_paid_by_user,
     );
     
-    // Increase unlocked capital by (fees - premia)
-    let (current_locked_balance) = pool_locked_capital.read();
-    let new_locked_balance = current_locked_balance - premia_including_fees;
+    // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+    // since only locked_capital storage_var exists
+    let (current_balance) = lpool_balance.read();
+    let (new_balance) = current_balance + premia_including_fees;
+    lpool_balance.write(new_balance)
 
-    // FIXME 7: free up locked capital if the pool was short (the user that is trading to be short
-    // is providing the locked capital instead of pool - in case the pool had a short position)
-    // ie update new_locked_balance before writing it
-    // LOOK INTO BURN_OPTION_TOKEN FIXMEs FOR BETTER DESCRIPTION
+    // User is going short, hence user is locking in capital...
+    //       if pool has short position -> unlock pool's capital
+    // pools_position is in terms of base tokens (ETH in case of ETH/USD)... in same units is option_size
+    // since user wants to go short, the pool can "sell off" its short... and unlock its capital
+
+    // Update pool's short position
+    let (pools_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price)
+    let (size_to_be_unlocked_in_base) = min(option_size, pools_position)
+    let (new_pools_short_position) = pools_short_position - size_to_be_unlocked_in_base
+    option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position)
+
+    // Update pool's long position
+    let (pools_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price)
+    let (size_to_increase_long_position) = option_size - size_to_be_unlocked_in_base
+    let (new_pools_long_position) = pools_long_position + size_to_increase_long_position
+    option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position)
+
+    // Update the locked capital
+    let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(size_to_be_unlocked_in_base, option_type, strike_price
+    let (current_locked_balance) = pool_locked_capital.read();
+    let new_locked_balance = current_locked_balance - size_to_be_unlocked;
 
     with_attr error_message("Not enough capital") {
+        // This will never happen. It is here just as sanity check.
         assert_nn(new_locked_balance);
     }
        
     pool_locked_capital.write(new_locked_balance);
 
-    // user goes short, locks in capital of size amount, the pool pays premia to the user and lastly user pays fees to the pool
-    // increase unlocked capital by (fees - premia) (this might be happening in the amm.cairo)
     return ();
 }
 
