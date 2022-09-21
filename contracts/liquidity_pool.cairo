@@ -83,7 +83,7 @@ func option_position(option_side: felt, maturity: felt, strike_price: felt) -> (
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
-// FIXME: do we need pooled_token_addr??? if not drop it, if yes, add it all over the place
+// FIXME 1: do we need pooled_token_addr??? if not drop it, if yes, add it all over the place
 @storage_var
 func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
 }
@@ -134,14 +134,12 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // Returns capital that is unlocked for immediate extraction/use.
     // This is for example ETH in case of ETH/USD CALL options.
 
+    // Capital locked by the pool
     let (locked_capital) = pool_locked_capital.read();
 
-    let (own_addr) = get_contract_address();
-    // FIXME: fix this...
-    let (contract_balance) = IERC20.balanceOf(
-        contract_address = option_token_address,
-        account = own_addr
-    );
+    // Get capital that is sum of unlocked (available) and locked capital.
+    let (contract_balance) = lpool_balance.read();
+
     let unlocked_capital = contract_balance - locked_capital;
     return (unlocked_capital = unlocked_capital);
 }
@@ -161,7 +159,7 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 ) -> (value_of_position: Uint256) {
     // Returns a total value of pools position (sum of value of all options held by pool).
 
-    //FIXME
+    //FIXME 2: implement
 }
 
 
@@ -172,7 +170,7 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
 // sets pair, liquidity currency and hence the option type
 // for example pair is ETH/USDC and this pool is only for ETH hence only call options are handled here
-// FIXME: do we actually need two liquidity pools for one pair??? does it make sense to have 1 or 2 LPs?
+// FIXME 3: do we actually need two liquidity pools for one pair??? does it make sense to have 1 or 2 LPs?
 // end
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -256,7 +254,7 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (to_burn,);
 }
 
-// FIXME: add unittest that
+// FIXME 4: add unittest that
 // amount = get_underlying_for_lptokens(addr, get_lptokens_for_underlying(addr, amount))
 //ie that what you get for lptoken is what you need to get same amount of lptokens
 
@@ -311,7 +309,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
     ):
-        let (free_capital) = get_available_capital();
+        let (free_capital) = get_unlocked_capital();
         assert_nn(free_capital - underlying_amount);
     end
 
@@ -352,8 +350,8 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 //   for example how much capital is unlocked, how much is locked,...
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
-    amount: felt,
-    amount_in_pool_currency: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
     option_side: felt,
     option_type: felt,
     maturity: felt,
@@ -362,7 +360,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     underlying_price: felt,
 ) {
     // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
-    // amount: felt,  // in base tokens (ETH in case of ETH/USDC)
+    // option_size: felt,  // same as option_size... in base tokens (ETH in case of ETH/USDC)
     // option_side: felt,
     // option_type: felt,
     // maturity: felt,  // felt in seconds
@@ -370,7 +368,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // premia_including_fees: felt,  // in Math64x61 in either base or quote token
     // underlying_price: felt, // in Math64x61
 
-    // FIXME: do we want to have the amount here as felt or do want it as uint256???
+    // FIXME 5: do we want to have the option_size here as felt or do want it as uint256???
     alloc_locals;
 
     let (option_token_address) = get_option_token_address(
@@ -393,19 +391,19 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     }
 
     if (option_side == TRADE_SIDE_LONG) {
-        // FIXME: add amount_in_pool_currency
         _mint_option_token_long(
             currency_address=currency_address,
             option_token_address=option_token_address,
-            amount=amount,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
         );
     } else {
-        // FIXME: add amount_in_pool_currency
         _mint_option_token_short(
             currency_address=currency_address,
             option_token_address=option_token_address,
-            amount=amount,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_type=option_type,
             underlying_price=underlying_price,
@@ -416,7 +414,11 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    currency_address: felt, option_token_address: felt, amount: felt, premia_including_fees: felt
+    currency_address: felt,
+    option_token_address: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
+    premia_including_fees: felt
 ) {
     alloc_locals;
 
@@ -424,7 +426,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (user_address) = get_caller_address();
 
     // Mint tokens
-    IOptionToken.mint(option_token_address, user_address, amount);
+    IOptionToken.mint(option_token_address, user_address, option_size);
 
     // Move premia and fees from user to the pool
     IERC20.transferFrom(
@@ -434,15 +436,12 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees,
     );  // Transaction will fail if there is not enough fund on users account
 
-    // Decrease unlocked capital by (amount - premia_including_fees)
-    // We have storage_var only for locked, and unlocked is retrieved by subtracting
-    // locked capital from total balance, to to decrease unlocked capital, increase locked
+    // Decrease unlocked capital by (option_size_in_pool_currency - premia_including_fees)
     let (current_locked_balance) = pool_locked_capital.read();
-    // FIXME: pool is locking in capital only if there is no previous position to cover the user's
-    // long... ie if pool's does not have sufficient long to "pass down to user", it has to lock in
+    // FIXME 6: pool is locking in capital only if there is no previous position to cover the user's
+    // long... ie if pool does not have sufficient long to "pass down to user", it has to lock in
     // capital
-    // LOOK INTO BURN_OPTION_TOKEN FIXMEs FOR BETTER DESCRIPTION
-    let (increase_by) = amount - premia_including_fees; // FIXME amount here is in terms of ETH always
+    let (increase_by) = option_size_in_pool_currency - premia_including_fees;
 
     let new_locked_balance = current_locked_balance + increase_by;
 
@@ -461,7 +460,8 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     currency_address: felt,
     option_token_address: felt,
-    amount: felt,
+    option_size: felt,
+    option_size_in_pool_currency: felt,
     premia_including_fees: felt,
     option_type: felt,
     underlying_price: felt,
@@ -472,16 +472,11 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (user_address) = get_caller_address();
 
     // Mint tokens
-    IOptionToken.mint(option_token_address, user_address, amount);
+    IOptionToken.mint(option_token_address, user_address, option_size);
 
-    if (option_type == OPTION_PUT) {
-        let amount_quote = Math64x61.mul(amount, underlying_price);
-        let to_be_paid_by_user = amount_quote - premia_including_fees;
-    } else {
-        let to_be_paid_by_user = amount - premia_including_fees;
-    }
+    let to_be_paid_by_user = option_size_in_pool_currency - premia_including_fees;
 
-    // Move (amount minus (premia minus fees)) from user to the pool
+    // Move (option_size minus (premia minus fees)) from user to the pool
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
@@ -493,7 +488,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (current_locked_balance) = pool_locked_capital.read();
     let new_locked_balance = current_locked_balance - premia_including_fees;
 
-    // FIXME: free up locked capital if the pool was short (the user that is trading to be short
+    // FIXME 7: free up locked capital if the pool was short (the user that is trading to be short
     // is providing the locked capital instead of pool - in case the pool had a short position)
     // ie update new_locked_balance before writing it
     // LOOK INTO BURN_OPTION_TOKEN FIXMEs FOR BETTER DESCRIPTION
@@ -508,6 +503,9 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // increase unlocked capital by (fees - premia) (this might be happening in the amm.cairo)
     return ();
 }
+
+// FIXME 8: in all mint options functions... the lpool_balance has to be increased/decreased by premia_including_fees
+// including burns (cause burn is also transfer of premia and fees
 
 // User decreases its position (if user is long, it decreases the size of its long,
 // if he/she is short, the short gets decreased).
@@ -598,7 +596,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     );
 
     // Increase unlocked capital by (amount_in_pool_currency - (premia + fees))
-    // FIXME:
+    // FIXME 9:
     //  - in case the pool is long: the burn it increases pool's long
     //       -> the locked capital was locked by users and not pool -> do not decrease pool_locked_capital by the amount_in_pool_currency
     //  - in case the pool is short: the burn decreases the pool's short
@@ -644,7 +642,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     );
 
     // Increase unlocked capital by premia_including_fees
-    // FIXME:
+    // FIXME 10:
     //  - in case the pool is long: the burn decreases pool's long... up to a size of the pool's long
     //      -> if the amount_in_pool_currency > pool's long -> the pool starts to accumulate
     //          the short and has to lock in it's own capital... -> lock capital
@@ -694,9 +692,12 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         maturity=maturity,
         strike_price=strike_price
     );
-    // FIXME
+    // FIXME 11:
     let (currency_address) = 123;
 
+    // The option (underlying asset x maturity x option type x strike) has to be "expired"
+    // (settled) on the pool's side in terms of locked capital. Ie check that SHORT position
+    // has been settled, if pool is LONG then it did not lock capital and we can go on.
     let (current_pool_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
     with_attr error_message("Pool hasn't released the locked capital for users -> call expire_option_token_for_pool to release it.") {
         // Even though the transaction might go through with no problems, there is a chance
@@ -907,7 +908,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     }
 
     // Get terminal price of the option.
-    let (terminal_price) = FIXME;
+    let (terminal_price) = FIXME 12;
 
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
