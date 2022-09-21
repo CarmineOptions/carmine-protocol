@@ -439,14 +439,19 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees,
     );  // Transaction will fail if there is not enough fund on users account
 
-    // Decrease unlocked capital by (option_size_in_pool_currency - premia_including_fees)
+    // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+    // since only locked_capital storage_var exists
+    let (current_balance) = lpool_balance.read();
+    let (new_balance) = current_balance + premia_including_fees;
+    lpool_balance.write(new_balance)
+
+    // Increase locked capital by option_size_in_pool_currency
     let (current_locked_balance) = pool_locked_capital.read();
     // FIXME 6: pool is locking in capital only if there is no previous position to cover the user's
     // long... ie if pool does not have sufficient long to "pass down to user", it has to lock in
     // capital
-    let (increase_by) = option_size_in_pool_currency - premia_including_fees;
 
-    let new_locked_balance = current_locked_balance + increase_by;
+    let new_locked_balance = current_locked_balance + option_size_in_pool_currency;
 
     // Check that there is enough unlocked capital
     with_attr error_message("Not enough unlocked capital.") {
@@ -489,10 +494,10 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         amount=to_be_paid_by_user,
     );
     
-    // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+    // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read();
-    let (new_balance) = current_balance + premia_including_fees;
+    let (new_balance) = current_balance - premia_including_fees;
     lpool_balance.write(new_balance)
 
     // User is going short, hence user is locking in capital...
@@ -501,19 +506,19 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // since user wants to go short, the pool can "sell off" its short... and unlock its capital
 
     // Update pool's short position
-    let (pools_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price)
-    let (size_to_be_unlocked_in_base) = min(option_size, pools_position)
-    let (new_pools_short_position) = pools_short_position - size_to_be_unlocked_in_base
-    option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position)
+    let (pools_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+    let (size_to_be_unlocked_in_base) = min(option_size, pools_position);
+    let (new_pools_short_position) = pools_short_position - size_to_be_unlocked_in_base;
+    option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position);
 
     // Update pool's long position
-    let (pools_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price)
-    let (size_to_increase_long_position) = option_size - size_to_be_unlocked_in_base
-    let (new_pools_long_position) = pools_long_position + size_to_increase_long_position
-    option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position)
+    let (pools_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
+    let (size_to_increase_long_position) = option_size - size_to_be_unlocked_in_base;
+    let (new_pools_long_position) = pools_long_position + size_to_increase_long_position;
+    option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position);
 
     // Update the locked capital
-    let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(size_to_be_unlocked_in_base, option_type, strike_price
+    let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(size_to_be_unlocked_in_base, option_type, strike_price);
     let (current_locked_balance) = pool_locked_capital.read();
     let new_locked_balance = current_locked_balance - size_to_be_unlocked;
 
@@ -577,7 +582,9 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_side = option_side,
-            maturity = maturity
+            option_type=option_type,
+            maturity = maturity,
+            strike_price=strike_price,
         );
     } else {
         _burn_option_token_short(
@@ -587,7 +594,9 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
             option_side=option_size,
+            option_type=option_type,
             maturity=maturity,
+            strike_price=strike_price,
         );
     }
     return ();
@@ -600,7 +609,9 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     option_size_in_pool_currency: felt,
     premia_including_fees: felt,
     option_side: felt,
+    option_type: felt,
     maturity: felt,
+    strike_price: felt,
 ) {
     // option_side is the side of the token being closed
     // user is closing its long position -> freeing up pool's locked capital
@@ -627,13 +638,25 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         strike_price
     );
 
-    // FIXME 9:
-    if (option_side = TRADE_SIDE_LONG){
+    // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
+    // This decrease is happening because burning long is similar to minting short, hence the payment.
+    // since only locked_capital storage_var exists
+    let (current_balance) = lpool_balance.read();
+    let (new_balance) = current_balance - premia_including_fees;
+    lpool_balance.write(new_balance)
+
+    let (pool_short_position) = option_position.read(
+        TRADE_SIDE_SHORT,
+        maturity,
+        strike_price
+    );
+
+    if (pool_short_position = 0){
         // If pool is LONG:
-        // Burn increases pool's long
-        //      -> The locked capital was locked by users and not pool 
+        // Burn long increases pool's long (if pool was already long)
+        //      -> The locked capital was locked by users and not pool
         //      -> do not decrease pool_locked_capital by the option_size_in_pool_currency
-        let new_option_position = current_pool_position + option_size_in_pool_currency;
+        let new_option_position = current_pool_position + option_size;
         option_position.write(
             option_side,
             maturity,
@@ -645,19 +668,24 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         // Burn decreases the pool's short
         //     -> decrease the pool_locked_capital by min(size of pools short, amount_in_pool_currency)
         //         since the pools' short might not be covering all of the long
+
+        // Update the locked capital
         let (current_locked_balance) = pool_locked_capital.read();
-        let (decrease_locked_by) = min(current_pool_position, option_size_in_pool_currency);
-        let (new_locked_balance) = current_locked_balance - decrease_locked_by;
+        let (size_to_be_unlocked_in_base) = min(current_pool_position, option_size);
+        let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(size_to_be_unlocked_in_base, option_type, strike_price);
+        let (new_locked_balance) = current_locked_balance - size_to_be_unlocked;
         pool_locked_capital.write(new_locked_balance);
 
-        let new_option_position = current_pool_position - option_size_in_pool_currency;
-        option_position.write(
-            option_side,
-            maturity,
-            strike_price,
-            new_option_position
-        );
+        // Update pool's short position
+        let (pools_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+        let (new_pools_short_position) = pools_short_position - size_to_be_unlocked_in_base;
+        option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position);
 
+        // Update pool's long position
+        let (pools_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
+        let (size_to_increase_long_position) = option_size - size_to_be_unlocked_in_base;
+        let (new_pools_long_position) = pools_long_position + size_to_increase_long_position;
+        option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position);
     }
     return ();
 }
@@ -669,7 +697,9 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     option_size_in_pool_currency: felt,
     premia_including_fees: felt,
     option_side: felt,
+    option_type: felt,
     maturity: felt,
+    strike_price: felt,
 ) {
     // option_side is the side of the token being closed
 
@@ -683,7 +713,6 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = option_size_in_pool_currency - premia_including_fees;
-
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=current_contract_address,
@@ -691,71 +720,51 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         amount=total_user_payment,
     );
 
-    let (current_pool_position) = option_position.read(
-        option_side,
-        maturity,
-        strike_price
-    );
+    // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+    // This increase is happening because burning short is similar to minting long, hence the payment.
+    // since only locked_capital storage_var exists
+    let (current_balance) = lpool_balance.read();
+    let (new_balance) = current_balance + premia_including_fees;
+    lpool_balance.write(new_balance);
 
-    // FIXME 10:
-    if (option_side = TRADE_SIDE_LONG) {
+    // Find out pools position... if it has short position = 0 -> it is long or at 0
+    let (pool_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+
+    // FIXME: the inside of the if (not the else) should work for both cases
+    if (pool_short_position = 0) {
         // If pool is LONG
         // Burn decreases pool's long -> up to a size of the pool's long 
         //      -> if option_size_in_pool_currency > pool's long -> pool starts to accumulate the short and 
         //         has to lock in it's own capital -> lock capital
         //      -> there might be a case, when there is not enough capital to be locked -> fail the transaction
-        let (should_accumulate_short) = is_le(current_pool_position, option_size_in_pool_currency);
 
-        if (should_accumulate_short == 1){
-            // Option_size_in_pool_currency > pool's long -> accumulate short
-            let (short_remainder) = current_pool_position - option_size_in_pool_currency;
-            let (short_to_be_accumulated) = abs_value(short_remainder);
-            
-            // Long position goes to zero and Short position increases
-            let new_long_position = 0;
-            option_position.write(
-                option_side,
-                maturity,
-                strike_price,
-                new_long_position    
-            );
+        let (pool_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
 
-            let (current_short_position) = option_position.read(
-                TRADE_SIDE_SHORT,
-                maturity,
-                strike_price,
-            );
+        let (decrease_long_position_by) = min(pool_long_position, option_size);
+        let (increase_short_position_by) = option_size - decrease_long_position_by;
+        let (new_long_position) = pool_long_position - decrease_long_position_by;
+        let (new_short_position) = pool_short_position + increase_short_position_by;
 
-            let new_short_position = current_short_position + short_to_be_accumulated;
-            option_position.write(
-                TRADE_SIDE_SHORT,
-                maturity,
-                strike_price,
-                new_short_position
-            );
+        // The increase_short_position_by and capital_to_be_locked might both be zero,
+        // if the long position is sufficient.
+        let (capital_to_be_locked) = convert_amount_to_option_currency_from_base(
+            increase_short_position_by,
+            option_type,
+            strike_price
+        );
+        let (current_locked_capital) = pool_locked_capital.read();
+        let (new_locked_capital) = current_locked_capital + capital_to_be_locked;
 
-            // Pool has to lock it's own capital
-            let (current_locked_capital) = pool_locked_capital.read();
-            let (current_total_capital) = lpool_balance.read();
-            let current_unlocked_capital = current_total_capital - current_locked_capital; 
-            
-            // Assert there is enough capital to be locked
-            with_attr error_message("Not enough capital to be locked.") {
-                assert_nn(current_unlocked_capital - short_to_be_accumulated);
-            }
-    
-            let new_locked_capital = current_locked_capital + short_to_be_accumulated;
-            pool_locked_capital.write(new_locked_capital);
+        // Set the option positions
+        option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
+        option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
 
-        } else {
-            // Burn decreases pool's long without accumulating short position
-            let new_pool_position = current_pool_position - option_size_in_pool_currency;
-            option_position.write(
-                option_side,
-                maturity,
-                strike_price,
-                new_pool_position
-            );
+        // Set the pool_locked_capital.
+        pool_locked_capital.write(new_locked_capital);
+
+        // Assert there is enough capital to be locked
+        with_attr error_message("Not enough capital to be locked.") {
+            assert_nn(new_balance - new_locked_capital);
         }
 
     } else {
@@ -771,8 +780,14 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             assert_nn(current_unlocked_capital - option_size_in_pool_currency);
         }
 
+        // Update locked capital
         let new_locked_capital = current_locked_capital + option_size_in_pool_currency;
         pool_locked_capital.write(new_locked_capital);
+
+        // Update pools (short) position
+        let (pools_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+        let (new_pools_short_position) = pools_short_position - option_size;
+        option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position);
     }
 
     return ();
