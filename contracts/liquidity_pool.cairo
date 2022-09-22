@@ -532,9 +532,6 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     return ();
 }
 
-// FIXME 8: in all mint options functions... the lpool_balance has to be increased/decreased by premia_including_fees
-// including burns (cause burn is also transfer of premia and fees
-
 // User decreases its position (if user is long, it decreases the size of its long,
 // if he/she is short, the short gets decreased).
 // Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
