@@ -51,7 +51,7 @@ func option_type_() -> (option_type: felt) {
 // Address of the underlying token (for example address of ETH or USD or...).
 // Will return base/quote according to option_type
 @storage_var
-func underlying_token_addres(option_type: felt) -> (res: felt) {
+func underlying_token_addres(pooled_token_addr: felt) -> (res: felt) {
 }
 
 
@@ -375,7 +375,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     alloc_locals;
 
-    let (currency_address) = underlying_token_addres.read(option_type);
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
     let (option_token_address) = get_option_token_address(
         option_side=side,
         maturity=maturity,
@@ -434,7 +434,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(option_type);
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
 
     // Mint tokens
     IOptionToken.mint(option_token_address, user_address, option_size);
@@ -499,7 +499,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(option_token);
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
 
     // Mint tokens
     IOptionToken.mint(option_token_address, user_address, option_size);
@@ -637,8 +637,8 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(option_type);
-    
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
+
     // Burn the tokens
     IOptionToken.burn(option_token_address, user_address, option_size);
 
@@ -723,7 +723,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(option_type);
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
 
     // Burn the tokens
     IOptionToken.burn(option_token_address, user_address, option_size);
@@ -815,7 +815,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     option_type: felt,
     option_side: felt,
     strike_price: felt,
-    terminal_price: felt, 
+    terminal_price: felt,
     option_size: felt,
     maturity: felt,
 ) {
@@ -830,7 +830,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         strike_price=strike_price
     );
 
-    let (currency_address) = underlying_token_addres.read(option_type);
+    let (currency_address) = underlying_token_addres.read(pooled_token_addr);
 
     // The option (underlying asset x maturity x option type x strike) has to be "expired"
     // (settled) on the pool's side in terms of locked capital. Ie check that SHORT position
