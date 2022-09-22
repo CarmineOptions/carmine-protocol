@@ -402,6 +402,8 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             option_size=option_size,
             option_size_in_pool_currency=option_size_in_pool_currency,
             premia_including_fees=premia_including_fees,
+            option_type=option_type,
+            strike_price=strike_price,
         );
     } else {
         _mint_option_token_short(
@@ -424,7 +426,9 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     option_token_address: felt,
     option_size: felt,
     option_size_in_pool_currency: felt,
-    premia_including_fees: felt
+    premia_including_fees: felt,
+    option_type: felt,
+    strike_price: felt,
 ) {
     alloc_locals;
 
@@ -443,44 +447,40 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees,
     );  // Transaction will fail if there is not enough fund on users account
 
+    // Pool is locking in capital inly if there is no previous position to cover the user's long
+    //      -> if pool does not have sufficient long to "pass down to user", it has to lock
+    //           capital... option position has to be updated too!!!
+
     // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read();
     let (new_balance) = current_balance + premia_including_fees;
-    lpool_balance.write(new_balance)
+    lpool_balance.write(new_balance);
 
-    // FIXME 6: 
+    // Update pool's position, lock capital... lpool_balance was already updated above
     let (current_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
-    let is_long_enough = is_nn(current_long_position - option_size);
+    let (current_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
+    let (current_locked_balance) = pool_locked_capital.read();
 
-    if (is_long_enough = 0) {
-        // Pool is locking in capital inly if there is no previous position to cover the user's long
-        //      -> if pool foes not have sufficient long to "pass down to user", it has to lock
-        //           capital... option position has to be updated too!!!
+    // Get diffs to update everything
+    let (decrease_long_by) = min(option_size, current_long_position);
+    let (increase_short_by) = option_size - decrease_long_by;
+    let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
 
-        let long_position_remainder_base = option_size - current_long_position;
-        let long_position_remainder = convert_amount_to_option_currency_from_base(
-            long_position_remainder_base, option_type, strike_price
-        );
+    // New state
+    let (new_long_position) = current_long_position - decrease_long_by;
+    let (new_short_position) = current_short_position + increase_short_by;
+    let (new_locked_capital) = current_locked_balance + increase_locked_by;
 
-        let (current_locked_balance) = pool_locked_capital.read();
-        let new_locked_balance = current_locked_balance + long_position_remainder;
-        
-        with_attr error_message("Not enough unlocked capital in pool") {
-            assert_nn(new_balance - new_locked_balance);
-        }
-
-        let new_long_position = current_long_position + long_position_remainder_base;
-                      
-        pool_locked_capital.write(new_locked_balance);
-        option_position.write(
-            TRADE_SIDE_LONG,
-            maturity,
-            strike_price,
-            new_long_position
-        );
-
+    // Check that there is enough capital to be locked.
+    with_attr error_message("Not enough unlocked capital in pool") {
+        assert_nn(new_balance - pool_locked_capital);
     }
+
+    // Update the state
+    option_position.write(TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
+    option_position.write(TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
+    pool_locked_capital.write(new_locked_capital);
 
     return ();
 }
