@@ -171,7 +171,6 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 // func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
 // sets pair, liquidity currency and hence the option type
 // for example pair is ETH/USDC and this pool is only for ETH hence only call options are handled here
-// FIXME 3: do we actually need two liquidity pools for one pair??? does it make sense to have 1 or 2 LPs?
 // end
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -449,7 +448,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (current_locked_balance) = pool_locked_capital.read();
     // FIXME 6: pool is locking in capital only if there is no previous position to cover the user's
     // long... ie if pool does not have sufficient long to "pass down to user", it has to lock in
-    // capital
+    // capital... option position has to be updated too!!!
 
     let new_locked_balance = current_locked_balance + option_size_in_pool_currency;
 
