@@ -368,7 +368,6 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // premia_including_fees: felt,  // in Math64x61 in either base or quote token
     // underlying_price: felt, // in Math64x61
 
-    // FIXME 5: do we want to have the option_size here as felt or do want it as uint256???
     alloc_locals;
 
     let (currency_address) = underlying_token_addres.read(option_type);
