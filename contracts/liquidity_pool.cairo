@@ -445,15 +445,15 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     lpool_balance.write(new_balance)
 
     // FIXME 6: 
-    let (long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
-    let is_long_enough = is_nn(long_position - option_size);
+    let (current_long_position) = option_position.read(TRADE_SIDE_LONG, maturity, strike_price);
+    let is_long_enough = is_nn(current_long_position - option_size);
 
     if (is_long_enough = 0) {
         // Pool is locking in capital inly if there is no previous position to cover the user's long
         //      -> if pool foes not have sufficient long to "pass down to user", it has to lock
-        //           capital
+        //           capital... option position has to be updated too!!!
 
-        let long_position_remainder_base = option_size - long_position;
+        let long_position_remainder_base = option_size - current_long_position;
         let long_position_remainder = convert_amount_to_option_currency_from_base(
             long_position_remainder_base, option_type, strike_price
         );
@@ -464,8 +464,16 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("Not enough unlocked capital in pool") {
             assert_nn(new_balance - new_locked_balance);
         }
+
+        let new_long_position = current_long_position + long_position_remainder_base;
                       
         pool_locked_capital.write(new_locked_balance);
+        option_position.write(
+            TRADE_SIDE_LONG,
+            maturity,
+            strike_price,
+            new_long_position
+        );
 
     }
 
