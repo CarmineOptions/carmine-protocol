@@ -62,7 +62,7 @@ func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 
 
 // List of available options (mapping from 1 to n to available strike x maturity,
-// for n+1 returns zeros).
+// for n+1 returns zeros). STARTS INDEXING AT 0.
 @storage_var
 func available_options(order_i: felt) -> (option_side: felt, maturity: felt, strike_price: felt) {
 }
@@ -160,8 +160,13 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> (value_of_position: Uint256) {
     // Returns a total value of pools position (sum of value of all options held by pool).
+    // Goes through all options in storage var "available_options"... is able to iterate by i (from 0 to n)
+    // It gets 0 from available_option(n), if the n-1 is the "last" option.
+    // This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
+    // If this doesn't look "good", there is an option to have the available_options instead
+    // of having the argument i, it could have no argument and return array (it might be easier for the map above)
 
-    //FIXME 2: implement
+    //FIXME 2: implement, for suggestion look at description 2-3 lines above
 }
 
 
