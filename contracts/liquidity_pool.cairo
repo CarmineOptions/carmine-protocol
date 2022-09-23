@@ -63,8 +63,14 @@ func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
+struct Option {
+    option_side: felt,
+    maturity: felt,
+    strike_price: felt,
+}
+
 @storage_var
-func available_options(order_i: felt) -> (option_side: felt, maturity: felt, strike_price: felt) {
+func available_options(order_i: felt) -> (Option) {
 }
 
 
@@ -156,17 +162,73 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     return (option_token_address=option_token_addr);
 }
 
+// Returns a total value of pools position (sum of value of all options held by pool).
+// Goes through all options in storage var "available_options"... is able to iterate by i (from 0 to n)
+// It gets 0 from available_option(n), if the n-1 is the "last" option.
+// This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
+// If this doesn't look "good", there is an option to have the available_options instead
+// of having the argument i, it could have no argument and return array (it might be easier for the map above)
 
-func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-) -> (value_of_position: Uint256) {
-    // Returns a total value of pools position (sum of value of all options held by pool).
-    // Goes through all options in storage var "available_options"... is able to iterate by i (from 0 to n)
-    // It gets 0 from available_option(n), if the n-1 is the "last" option.
-    // This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
-    // If this doesn't look "good", there is an option to have the available_options instead
-    // of having the argument i, it could have no argument and return array (it might be easier for the map above)
+//FIXME 2: implement, for suggestion look at description 2-3 lines above
+func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: felt) {
+    alloc_locals;
 
-    //FIXME 2: implement, for suggestion look at description 2-3 lines above
+    let index = 0;
+    let (res) = _get_position_value(index);
+    return (res = res);
+}
+
+func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(index: felt) -> (res: felt) {
+    alloc_locals;
+
+    let (option) = available_options.read(index);
+    let option_sum = option.maturity + option.strike_price;
+
+    if (option_sum == 0) {
+        return (res = 0);
+    }
+
+    let (option_position_tmp) = _get_position_value(index = index + 1);
+
+    let (_option_position) = option_position.read(
+        option.option_side,
+        option.maturity,
+        option.strike_price
+    );
+    let res = option_position_tmp + _option_position;
+
+    return (res = res);
+}
+
+func get_available_options_usable_index{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(starting_index: felt) -> (usable_index: felt) {
+    alloc_locals;
+
+    let (option) = available_options.read(starting_index);
+    let option_sum = option.maturity + option.strike_price;
+
+    if (option_sum == 0) {
+        return (usable_index = starting_index);
+    }
+    
+    let (usable_index) = get_available_options_usable_index(starting_index + 1);
+
+    return (usable_index = usable_index);
+
+}
+
+func update_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(option_side: felt, maturity: felt, strike_price: felt) {
+    alloc_locals;
+    let new_option = Option (
+        option_side = option_side,
+        maturity = maturity,
+        strike_price = strike_price
+    );
+
+    let (usable_index) = get_available_options_usable_index(0);
+
+    available_options.write(usable_index, new_option);
+
+    return ();
 }
 
 
