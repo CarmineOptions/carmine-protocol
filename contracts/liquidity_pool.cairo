@@ -174,7 +174,7 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
     alloc_locals;
 
     let index = 0;
-    let (res) = _get_position_value(index);
+    let (res) = _get_value_of_pool_position(index);
     return (res = res);
 }
 
@@ -188,7 +188,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         return (res = 0);
     }
 
-    let (option_position_tmp) = _get_position_value(index = index + 1);
+    let (option_position_tmp) = _get_value_of_pool_position(index = index + 1);
 
     let (_option_position) = option_position.read(
         option.option_side,
