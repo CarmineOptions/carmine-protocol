@@ -53,6 +53,7 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
 ) -> (pool_balance: felt) {
     // Returns total capital in the pool minus the locked capital
     // (ie capital available to locking).
+    // FIXME: Implement ILiqPool.get_unlocked_capital
     let (pool_balance_) = ILiquidityPool.get_unlocked_capital(
         contract_address=pool_address
     );
