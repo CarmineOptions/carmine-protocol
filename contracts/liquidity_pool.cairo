@@ -229,7 +229,7 @@ func _get_available_options_usable_index{
     return (usable_index = usable_index);
 }
 
-func update_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_side: felt,
     maturity: felt,
     strike_price: felt,
