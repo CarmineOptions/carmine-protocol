@@ -109,6 +109,9 @@ func lpool_balance(pooled_token_addr: felt) -> (res: Uint256) {
 func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt) {
 }
 
+func add_lptoken(asset_token_addr: felt, base_token_addr: felt, lptoken_addr: felt){
+}
+
 // mints LPToken
 // assumes the underlying token is already approved (directly call approve() on the token being deposited to allow this contract to claim them)
 // amt is amt of underlying token to deposit
