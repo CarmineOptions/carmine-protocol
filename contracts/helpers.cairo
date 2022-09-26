@@ -64,12 +64,13 @@ func _get_value_of_position{
     let side = option.option_side;
     let maturity = option.maturity;
     let strike_price = option.strike_price;
-    let underlying_asset = option.asset;
+    let quote_token_address = option.quote_token_address;
+    let base_token_address = option.base_token_address;
 
     let option_size = position_size;
 
     // 1) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(underlying_asset);
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 2) Calculate new volatility, calculate trade volatility

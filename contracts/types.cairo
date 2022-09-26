@@ -20,5 +20,7 @@ struct Option {
     option_side: felt,
     maturity: felt,
     strike_price: felt,
-    asset: felt,
+    quote_token_address: felt,
+    base_token_address: felt,
+    option_type: felt
 }

@@ -24,7 +24,16 @@ from contracts.constants import (
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
-from contracts.liquidity_pool import get_unlocked_capital
+from contracts.liquidity_pool import (
+    get_unlocked_capital,
+    get_lptoken_addr_for_given_option,
+    get_option_token_address,
+    get_option_type,
+    get_pool_volatility,
+    mint_option_token,
+    burn_option_token,
+    expire_option_token
+)
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
 from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address)
@@ -51,14 +60,12 @@ func pool_address_for_given_asset_and_option_type(asset: felt, option_type: Opti
 
 @view
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    pool_address: Address,
-    option_type: OptionType
+    lptoken_address: Address,
 ) -> (pool_balance: Math64x61_) {
     // Returns total capital in the pool minus the locked capital
     // (ie capital available to locking).
-    // FIXME: Implement ILiqPool.get_unlocked_capital
-    let (pool_balance_) = ILiquidityPool.get_unlocked_capital(
-        contract_address=pool_address
+    let (pool_balance_) = get_unlocked_capital(
+        lptoken_address=lptoken_address
     );
 
     return (pool_balance_,);
@@ -67,10 +74,10 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
 
 @view
 func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    pool_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
+    lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
 ) -> (option_availability: felt) {
-    let (option_address) = ILiquidityPool.get_option_token_address(
-        contract_address=pool_address,
+    let (option_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
         option_side=option_side,
         maturity=maturity,
         strike_price=strike_price
@@ -95,30 +102,33 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     maturity: Int,
     side: OptionSide,
     option_size: Math64x61_,
-    underlying_asset: felt
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
 ) -> (premia: Math64x61_) {
     // options_size is always denominated in base tokens (ETH in case of ETH/USDC)
 
     alloc_locals;
 
-    // 0) Get pool address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
-        underlying_asset,
-        option_type
+    // 0) Helper values
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        strike_price
     );
 
     // 1) Get current volatility
-    let (current_volatility) = ILiquidityPool.get_pool_volatility(
-        contract_address=pool_address,
+    let (current_volatility) = get_pool_volatility(
+        lptoken_address=lptoken_address,
         maturity=maturity
     );
 
     // 2) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(underlying_asset);
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
     let (underlying_price) = empiric_median_price(empiric_key);
 
-    // 3) Calculate new volatility, calculate trade volatilit
-    let (current_pool_balance) = get_pool_available_balance(pool_address);
+    // 3) Calculate new volatility, calculate trade volatility
+    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
     assert_nn_le(Math64x61.ONE, current_pool_balance);
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
@@ -127,8 +137,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 4) Update volatility
-    let (current_volatility) = ILiquidityPool.set_pool_volatility(
-        contract_address=pool_address,
+    let (current_volatility) = set_pool_volatility(
+        lptoken_address=lptoken_address,
         maturity=maturity,
         volatility=new_volatility
     );
@@ -165,14 +175,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-        option_size,
-        option_type,
-        strike_price
-    );
-
-    ILiquidityPool.mint_option_token(
-        contract_address=pool_address,
+    mint_option_token(
+        lptoken_address=lptoken_address,
         option_size=option_size,
         option_size_in_pool_currency=option_size_in_pool_currency,
         option_side=side,
@@ -192,7 +196,9 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     maturity : Int,
     side : OptionSide,
     option_size : Math64x61_,
-    underlying_asset: felt
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
 ) -> (premia : felt) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
@@ -206,24 +212,24 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     let (opposite_side) = get_opposite_side(side);
 
-    // 0) Get pool address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
-        underlying_asset,
-        option_type
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        strike_price
     );
 
     // 1) Get current volatility
-    let (current_volatility) = ILiquidityPool.get_pool_volatility(
-        contract_address=pool_address,
+    let (current_volatility) = get_pool_volatility(
+        lptoken_address=lptoken_address,
         maturity=maturity
     );
 
     // 2) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(underlying_asset);
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
     let (underlying_price) = empiric_median_price(empiric_key);
 
-    // 3) Calculate new volatility, calculate trade volatilit
-    let (current_pool_balance) = get_pool_available_balance(pool_address);
+    // 3) Calculate new volatility, calculate trade volatility
+    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
     assert_nn_le(Math64x61.ONE, current_pool_balance);
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
@@ -265,15 +271,9 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_fees) = get_fees(total_premia_before_fees);
     let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
-    // 9) Make the trade
-    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-        option_size,
-        option_type,
-        strike_price
-    );
-    
-    ILiquidityPool.burn_option_token(
-        contract_address=pool_address,
+    // 9) Make the trade    
+    burn_option_token(
+        lptoken_address=lptoken_address,
         option_size=option_size,
         option_size_in_pool_currency=option_size_in_pool_currency,
         option_side=opposite_side,
@@ -281,7 +281,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         maturity=maturity,
         strike=strike_price,
         premia_including_fees=total_premia,
-        underlying_price=underlying_price,
+        underlying_price=underlying_price
     );
 
     return (premia=premia);
@@ -293,20 +293,17 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     maturity : Int,
     side : OptionSide,
     option_size : Math64x61_,
-    underlying_asset: felt,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> () {
 
     // FIXME: Implement terminal price... of type Math64x61_
     let (terminal_price: Math64x61_) = 0;
 
-    let (pool_address: Address) = pool_address_for_given_asset_and_option_type.read(
-        underlying_asset,
-        option_type
-    );
-
-    ILiquidityPool.expire_option_token(
-        contract_address=pool_address,
+    expire_option_token(
+        lptoken_address=lptoken_address,
         option_type=option_type,
         option_side=side,
         strike_price=strike_price,
@@ -325,28 +322,17 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     maturity : Int,
     option_side : OptionSide,
     option_size : Math64x61_,
-    underlying_asset: felt,
-    open_position: Bool, // True or False... determines if the user wants to open or close the position
+    // underlying_asset
+    quote_token_address: Address,
+    base_token_address: Address,
+    // True or False... determines if the user wants to open or close the position
+    open_position: Bool,
 ) -> (premia : Math64x61_) {
     // side is dependent on open_position...
     //  if open_position=TRUE -> side is what the user want's to do as action
     //  if open_position=False -> side is what the user want's to close
     //      (side of the token that user holds)
     //      This is very important is in close_position an opposite side is used
-
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
-        underlying_asset,
-        option_type
-    );
-    let (option_is_available) = is_option_available(
-        pool_address,
-        option_side,
-        strike_price,
-        maturity
-    );
-    with_attr error_message("Option is not available") {
-        assert option_is_available = TRUE;
-    }
 
     with_attr error_message("Given option_type is not available") {
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
@@ -363,6 +349,22 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
     with_attr error_message("Option size is not positive") {
         assert_le(1, option_size);
+    }
+
+    // lptoken_address serves as an identifier of selected liquidity pool
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        quote_token_address: felt,
+        base_token_address: felt,
+        option_type: felt
+    );
+    let (option_is_available) = is_option_available(
+        lptoken_address,
+        option_side,
+        strike_price,
+        maturity
+    );
+    with_attr error_message("Option is not available") {
+        assert option_is_available = TRUE;
     }
 
     // Check that maturity hasn't matured in case of open_position=TRUE
@@ -399,7 +401,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
             maturity,
             option_side,
             option_size,
-            underlying_asset
+            quote_token_address,
+            base_token_address,
+            lptoken_address
         );
         return (premia=premia);
     } else {
@@ -411,7 +415,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 maturity,
                 option_side,
                 option_size,
-                underlying_asset
+                quote_token_addr,
+                base_token_addr,
+                lptoken_address
             );
             return (premia=premia);
         } else {
@@ -423,6 +429,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 option_size=option_size,
                 underlying_asset=underlying_asset,
                 open_position=open_position
+                quote_token_addr,
+                base_token_addr,
+                lptoken_address
             );
             return (premia=0);
         }
