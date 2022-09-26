@@ -171,7 +171,6 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // If this doesn't look "good", there is an option to have the available_options instead of having
 // the argument i, it could have no argument and return array (it might be easier for the map above)
 
-//FIXME 2: implement, for suggestion look at description 2-3 lines above
 func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> (res: felt) {
     alloc_locals;
