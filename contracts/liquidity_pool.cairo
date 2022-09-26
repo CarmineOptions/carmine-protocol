@@ -164,14 +164,16 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 // Returns a total value of pools position (sum of value of all options held by pool).
-// Goes through all options in storage var "available_options"... is able to iterate by i (from 0 to n)
+// Goes through all options in storage var "available_options"... is able to iterate by i
+// (from 0 to n)
 // It gets 0 from available_option(n), if the n-1 is the "last" option.
 // This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
-// If this doesn't look "good", there is an option to have the available_options instead
-// of having the argument i, it could have no argument and return array (it might be easier for the map above)
+// If this doesn't look "good", there is an option to have the available_options instead of having
+// the argument i, it could have no argument and return array (it might be easier for the map above)
 
 //FIXME 2: implement, for suggestion look at description 2-3 lines above
-func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: felt) {
+func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+) -> (res: felt) {
     alloc_locals;
 
     let index = 0;
@@ -179,12 +181,16 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
     return (res = res);
 }
 
-func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(index: felt) -> (res: felt) {
+func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    index: felt
+) -> (res: felt) {
     alloc_locals;
 
     let (option) = available_options.read(index);
-    let option_sum = option.maturity + option.strike_price + option.asset;
 
+    // Because of how the defined options are stored we have to verify that we have not run
+    // at the end of the stored values. The end is with "empty" Option.
+    let option_sum = option.maturity + option.strike_price + option.asset;
     if (option_sum == 0) {
         return (res = 0);
     }
@@ -204,7 +210,11 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (res = res);
 }
 
-func _get_available_options_usable_index{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(starting_index: felt) -> (usable_index: felt) {
+func _get_available_options_usable_index{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    starting_index: felt
+) -> (usable_index: felt) {
     alloc_locals;
 
     let (option) = available_options.read(starting_index);
