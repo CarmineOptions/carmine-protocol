@@ -110,6 +110,7 @@ func lptoken_addr_for_given_pooled_token(pooled_token_addr: felt) -> (res: felt)
 }
 
 func add_lptoken(asset_token_addr: felt, base_token_addr: felt, lptoken_addr: felt){
+    return ();
 }
 
 // mints LPToken
