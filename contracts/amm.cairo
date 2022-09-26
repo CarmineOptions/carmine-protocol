@@ -20,6 +20,7 @@ from contracts.constants import (
     STOP_TRADING_BEFORE_MATURITY_SECONDS,
     EMPIRIC_ETH_USD_KEY,
     get_empiric_key,
+    get_opposite_side,
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
@@ -217,10 +218,12 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
 
     // 1) Get current volatility
-    let (current_volatility) = ILiquidityPool.get_pool_volatility(
-        contract_address=pool_address,
-        maturity=maturity
-    );
+    // FIXME: Implement get_pool_volatility
+    // let (current_volatility) = ILiquidityPool.get_pool_volatility(
+    //     contract_address=pool_address,
+    //     maturity=maturity
+    // );
+    let current_volatility = 0;
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);
@@ -296,7 +299,9 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     underlying_asset: felt,
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> () {
-    let (terminal_price) = FIXME;
+
+    // FIXME: Implement terminal price
+    let (terminal_price) = 0;
 
     let (pool_address) = pool_address_for_given_asset_and_option_type.read(
         underlying_asset,
@@ -321,7 +326,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
-    side : OptionSide,
+    option_side : OptionSide,
     option_size : Math64x61_,
     underlying_asset: felt,
     open_position: Bool, // True or False... determines if the user wants to open or close the position
@@ -338,7 +343,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     );
     let (option_is_available) = is_option_available(
         pool_address,
-        side,
+        option_side,
         strike_price,
         maturity
     );
@@ -355,7 +360,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     }
 
     with_attr error_message("open_position is not bool") {
-        assert (open_position - TRUE) * (open_position - fALSE) = 0;
+        assert (open_position - TRUE) * (open_position - FALSE) = 0;
     }
 
     // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
@@ -395,7 +400,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
             option_type,
             strike_price,
             maturity,
-            side,
+            option_side,
             option_size,
             underlying_asset
         );
@@ -407,7 +412,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 option_type,
                 strike_price,
                 maturity,
-                side,
+                option_side,
                 option_size,
                 underlying_asset
             );
@@ -417,7 +422,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 option_type=option_type,
                 strike_price=strike_price,
                 maturity=maturity,
-                side=side,
+                side=option_side,
                 option_size=option_size,
                 underlying_asset=underlying_asset,
                 open_position=open_position

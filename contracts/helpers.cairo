@@ -28,6 +28,13 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (value_b,);
 }
 
+struct Option {
+    option_side: felt,
+    maturity: felt,
+    strike_price: felt,
+    asset: felt,
+}
+
 func _get_premia_with_fees_for_position(option: Option, position_size: felt) -> (premia: felt){
     alloc_locals; 
 

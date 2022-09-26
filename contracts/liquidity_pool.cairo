@@ -8,7 +8,7 @@ from interface_option_token import IOptionToken
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
-from helpers import max, _get_premia_with_fees_for_position
+from helpers import max, _get_premia_with_fees_for_position, Option
 from starkware.cairo.common.math import abs_value
 from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
@@ -21,14 +21,14 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-from contracts.constants import (
-    OPTION_CALL,
-    OPTION_PUT,
-    TRADE_SIDE_LONG,
-    TRADE_SIDE_SHORT,
-    get_opposite_side
-)
-from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
+// from contracts.constants import (
+//     OPTION_CALL,
+//     OPTION_PUT,
+//     TRADE_SIDE_LONG,
+//     TRADE_SIDE_SHORT,
+//     get_opposite_side
+// )
+// from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
 
 
 
@@ -63,13 +63,6 @@ func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
-struct Option {
-    option_side: felt,
-    maturity: felt,
-    strike_price: felt,
-    asset: felt,
-}
-
 @storage_var
 func available_options(order_i: felt) -> (Option) {
 }
