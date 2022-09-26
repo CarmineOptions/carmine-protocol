@@ -164,7 +164,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         option_size,
         option_type,
         strike_price
-    )
+    );
+
     ILiquidityPool.mint_option_token(
         contract_address=pool_address,
         option_size=option_size,
@@ -261,7 +262,8 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         option_size,
         option_type,
         strike_price
-    )
+    );
+    
     ILiquidityPool.burn_option_token(
         contract_address=pool_address,
         option_size=option_size,

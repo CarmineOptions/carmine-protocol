@@ -67,7 +67,7 @@ struct Option {
     option_side: felt,
     maturity: felt,
     strike_price: felt,
-    asset: felt
+    asset: felt,
 }
 
 @storage_var
@@ -384,10 +384,10 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
-    ):
+    ){
         let (free_capital) = get_unlocked_capital();
         assert_nn(free_capital - underlying_amount);
-    end
+    }
 
     // Transfer underlying (base or quote depending on call/put)
     // We can do this transfer optimistically;
@@ -588,7 +588,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read();
     let (new_balance) = current_balance - premia_including_fees;
-    lpool_balance.write(new_balance)
+    lpool_balance.write(new_balance);
 
     // User is going short, hence user is locking in capital...
     //       if pool has short position -> unlock pool's capital
@@ -730,7 +730,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read();
     let (new_balance) = current_balance - premia_including_fees;
-    lpool_balance.write(new_balance)
+    lpool_balance.write(new_balance);
 
     let (pool_short_position) = option_position.read(
         TRADE_SIDE_SHORT,
@@ -738,7 +738,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         strike_price
     );
 
-    if (pool_short_position = 0){
+    if (pool_short_position == 0){
         // If pool is LONG:
         // Burn long increases pool's long (if pool was already long)
         //      -> The locked capital was locked by users and not pool
@@ -818,7 +818,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (pool_short_position) = option_position.read(TRADE_SIDE_SHORT, maturity, strike_price);
 
     // FIXME: the inside of the if (not the else) should work for both cases
-    if (pool_short_position = 0) {
+    if (pool_short_position == 0) {
         // If pool is LONG
         // Burn decreases pool's long -> up to a size of the pool's long 
         //      -> if option_size_in_pool_currency > pool's long -> pool starts to accumulate the short and 
@@ -988,7 +988,7 @@ func adjust_capital_for_pools_expired_options{
     // This function is a helper function used only for expiring POOL'S options.
     // option_side is from perspektive of the pool
 
-    alloc_locals
+    alloc_locals;
 
     // lpool_balance is total staked capital which has to be decreased by the "opposite" of adjust_by...
 
@@ -996,7 +996,7 @@ func adjust_capital_for_pools_expired_options{
     let (current_locked_balance) = pool_locked_capital.read();
     let (current_pool_position) = option_position.read(option_side, maturity, strike_price);
 
-    let (new_pool_position) = current_pool_position - option_size
+    let (new_pool_position) = current_pool_position - option_size;
     option_position.write(option_side, maturity, strike_price, new_pool_position);
 
     if (option_side == TRADE_SIDE_LONG) {
@@ -1115,7 +1115,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     }
 
     // Get terminal price of the option.
-    let (terminal_price) = FIXME 12;
+    // FIXME 12: Implement terminal price
+    let (terminal_price) = 0;
 
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
