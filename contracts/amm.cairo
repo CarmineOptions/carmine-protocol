@@ -51,8 +51,9 @@ func pool_address_for_given_asset_and_option_type(asset: felt, option_type: Opti
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type: OptionType
 ) -> (pool_balance: felt) {
-    // Returns total locked capital in the pool minus the locked capital
+    // Returns total capital in the pool minus the locked capital
     // (ie capital available to locking).
+    // FIXME: Implement get_option_token_unlocked_capital
     let (pool_balance_) = ILiquidityPool.get_option_token_unlocked_capital(
         contract_address=pool_address
     );
