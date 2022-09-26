@@ -4,7 +4,7 @@
 from helpers import max, _get_value_of_position
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
-from types import Option
+from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 
 //  commented out code already imported in amm.cairo
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -133,7 +133,7 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_token_adress: felt
-) -> (unlocked_capital: felt) {
+) -> (unlocked_capital: Math64x61_) {
     // Returns capital that is unlocked for immediate extraction/use.
     // This is for example ETH in case of ETH/USD CALL options.
 
@@ -447,14 +447,14 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is unlocked, how much is locked,...
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    option_side: felt,
-    option_type: felt,
-    maturity: felt,
-    strike_price: felt,
-    premia_including_fees: felt,
-    underlying_price: felt,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    option_side: OptionSide,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
+    premia_including_fees: Math64x61_,
+    underlying_price: Math64x61_,
 ) {
     // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
     // option_size: felt,  // same as option_size... in base tokens (ETH in case of ETH/USDC)
@@ -515,12 +515,13 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_token_address: felt,
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    premia_including_fees: felt,
-    option_type: felt,
-    strike_price: felt,
+    option_token_address: Address,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    premia_including_fees: Math64x61_,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
 ) {
     alloc_locals;
 
@@ -578,14 +579,14 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_token_address: felt,
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    premia_including_fees: felt,
-    option_type: felt,
-    maturity: felt,
-    strike_price: felt,
-    underlying_price: felt,
+    option_token_address: Address,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    premia_including_fees: Math64x61_,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
+    underlying_price: Math64x61_,
 ) {
     alloc_locals;
 
@@ -651,14 +652,14 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is unlocked, how much is locked,...
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    option_side: felt,
-    option_type: felt,
-    maturity: felt,
-    strike_price: felt,
-    premia_including_fees: felt,
-    underlying_price: felt,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    option_side: OptionSide,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
+    premia_including_fees: Math64x61_,
+    underlying_price: Math64x61_,
 ) {
     // option_side is the side of the token being closed
 
@@ -712,14 +713,14 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_token_address: felt,
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    premia_including_fees: felt,
-    option_side: felt,
-    option_type: felt,
-    maturity: felt,
-    strike_price: felt,
+    option_token_address: Address,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    premia_including_fees: Math64x61_,
+    option_side: OptionSide,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
 ) {
     // option_side is the side of the token being closed
     // user is closing its long position -> freeing up pool's locked capital
@@ -800,14 +801,14 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_token_address: felt,
-    option_size: felt,
-    option_size_in_pool_currency: felt,
-    premia_including_fees: felt,
-    option_side: felt,
-    option_type: felt,
-    maturity: felt,
-    strike_price: felt,
+    option_token_address: Address,
+    option_size: Math64x61_,
+    option_size_in_pool_currency: Math64x61_,
+    premia_including_fees: Math64x61_,
+    option_side: OptionSide,
+    option_type: OptionType,
+    maturity: Int,
+    strike_price: Math64x61_,
 ) {
     // option_side is the side of the token being closed
 
@@ -904,12 +905,12 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
 
 func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt,
-    option_side: felt,
-    strike_price: felt,
-    terminal_price: felt,
-    option_size: felt,
-    maturity: felt,
+    option_type: OptionType,
+    option_side: OptionSide,
+    strike_price: Math64x61_,
+    terminal_price: Math64x61_,
+    option_size: Math64x61_,
+    maturity: Int,
 ) {
     // EXPIRES OPTIONS ONLY FOR USERS (OPTION TOKEN HOLDERS) NOT FOR POOL.
     // terminal price is price at which option is being settled
@@ -1000,12 +1001,12 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 func adjust_capital_for_pools_expired_options{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
-    long_value: felt,
-    short_value: felt,
-    option_size: felt,
-    option_side: felt,
-    maturity: felt,
-    strike_price: felt
+    long_value: Math64x61_,
+    short_value: Math64x61_,
+    option_size: Math64x61_,
+    option_side: OptionSide,
+    maturity: Int,
+    strike_price: Math64x61_
 ) {
     // This function is a helper function used only for expiring POOL'S options.
     // option_side is from perspektive of the pool
@@ -1074,11 +1075,11 @@ func adjust_capital_for_pools_expired_options{
 
 
 func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt,
-    option_side: felt,
-    option_size: felt,
-    strike_price: felt,
-    terminal_price: felt, // terminal price is price at which option is being settled
+    option_type: OptionType,
+    option_side: OptionSide,
+    option_size: Math64x61_,
+    strike_price: Math64x61_,
+    terminal_price: Math64x61_, // terminal price is price at which option is being settled
 ) -> (long_value: felt, short_value: felt) {
     alloc_locals;
 
@@ -1110,9 +1111,9 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
 @external
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_side: felt,
-    strike_price: felt,
-    maturity: felt,
+    option_side: OptionSide,
+    strike_price: Math64x61_,
+    maturity: Int,
 ) {
 
     alloc_locals;

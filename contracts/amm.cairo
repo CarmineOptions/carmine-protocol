@@ -24,6 +24,7 @@ from contracts.constants import (
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
+from contracts.liquidity_pool import get_unlocked_capital
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
 from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address)
@@ -50,16 +51,15 @@ func pool_address_for_given_asset_and_option_type(asset: felt, option_type: Opti
 
 @view
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    pool_address: Address,
     option_type: OptionType
-) -> (pool_balance: felt) {
+) -> (pool_balance: Math64x61_) {
     // Returns total capital in the pool minus the locked capital
     // (ie capital available to locking).
     // FIXME: Implement ILiqPool.get_unlocked_capital
-    // let (pool_balance_) = ILiquidityPool.get_unlocked_capital(
-    //     contract_address=pool_address
-    // );
-
-    let pool_balance_ = 0;
+    let (pool_balance_) = ILiquidityPool.get_unlocked_capital(
+        contract_address=pool_address
+    );
 
     return (pool_balance_,);
 }
@@ -189,11 +189,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
-    maturity : felt,
-    side : felt,
-    option_size : felt,
-    underlying_asset: felt,
-    open_position: felt,
+    maturity : Int,
+    side : OptionSide,
+    option_size : Math64x61_,
+    underlying_asset: felt
 ) -> (premia : felt) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
@@ -224,8 +223,12 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatilit
+    let (current_pool_balance) = get_pool_available_balance(pool_address);
+    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, opposite_side, underlying_price, pool_address
+        current_volatility, option_size, option_type, opposite_side, underlying_price, current_pool_balance
     );
 
     // 4) Update volatility
@@ -294,10 +297,10 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> () {
 
-    // FIXME: Implement terminal price
-    let (terminal_price) = 0;
+    // FIXME: Implement terminal price... of type Math64x61_
+    let (terminal_price: Math64x61_) = 0;
 
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
+    let (pool_address: Address) = pool_address_for_given_asset_and_option_type.read(
         underlying_asset,
         option_type
     );
