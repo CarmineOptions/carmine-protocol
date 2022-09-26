@@ -12,3 +12,13 @@ using OptionType = felt; // Is enum, has 0 and 1 values as boolean at the moment
 using OptionSide = felt; // Is enum, has 0 and 1 values.
 using Int = felt; // Is integer, ie "felt(1) = int(1)... felt(100) = int(100)"... for example maturity
 using Address = felt;
+
+
+// List of available options (mapping from 1 to n to available strike x maturity,
+// for n+1 returns zeros). STARTS INDEXING AT 0.
+struct Option {
+    option_side: felt,
+    maturity: felt,
+    strike_price: felt,
+    asset: felt,
+}

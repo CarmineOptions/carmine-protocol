@@ -3,12 +3,17 @@
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
+from types import Option
 
 //  commented out code already imported in amm.cairo
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
+<<<<<<< HEAD
 from helpers import max, _get_premia_with_fees_for_position, Option
+=======
+from helpers import max, _get_value_of_position
+>>>>>>> 5b01f8e (fix in getting value of option position)
 from starkware.cairo.common.math import abs_value
 from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
@@ -61,8 +66,11 @@ func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 }
 
 
+<<<<<<< HEAD
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
+=======
+>>>>>>> 5b01f8e (fix in getting value of option position)
 @storage_var
 func available_options(order_i: felt) -> (Option) {
 }
@@ -168,8 +176,7 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 ) -> (res: felt) {
     alloc_locals;
 
-    let index = 0;
-    let (res) = _get_value_of_pool_position(index);
+    let (res) = _get_value_of_pool_position(0);
     return (res = res);
 }
 
@@ -187,17 +194,33 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         return (res = 0);
     }
 
-    let (option_position_tmp) = _get_value_of_pool_position(index = index + 1);
+    // Get value of option at index "index"
+    // In case of long position in given option, the value is equal to premia - fees.
+    // In case of short position the value is equal to (locked capital - premia - fees).
+    //      - the value of option is comparable to how the locked capital would be split.
+    //        The option holder (long) would get equivalent to premia and the underwriter (short)
+    //        would get the remaining locked capital.
+    // Both scaled by the size of position.
     let (_option_position) = option_position.read(
         option.option_side,
         option.maturity,
         option.strike_price
     );
+    let (current_volatility) = pool_volatility.read(maturity);
+    let (current_pool_balance) = get_unlocked_capital();
+    let (value_of_option) = _get_value_of_position(
+        option,
+        _option_position,
+        option_type,
+        current_volatility,
+        current_pool_balance
+    );
 
-    let (option_premia_tmp) = _get_premia_with_fees_for_position(option, option_position_tmp);
-    let (option_premia) = _get_premia_with_fees_for_postion(option, _option_position);
+    // Get value of the remaining pool
+    let (value_of_rest_of_the_pool) = _get_value_of_pool_position(index = index + 1);
 
-    let res = option_premia_tmp + option_premia;
+    // Combine the two values
+    let res = value_of_option + value_of_rest_of_the_pool;
 
     return (res = res);
 }
@@ -207,11 +230,15 @@ func _get_available_options_usable_index{
 }(
     starting_index: felt
 ) -> (usable_index: felt) {
+    // Returns lowest index that does not contain any specified option.
+
     alloc_locals;
 
     let (option) = available_options.read(starting_index);
-    let option_sum = option.maturity + option.strike_price + option.asset;
 
+    // Because of how the defined options are stored we have to verify that we have not run
+    // at the end of the stored values. The end is with "empty" Option.
+    let option_sum = option.maturity + option.strike_price + option.asset;
     if (option_sum == 0) {
         return (usable_index = starting_index);
     }

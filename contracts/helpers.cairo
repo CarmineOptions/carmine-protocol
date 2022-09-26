@@ -2,9 +2,28 @@
 
 %lang starknet
 
+from contracts.constants import (
+    OPTION_CALL,
+    TRADE_SIDE_LONG,
+    RISK_FREE_RATE,
+    get_empiric_key,
+    get_opposite_side
+)
+from contracts.fees import get_fees
+from contracts.option_pricing import black_scholes
+from contracts.oracles import empiric_median_price
+from contracts.option_pricing_helpers import (
+    select_and_adjust_premia,
+    get_time_till_maturity,
+    add_premia_fees,
+    get_new_volatility
+)
+from contracts.types import Option
+
 from starkware.cairo.common.bool import TRUE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
+
 
 func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     value_a: felt, value_b: felt
@@ -28,52 +47,43 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (value_b,);
 }
 
-struct Option {
-    option_side: felt,
-    maturity: felt,
-    strike_price: felt,
-    asset: felt,
-}
 
-func _get_premia_with_fees_for_position(option: Option, position_size: felt) -> (premia: felt){
+func _get_value_of_position{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    option: Option,
+    position_size: felt,
+    option_type: felt,
+    current_volatility: felt,
+    current_pool_balance: felt
+) -> (position_value: felt){
+    // Gets value of position ADJUSTED for fees!!!
+
     alloc_locals; 
 
     let side = option.option_side;
     let maturity = option.maturity;
-    let strike_price = strike_price;
+    let strike_price = option.strike_price;
     let underlying_asset = option.asset;
+
     let option_size = position_size;
-    let (option_type) = option_type.read();
 
-    // 0) Get pool address
-    let (pool_address) = pool_address_for_given_asset_and_option_type.read(
-        underlying_asset,
-        option_type
-    );   
-
-    // 1) Get current volatility
-    let (current_volatility) = pool_volatility.read(maturity);
-
-    // 2) Get price of underlying asset
+    // 1) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);
     let (underlying_price) = empiric_median_price(empiric_key);
 
-    // 3) Calculate new volatility, calculate trade volatilit
-    let (current_pool_balance) = get_pool_available_balance(pool_address);
-    // assert_nn_le(Math64x61.ONE, current_pool_balance);
-    // assert_nn_le(option_size_in_pool_currency, current_pool_balance);
-
+    // 2) Calculate new volatility, calculate trade volatility
     let (_, trade_volatility) = get_new_volatility(
         current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
     );
 
-    // 5) Get time till maturity
+    // 3) Get time till maturity
     let (time_till_maturity) = get_time_till_maturity(maturity);
 
-    // 6) risk free rate
+    // 4) risk free rate
     let (risk_free_rate_annualized) = RISK_FREE_RATE;
 
-    // 7) Get premia
+    // 5) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
     let (call_premia, put_premia) = black_scholes(
         sigma=trade_volatility,
@@ -91,12 +101,26 @@ func _get_premia_with_fees_for_position(option: Option, position_size: felt) -> 
     // premia adjusted by size (multiplied by size)
     let total_premia_before_fees = Math64x61.mul(premia, option_size);
 
-    // 8) Get fees
+    // 6) Get fees and total premia
     // fees are already in the currency same as premia
-    // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    // Value of position is calculated as "how much remaining value would holder get if liquidated"
+    // For long the holder's position is valued as "premia - fees", this is similar to closing
+    //      the given position.
+    // For short the holder's position is valued as "locked capital - premia - fees" since it would
+    //      be the remaining capital if closed position
     let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
+    let (opposite_side) = get_opposite_side(side);
+    let (premia_with_fees) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
+    if (side == TRADE_SIDE_LONG) {
+        return (position_value=premia_with_fees);
+    }
 
-    return (total_premia = total_premia);
+    if (option_type == OPTION_CALL) {
+        let locked_capital = option_size;
+    } else {
+        let locked_capital = Math64x61.mul(option_size, strike_price);
+    }
+    let (locked_and_premia_with_fees) = Math64x61.sub(locked_capital, premia_with_fees);
+
+    return (position_value = locked_and_premia_with_fees);
 }
