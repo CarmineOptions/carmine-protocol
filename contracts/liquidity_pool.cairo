@@ -1,6 +1,7 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
+from helpers import max, _get_value_of_position
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 from types import Option
@@ -9,11 +10,6 @@ from types import Option
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
-<<<<<<< HEAD
-from helpers import max, _get_premia_with_fees_for_position, Option
-=======
-from helpers import max, _get_value_of_position
->>>>>>> 5b01f8e (fix in getting value of option position)
 from starkware.cairo.common.math import abs_value
 from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
@@ -66,11 +62,8 @@ func pool_volatility(maturity: Int) -> (volatility: Math64x61_) {
 }
 
 
-<<<<<<< HEAD
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
-=======
->>>>>>> 5b01f8e (fix in getting value of option position)
 @storage_var
 func available_options(order_i: felt) -> (Option) {
 }

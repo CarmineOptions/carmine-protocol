@@ -108,12 +108,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 1) Get current volatility
-    // FIXME: Implement get_pool_volatility
-    // let (current_volatility) = ILiquidityPool.get_pool_volatility(
-    //     contract_address=pool_address,
-    //     maturity=maturity
-    // );
-    let current_volatility = 0;
+    let (current_volatility) = ILiquidityPool.get_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity
+    );
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);
@@ -129,13 +127,11 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 4) Update volatility
-    // FIXME: Implement set_pool_volatility
-    // let (current_volatility) = ILiquidityPool.set_pool_volatility(
-    //     contract_address=pool_address,
-    //     maturity=maturity,
-    //     volatility=new_volatility
-    // );
-    let current_volatility = 0;
+    let (current_volatility) = ILiquidityPool.set_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity,
+        volatility=new_volatility
+    );
 
     // 5) Get time till maturity
     let (time_till_maturity) = get_time_till_maturity(maturity);
@@ -218,12 +214,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
 
     // 1) Get current volatility
-    // FIXME: Implement get_pool_volatility
-    // let (current_volatility) = ILiquidityPool.get_pool_volatility(
-    //     contract_address=pool_address,
-    //     maturity=maturity
-    // );
-    let current_volatility = 0;
+    let (current_volatility) = ILiquidityPool.get_pool_volatility(
+        contract_address=pool_address,
+        maturity=maturity
+    );
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(underlying_asset);
