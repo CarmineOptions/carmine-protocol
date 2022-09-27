@@ -602,11 +602,11 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size)
+    let option_size_uint256 = Math64x61.toUint256(option_size);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     // Move premia and fees from user to the pool
-    let premia_including_fees_uint256 = Math64x61.toUint256(premia_including_fees)
+    let premia_including_fees_uint256 = Math64x61.toUint256(premia_including_fees);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
@@ -635,11 +635,11 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     // Get diffs to update everything
     let (decrease_long_by) = min(option_size, current_long_position);
-    let (increase_short_by) = Math_64x61.sub(option_size, decrease_long_by);
+    let (increase_short_by) = Math64x61.sub(option_size, decrease_long_by);
     let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
 
     // New state
-    let (new_long_position) = Math_64x61.sub(current_long_position, decrease_long_by);
+    let (new_long_position) = Math64x61.sub(current_long_position, decrease_long_by);
     let (new_short_position) = Math64x61.add(current_short_position, increase_short_by);
     let (new_locked_capital) = Math64x61.add(current_locked_balance, increase_locked_by);
 
@@ -674,13 +674,13 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size)
+    let option_size_uint256 = Math64x61.toUint256(option_size);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
     // Move (option_size minus (premia minus fees)) from user to the pool
-    let to_be_paid_by_user_uint256 = Math64x61.toUint256(to_be_paid_by_user)
+    let to_be_paid_by_user_uint256 = Math64x61.toUint256(to_be_paid_by_user);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
