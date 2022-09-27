@@ -1,7 +1,7 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from helpers import max, _get_value_of_position
+from helpers import max, _get_value_of_position, min
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
@@ -753,7 +753,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     let (option_token_address) = get_option_token_address(
         lptoken_address=lptoken_address,
-        option_side=side,
+        option_side=option_side,
         maturity=maturity,
         strike_price=strike_price
     );
@@ -1030,7 +1030,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     let (option_token_address) = get_option_token_address(
         lptoken_address=lptoken_address,
-        option_side=side,
+        option_side=option_side,
         maturity=maturity,
         strike_price=strike_price
     );
@@ -1207,7 +1207,7 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         // User receives (option_size - long_profit) for short
         let price_diff = terminal_price - strike_price;
         let to_be_paid_quote = option_size * price_diff;
-        let to_be_paid_base = to_be_paid / terminal_price;
+        let to_be_paid_base = to_be_paid_quote / terminal_price;
         let to_be_paid_buyer = max(0, to_be_paid_base);
         let to_be_paid_seller = option_size - to_be_paid_buyer;
 

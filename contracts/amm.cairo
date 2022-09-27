@@ -137,7 +137,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 4) Update volatility
-    let (current_volatility) = set_pool_volatility(
+    set_pool_volatility(
         lptoken_address=lptoken_address,
         maturity=maturity,
         volatility=new_volatility
@@ -147,7 +147,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (time_till_maturity) = get_time_till_maturity(maturity);
 
     // 6) risk free rate
-    let (risk_free_rate_annualized) = RISK_FREE_RATE;
+    let risk_free_rate_annualized = RISK_FREE_RATE;
 
     // 7) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
@@ -182,7 +182,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         option_side=side,
         option_type=option_type,
         maturity=maturity,
-        strike=strike_price,
+        strike_price=strike_price,
         premia_including_fees=total_premia,
         underlying_price=underlying_price,
     );
@@ -244,7 +244,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (time_till_maturity) = get_time_till_maturity(maturity);
 
     // 6) risk free rate
-    let (risk_free_rate_annualized) = RISK_FREE_RATE;
+    let risk_free_rate_annualized = RISK_FREE_RATE;
 
     // 7) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
@@ -262,7 +262,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
-    let (total_premia_before_fees) = Math64x61.mul(premia, option_size);
+    let total_premia_before_fees = Math64x61.mul(premia, option_size);
 
     // 8) Get fees
     // fees are already in the currency same as premia
@@ -279,7 +279,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         option_side=opposite_side,
         option_type=option_type,
         maturity=maturity,
-        strike=strike_price,
+        strike_price=strike_price,
         premia_including_fees=total_premia,
         underlying_price=underlying_price
     );
@@ -333,6 +333,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     //  if open_position=False -> side is what the user want's to close
     //      (side of the token that user holds)
     //      This is very important is in close_position an opposite side is used
+    alloc_locals;
 
     with_attr error_message("Given option_type is not available") {
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
@@ -378,9 +379,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
             assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
         }
     } else {
-        let (is_not_ripe) = is_le(current_block_time, maturity);
-        let (cannot_be_closed) = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
-        let (cannot_be_closed_or_settled) = is_not_ripe * cannot_be_closed;
+        let is_not_ripe = is_le(current_block_time, maturity);
+        let cannot_be_closed = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
+        let cannot_be_closed_or_settled = is_not_ripe * cannot_be_closed;
         with_attr error_message(
             "Closing positions or settling option of given maturity is not possible just before expiration"
         ) {
@@ -407,7 +408,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         );
         return (premia=premia);
     } else {
-        let (can_be_closed) = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+        let can_be_closed = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
         if (can_be_closed == TRUE) {
             let (premia) = close_position(
                 option_type,
