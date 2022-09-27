@@ -91,14 +91,14 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     // Where quote is USDC in case of ETH/USDC, base token is ETH in case of ETH/USDC
     // and option_type is either CALL or PUT (constants.OPTION_CALL or constants.OPTION_PUT).
 
-    if (base_token_addr = TOKEN_ETH_ADDRESS) {
-        if (quote_token_addr = TOKEN_USD_ADDRESS) {
+    if (base_token_addr == TOKEN_ETH_ADDRESS) {
+        if (quote_token_addr == TOKEN_USD_ADDRESS) {
             return (EMPIRIC_ETH_USD_KEY,);
         }
     }
-    if (base_token_addr = TOKEN_BTC_ADDRESS) {
-        if (quote_token_addr = TOKEN_USD_ADDRESS) {
-            return (EMPIRIC_ETH_USD_KEY,);
+    if (base_token_addr == TOKEN_BTC_ADDRESS) {
+        if (quote_token_addr == TOKEN_USD_ADDRESS) {
+            return (EMPIRIC_BTC_USD_KEY,);
         }
     }
     return (0,);

@@ -295,7 +295,7 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     option_size : Math64x61_,
     quote_token_address: Address,
     base_token_address: Address,
-    lptoken_address: Address
+    lptoken_address: Address,
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> () {
 
@@ -353,9 +353,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 
     // lptoken_address serves as an identifier of selected liquidity pool
     let (lptoken_address) = get_lptoken_address_for_given_option(
-        quote_token_address: felt,
-        base_token_address: felt,
-        option_type: felt
+        quote_token_address,
+        base_token_address,
+        option_type
     );
     let (option_is_available) = is_option_available(
         lptoken_address,
@@ -428,7 +428,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 side=option_side,
                 option_size=option_size,
                 underlying_asset=underlying_asset,
-                open_position=open_position
+                open_position=open_position,
                 quote_token_addr,
                 base_token_addr,
                 lptoken_address

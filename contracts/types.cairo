@@ -22,5 +22,5 @@ struct Option {
     strike_price: felt,
     quote_token_address: felt,
     base_token_address: felt,
-    option_type: felt
+    option_type: felt,
 }

@@ -131,9 +131,13 @@ func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: Hash
     let (lptoken_addres) = lptoken_addr_for_given_pooled_token.read(
         quote_token_address, base_token_address, option_type
     );
-    with_attr error_message("Specified pool does not exist"){
-        assert lptoken_addres != 0;
+
+    if (lptoken_addres == 0) {
+        with_attr error_message("Specified pool does not exist"){
+            assert 1 = 0;
+        }
     }
+
     return (lptoken_address=lptoken_addres);
 }
 
@@ -530,7 +534,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     let (currency_address) = underlying_token_addres.read(lptoken_address);
     let (option_token_address) = get_option_token_address(
-        lptoken_address=lptoken_address
+        lptoken_address=lptoken_address,
         option_side=side,
         maturity=maturity,
         strike_price=strike_price
