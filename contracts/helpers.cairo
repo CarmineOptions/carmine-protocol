@@ -118,14 +118,14 @@ func _get_value_of_position{
 
     if (option_type == OPTION_CALL) {
         let locked_capital = option_size;
-        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);    
-    
+        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
+
         return (position_value = locked_and_premia_with_fees);
     } else {
 
         let locked_capital = Math64x61.mul(option_size, strike_price);
         let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
-        
+
         return (position_value = locked_and_premia_with_fees);
     }
 }
