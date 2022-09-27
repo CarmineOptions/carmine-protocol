@@ -415,8 +415,8 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 maturity,
                 option_side,
                 option_size,
-                quote_token_addr,
-                base_token_addr,
+                quote_token_address,
+                base_token_address,
                 lptoken_address
             );
             return (premia=premia);
@@ -427,10 +427,9 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 maturity=maturity,
                 side=option_side,
                 option_size=option_size,
-                underlying_asset=underlying_asset,
                 open_position=open_position,
-                quote_token_addr,
-                base_token_addr,
+                quote_token_address,
+                base_token_address,
                 lptoken_address
             );
             return (premia=0);
