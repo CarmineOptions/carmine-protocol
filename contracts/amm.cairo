@@ -378,6 +378,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         with_attr error_message("Trading of given maturity has been stopped before expiration") {
             assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
         }
+        tempvar range_check_ptr = range_check_ptr;
     } else {
         let is_not_ripe = is_le(current_block_time, maturity);
         let cannot_be_closed = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
@@ -387,6 +388,7 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         ) {
             assert cannot_be_closed_or_settled = 0;
         }
+        tempvar range_check_ptr = range_check_ptr;
     }
 
     // Check that account has enough amount of given token to pay for premia and/or locked capital.
