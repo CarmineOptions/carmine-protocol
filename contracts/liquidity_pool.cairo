@@ -99,7 +99,7 @@ func option_position(
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
 @storage_var
-func lpool_balance(lptoken_address: Address) -> (res: Uint256) {
+func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
 }
 
 
@@ -350,9 +350,14 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
     alloc_locals;
 
-    let (free_capital) = get_unlocked_capital(lptoken_address);
-    let (value_of_position) = get_value_of_pool_position(lptoken_address);
-    let (value_of_pool) = uint256_add(free_capital, value_of_position);
+    let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
+    let free_capital = Math64x61.toUint256(free_capital_Math64);
+
+    let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
+    let value_of_position = Math64x61.toUint256(value_of_position_Math64);
+
+    let (value_of_pool, _) = uint256_add(free_capital, value_of_position);
+    // FIXME: Should we handle carry from the line above somehow?
 
     if (value_of_pool.low == 0) {
         return (underlying_amt,);
@@ -387,9 +392,14 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
 
-    let (free_capital) = get_unlocked_capital(lptoken_address);
-    let (value_of_position) = get_value_of_pool_position(lptoken_address);
-    let (total_underlying_amt) = uint256_add(free_capital, value_of_position);
+    let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
+    let free_capital = Math64x61.toUint256(free_capital_Math64);
+
+    let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
+    let value_of_position = Math64x61.toUint256(value_of_position_Math64);
+    
+    let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
+    // FIXME: Should we handle carry from the line above somehow?
 
     let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt);
     let (b_low, b_high) = uint256_mul(a_quot, lpt_amt);
