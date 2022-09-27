@@ -243,12 +243,12 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         option.maturity,
         option.strike_price
     );
-    let (current_volatility) = pool_volatility.read(lptoken_address, maturity);
+    let (current_volatility) = pool_volatility.read(lptoken_address, option.maturity);
     let (current_pool_balance) = get_unlocked_capital(lptoken_address);
     let (value_of_option) = _get_value_of_position(
         option,
         _option_position,
-        option_type,
+        option.option_type,
         current_volatility,
         current_pool_balance
     );
@@ -283,7 +283,7 @@ func _get_available_options_usable_index{
         return (usable_index = starting_index);
     }
     
-    let (usable_index) = get_available_options_usable_index(lptoken_address, starting_index + 1);
+    let (usable_index) = _get_available_options_usable_index(lptoken_address, starting_index + 1);
 
     return (usable_index = usable_index);
 }
@@ -307,7 +307,7 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         option_type=option_type
     );
 
-    let (usable_index) = get_available_options_usable_index(lptoken_address, 0);
+    let (usable_index) = _get_available_options_usable_index(lptoken_address, 0);
 
     available_options.write(lptoken_address, usable_index, new_option);
 
@@ -443,7 +443,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Calculates how many lp tokens will be minted for given amount of provided capital.
     let (mint_amt) = get_lptokens_for_underlying(lptoken_address, amt);
     // Mint LP tokens
-    ILPToken.mint(contract_address=lpt_addr, to=caller_addr, amount=mint_amt);
+    ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amt);
     return ();
 }
 
