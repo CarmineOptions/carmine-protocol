@@ -24,16 +24,16 @@ from contracts.constants import (
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
-from contracts.liquidity_pool import (
-    get_unlocked_capital,
-    get_lptoken_addr_for_given_option,
-    get_option_token_address,
-    get_option_type,
-    get_pool_volatility,
-    mint_option_token,
-    burn_option_token,
-    expire_option_token
-)
+// from contracts.liquidity_pool import (
+//     get_unlocked_capital,
+//     get_lptoken_addr_for_given_option,
+//     get_option_token_address,
+//     get_option_type,
+//     get_pool_volatility,
+//     mint_option_token,
+//     burn_option_token,
+//     expire_option_token
+// )
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
 from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
@@ -430,10 +430,10 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
                 maturity=maturity,
                 side=option_side,
                 option_size=option_size,
+                quote_token_address=quote_token_address,
+                base_token_address=base_token_address,
+                lptoken_address=lptoken_address,
                 open_position=open_position,
-                quote_token_address,
-                base_token_address,
-                lptoken_address
             );
             return (premia=0);
         }

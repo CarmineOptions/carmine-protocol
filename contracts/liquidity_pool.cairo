@@ -4,7 +4,7 @@
 from helpers import max, _get_value_of_position, min
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
-from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+// from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 
 //  commented out code already imported in amm.cairo
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -128,6 +128,7 @@ func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: Hash
 ) -> (
     lptoken_address: Address
 ) {
+    alloc_locals;
     let (lptoken_addres) = lptoken_addr_for_given_pooled_token.read(
         quote_token_address, base_token_address, option_type
     );
