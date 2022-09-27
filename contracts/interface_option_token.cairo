@@ -44,13 +44,13 @@ namespace IOptionToken {
     func side() -> (side: felt) {
     }
 
-    func get_value_for_holder(final_price: felt, amount: felt) -> (holder_value: felt) {
-    }
+    // func get_value_for_holder(final_price: felt, amount: felt) -> (holder_value: felt) {
+    // }
 
-    func get_value_for_liquidity_pool(final_price: felt, amount: felt) -> (
-        liqudity_pool_value: felt
-    ) {
-    }
+    // func get_value_for_liquidity_pool(final_price: felt, amount: felt) -> (
+    //     liqudity_pool_value: felt
+    // ) {
+    // }
 
     func transfer(recipient: felt, amount: Uint256) -> (success: felt) {
     }
