@@ -523,23 +523,15 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 //   for example how much capital is unlocked, how much is locked,...
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
-    option_size: Math64x61_,
+    option_size: Math64x61_, // in base tokens (ETH in case of ETH/USDC)
     option_size_in_pool_currency: Math64x61_,
     option_side: OptionSide,
     option_type: OptionType,
-    maturity: Int,
+    maturity: Int, // in seconds
     strike_price: Math64x61_,
-    premia_including_fees: Math64x61_,
+    premia_including_fees: Math64x61_, // either base or quote token
     underlying_price: Math64x61_,
 ) {
-    // currency_address: felt,  // adress of token staked in the pool (ETH/USDC/...)
-    // option_size: felt,  // same as option_size... in base tokens (ETH in case of ETH/USDC)
-    // option_side: felt,
-    // option_type: felt,
-    // maturity: felt,  // felt in seconds
-    // strike: felt,  // in Math64x61
-    // premia_including_fees: felt,  // in Math64x61 in either base or quote token
-    // underlying_price: felt, // in Math64x61
 
     alloc_locals;
 
@@ -610,14 +602,16 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    IOptionToken.mint(option_token_address, user_address, option_size);
+    let option_size_uint256 = Math64x61.toUint256(option_size)
+    IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     // Move premia and fees from user to the pool
+    let premia_including_fees_uint256 = Math64x61.toUint256(premia_including_fees)
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
         recipient=current_contract_address,
-        amount=premia_including_fees,
+        amount=premia_including_fees_uint256,
     );  // Transaction will fail if there is not enough fund on users account
 
     // Pool is locking in capital inly if there is no previous position to cover the user's long
@@ -627,7 +621,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read(lptoken_address);
-    let (new_balance) = current_balance + premia_including_fees;
+    let (new_balance) = Math64x61.add(current_balance, premia_including_fees);
     lpool_balance.write(lptoken_address, new_balance);
 
     // Update pool's position, lock capital... lpool_balance was already updated above
@@ -641,13 +635,13 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     // Get diffs to update everything
     let (decrease_long_by) = min(option_size, current_long_position);
-    let (increase_short_by) = option_size - decrease_long_by;
+    let (increase_short_by) = Math_64x61.sub(option_size, decrease_long_by);
     let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
 
     // New state
-    let (new_long_position) = current_long_position - decrease_long_by;
-    let (new_short_position) = current_short_position + increase_short_by;
-    let (new_locked_capital) = current_locked_balance + increase_locked_by;
+    let (new_long_position) = Math_64x61.sub(current_long_position, decrease_long_by);
+    let (new_short_position) = Math64x61.add(current_short_position, increase_short_by);
+    let (new_locked_capital) = Math64x61.add(current_locked_balance, increase_locked_by);
 
     // Check that there is enough capital to be locked.
     with_attr error_message("Not enough unlocked capital in pool") {
@@ -680,22 +674,24 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    IOptionToken.mint(option_token_address, user_address, option_size);
+    let option_size_uint256 = Math64x61.toUint256(option_size)
+    IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
-    let to_be_paid_by_user = option_size_in_pool_currency - premia_including_fees;
+    let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
     // Move (option_size minus (premia minus fees)) from user to the pool
+    let to_be_paid_by_user_uint256 = Math64x61.toUint256(to_be_paid_by_user)
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
         recipient=current_contract_address,
-        amount=to_be_paid_by_user,
+        amount=to_be_paid_by_user_uint256,
     );
     
     // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
     // since only locked_capital storage_var exists
     let (current_balance) = lpool_balance.read(lptoken_address);
-    let (new_balance) = current_balance - premia_including_fees;
+    let (new_balance) = Math64x61.sub(current_balance, premia_including_fees);
     lpool_balance.write(lptoken_address, new_balance);
 
     // User is going short, hence user is locking in capital...
@@ -709,7 +705,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
     );
     let (size_to_be_unlocked_in_base) = min(option_size, pools_position);
-    let (new_pools_short_position) = pools_short_position - size_to_be_unlocked_in_base;
+    let (new_pools_short_position) = Math64x61.sub(pools_short_position, size_to_be_unlocked_in_base);
     option_position.write(
         lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
     );
@@ -718,8 +714,8 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (pools_long_position) = option_position.read(
         lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
     );
-    let (size_to_increase_long_position) = option_size - size_to_be_unlocked_in_base;
-    let (new_pools_long_position) = pools_long_position + size_to_increase_long_position;
+    let (size_to_increase_long_position) = Math64x61.sub(option_size, size_to_be_unlocked_in_base);
+    let (new_pools_long_position) = Math64x61.add(pools_long_position, size_to_increase_long_position);
     option_position.write(
         lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
     );
@@ -729,7 +725,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         size_to_be_unlocked_in_base, option_type, strike_price
     );
     let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
-    let new_locked_balance = current_locked_balance - size_to_be_unlocked;
+    let new_locked_balance = Math64x61.sub(current_locked_balance, size_to_be_unlocked);
 
     with_attr error_message("Not enough capital") {
         // This will never happen. It is here just as sanity check.

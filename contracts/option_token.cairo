@@ -29,6 +29,8 @@ from contracts.constants import (
     get_opposite_side,
 )
 from contracts.helpers import max
+from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+
 
 @storage_var
 func option_token_underlying_asset_address() -> (underlying_asset_address: felt) {
@@ -60,10 +62,10 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     recipient: felt,
     owner: felt,
     underlying_asset_address: felt,
-    option_type: felt,
-    strike_price: felt,
-    maturity: felt,
-    side: felt,
+    option_type: OptionSide,
+    strike_price: Math64x61_,
+    maturity: Int,
+    side: OptionSide,
 ) {
     // inputs bellow owner are inputs needed for the option definition
     ERC20.initializer(name, symbol, decimals);
