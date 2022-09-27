@@ -6,7 +6,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 from math64x61 import Math64x61
 
-
+from types import Address
 // The maximum amount of token in a pool.
 const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // The maximum amount of token for account balance

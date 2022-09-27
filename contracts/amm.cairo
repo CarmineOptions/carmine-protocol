@@ -36,7 +36,7 @@ from contracts.liquidity_pool import (
 )
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price
-from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address)
+from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
