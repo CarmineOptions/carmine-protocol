@@ -542,8 +542,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // Make sure the contract is the one that user wishes to trade
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    // FIXME: Implement IOptionToken.strike
-    let (contract_strike) = IOptionToken.strike(option_token_address);
+    let (contract_strike) = IOptionToken.strike_price(option_token_address);
     let (contract_maturity) = IOptionToken.maturity(option_token_address);
     let (contract_option_side) = IOptionToken.side(option_token_address);
 
@@ -761,8 +760,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // Make sure the contract is the one that user wishes to trade
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    // FIXME: Implement IOptionToken.strike
-    let (contract_strike) = IOptionToken.strike(option_token_address);
+    let (contract_strike) = IOptionToken.strike_price(option_token_address);
     let (contract_maturity) = IOptionToken.maturity(option_token_address);
     let (contract_option_side) = IOptionToken.side(option_token_address);
 
@@ -1055,8 +1053,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     // Make sure the contract is the one that user wishes to expire
     let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    // FIXME: Implement IOptionToken.strike
-    let (contract_strike) = IOptionToken.strike(option_token_address);
+    let (contract_strike) = IOptionToken.strike_price(option_token_address);
     let (contract_maturity) = IOptionToken.maturity(option_token_address);
     let (contract_option_side) = IOptionToken.side(option_token_address);
     let (current_contract_address) = get_contract_address();
