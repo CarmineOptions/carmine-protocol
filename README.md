@@ -157,9 +157,33 @@ where `--inputs` contains `option_type, strike_price, maturity, side`.
 
 ### Deploy demo
 
+Assumes the following to be set in .env: `STARKNET_NETWORK=alpha-goerli`, `PROTOSTAR_ACCOUNT_PRIVATE_KEY`, `PROTOSTAR_ACCOUNT_ADDRESS`
+
 ```
-    protostar deploy build/amm.json --network alpha-goerli
+    protostar build
+    protostar deploy ./build/amm.json --network testnet
 ```
+
+Save the contract address printed by the last command like this:
+
+(Note how initial_supply is two zeros since it's uint256)
+
+(Unclear how to pass strings)
+
+```
+    export MAIN_CONTRACT_ADDRESS="0x040fa3b63f3c844c67c6e47c9fa4c289f41f86e36e5aaead81299a6915b90858"
+    protostar deploy build/lptoken.json --network testnet --salt 666 --inputs 111 11 18 0 0 0 $MAIN_CONTRACT_ADDRESS
+```
+
+Write down or save the contract address.
+
+```
+    export LPTOKEN_ONE_CONTRACT_ADDRESS="0x037fd36a3b34cc0405bf7662f15ce91bd598b5f47c2e356755527379b385d51a"
+    # Run starknet invoke on add_lptoken. (Untested because of dependency hell:/
+```
+
+Now it should be possible to poke around the contract.
+
 
 ### Init demo
 
