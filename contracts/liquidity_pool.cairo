@@ -467,7 +467,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    amt: Uint256
+    lp_token_amount: Uint256
 ) {
     // lp_token_amount is in terms of lp tokens, not underlying as deposit_liquidity
 
@@ -1185,7 +1185,7 @@ func adjust_capital_for_pools_expired_options{
         //      diff_capital = long_value - 0
 
         let new_lpool_balance = Math64x61.add(current_lpool_balance, long_value);
-        lpool_balance.write(lptoken_address, pooled_token_addr, new_lpool_balance);
+        lpool_balance.write(lptoken_address, new_lpool_balance);
     } else {
         // Pool is SHORT
         // Decrease the lpool_balance by the long_value.
@@ -1219,7 +1219,7 @@ func adjust_capital_for_pools_expired_options{
             assert_nn(new_locked_balance);
         }
 
-        lpool_balance.write(lptoken_address, pooled_token_addr, new_lpool_balance);
+        lpool_balance.write(lptoken_address, new_lpool_balance);
         pool_locked_capital.write(lptoken_address, new_lpool_balance);
     }
     return ();
