@@ -1292,7 +1292,11 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
     // pool's position... has to be nonnegative since the position is per side (long/short)
     let (option_size) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    assert_nn(option_size);
+
+    with_attr error_message("Received negative option size"){
+        assert_nn(option_size);
+    }
+    
     if (option_size == 0){
         // Pool's position is zero, there is nothing to expire.
         // This also checks that the option exists (if it doesn't storage_var returns 0).
