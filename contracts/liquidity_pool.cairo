@@ -420,6 +420,11 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 //ie that what you get for lptoken is what you need to get same amount of lptokens
 
 
+func add_lptoken(asset_token_addr: felt, base_token_addr: felt, lptoken_addr: felt){
+    return ();
+}
+
+
 // Mints LPToken
 // Assumes the underlying token is already approved (directly call approve() on the token being
 // deposited to allow this contract to claim them)
