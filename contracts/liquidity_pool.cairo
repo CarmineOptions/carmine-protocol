@@ -437,8 +437,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_type: OptionType,
     amt: Uint256
 ) {
-    // FIXME: Should we multiplu amt by Math.FRACT_PART here or just
-    // expect it'll be passed like that alreay?
+    // It is expected that amt is passed like Uint256?
 
     alloc_locals;
 
@@ -464,7 +463,8 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // Don't use Math.fromUint here since it would multiply the number by FRACT_PART again
     assert new_pb.high = 0;
-    lpool_balance.write(lptoken_address, new_pb.low);
+    let new_pb_math64x61 = Math64x61.fromUint(new_pb);
+    lpool_balance.write(lptoken_address, new_pb_math64x61);
 
     // Calculates how many lp tokens will be minted for given amount of provided capital.
     let (mint_amt) = get_lptokens_for_underlying(lptoken_address, amt);
