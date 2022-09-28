@@ -35,7 +35,7 @@ from contracts.interface_liquidity_pool import ILiquidityPool
 //     expire_option_token
 // )
 from contracts.option_pricing import black_scholes
-from contracts.oracles import empiric_median_price
+from contracts.oracles import empiric_median_price, get_terminal_price
 from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
@@ -299,8 +299,10 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     open_position: Bool, // True or False... determines if the user wants to open or close the position
 ) -> () {
 
-    // FIXME: Implement terminal price... of type Math64x61_
-    let (terminal_price: Math64x61_) = 0;
+    alloc_locals;
+
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
 
     expire_option_token(
         lptoken_address=lptoken_address,

@@ -10,7 +10,7 @@ from interface_option_token import IOptionToken
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 
-from starkware.cairo.common.math import abs_value
+from starkware.cairo.common.math import abs_value, assert_not_zero
 from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
@@ -288,6 +288,48 @@ func _get_available_options_usable_index{
     let (usable_index) = _get_available_options_usable_index(lptoken_address, starting_index + 1);
 
     return (usable_index = usable_index);
+}
+
+func _get_option_info{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address,
+    option_side: OptionSide,
+    strike_price: Math64x61_,
+    maturity: Int,
+    starting_index: felt,
+) -> (option: Option) {
+    // Returns Option (struct) information.
+
+    alloc_locals;
+
+    let (option_) = available_options.read(lptoken_address, starting_index);
+
+
+    // Verify that we have not run at the end of the stored values. The end is with "empty" Option.
+
+    with_attr error_message("Specified option is not available"){
+        let option_sum = option_.maturity + option_.strike_price;
+        assert_not_zero(option_sum);
+    }
+
+    if (option_.option_side == option_side) {
+        if (option_.strike_price == strike_price) {
+            if (option_.maturity == maturity) {
+                return (option=option_);
+            }
+        }
+    }
+
+    let (option) = _get_option_info(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        strike_price=strike_price,
+        maturity=maturity,
+        starting_index=starting_index+1
+    );
+
+    return (option = option);
 }
 
 func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -1288,6 +1330,17 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
     alloc_locals;
 
+    let (option) = _get_option_info(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        strike_price=strike_price,
+        maturity=maturity,
+        starting_index=0
+    );
+
+    let quote_token_address = option.quote_token_address;
+    let base_token_address = option.base_token_address;
+
     let (option_type) = option_type_.read(lptoken_address);
 
     // pool's position... has to be nonnegative since the position is per side (long/short)
@@ -1312,8 +1365,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     }
 
     // Get terminal price of the option.
-    // FIXME 12: Implement terminal price
-    let (terminal_price) = 0;
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
 
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
