@@ -435,12 +435,10 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    amt: Uint256
+    amt: Math64x61_
 ) {
-    // It is expected that amt is passed like Uint256?
 
     alloc_locals;
-
     let (caller_addr) = get_caller_address();
     let (own_addr) = get_contract_address();
 
@@ -451,23 +449,20 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Transfer tokens to pool.
     // We can do this optimistically;
     // any later exceptions revert the transaction anyway. saves some sanity checks
+    let amt_uint256 = Math64x61.toUint256(amt);
     IERC20.transferFrom(
-        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amt
+        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amt_uint256
     );
 
     // update the lpool_balance by the provided capital
-    let (current_balance_Math64) = lpool_balance.read(lptoken_address);
-    let current_balance = Math64x61.toUint256(current_balance_Math64);
-    let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amt);
-    assert carry = 0;
+    let (current_balance) = lpool_balance.read(lptoken_address);
+    let new_pb = Math64x61.add(current_balance, amt);
 
     // Don't use Math.fromUint here since it would multiply the number by FRACT_PART again
-    assert new_pb.high = 0;
-    let new_pb_math64x61 = Math64x61.fromUint(new_pb);
-    lpool_balance.write(lptoken_address, new_pb_math64x61);
+    lpool_balance.write(lptoken_address, new_pb);
 
     // Calculates how many lp tokens will be minted for given amount of provided capital.
-    let (mint_amt) = get_lptokens_for_underlying(lptoken_address, amt);
+    let (mint_amt) = get_lptokens_for_underlying(lptoken_address, amt_uint256);
     // Mint LP tokens
     ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amt);
     return ();
@@ -479,7 +474,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    lp_token_amount: Uint256
+    lp_token_amount: Math64x61_
 ) {
     // lp_token_amount is in terms of lp tokens, not underlying as deposit_liquidity
 
@@ -493,18 +488,18 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     );
 
     // Get the amount of underlying that corresponds to given amount of lp tokens
-    let (underlying_amount) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
-
+    let lp_token_amount_uint256 = Math64x61.toUint256(lp_token_amount);
+    let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount_uint256);
+    let underlying_amount_Math64 = Math64x61.fromUint256(underlying_amount_uint256);
+    
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
     ){
         let (free_capital) = get_unlocked_capital(lptoken_address);
-        let free_capital_uint256 = Math64x61.toUint256(free_capital);
 
-        let (assert_res) = uint256_sub(free_capital_uint256, underlying_amount);
-        assert assert_res.high = 0;
+        let assert_res = Math64x61.sub(free_capital, underlying_amount_Math64);
 
-        assert_nn(assert_res.low);
+        assert_nn(assert_res);
     }
 
     // Transfer underlying (base or quote depending on call/put)
@@ -514,21 +509,18 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         contract_address=pooled_token_addr,
         sender=own_addr,
         recipient=caller_addr,
-        amount=underlying_amount
+        amount=underlying_amount_uint256
     );
 
     // Burn LP tokens
-    ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
+    ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount_uint256);
 
     // Update that the capital in the pool (including the locked capital).
     let (current_balance: Math64x61_) = lpool_balance.read(lptoken_address);
-    let current_balance_uint256 = Math64x61.toUint256(current_balance);
-
-    let (new_pb: Uint256) = uint256_sub(current_balance_uint256, underlying_amount);
+    let new_pb = Math64x61.sub(current_balance, underlying_amount_Math64);
 
     // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
-    assert new_pb.high = 0;
-    lpool_balance.write(lptoken_address, new_pb.low);
+    lpool_balance.write(lptoken_address, new_pb);
 
 
     return ();
