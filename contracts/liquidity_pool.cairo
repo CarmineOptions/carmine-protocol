@@ -22,6 +22,7 @@ from starkware.cairo.common.uint256 import (
 )
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
+from openzeppelin.access.ownable.library import Ownable
 
 // from contracts.constants import (
 //     OPTION_CALL,
@@ -462,7 +463,75 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 //ie that what you get for lptoken is what you need to get same amount of lptokens
 
 
-func add_lptoken(asset_token_addr: felt, base_token_addr: felt, lptoken_addr: felt){
+@external
+func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    quote_token_address: Address,
+    base_token_address: Address,
+    option_type: OptionType,
+    lptoken_address: Address
+){
+    // This function initializes the pool.
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    // 1) Check that owner (and no other entity) is adding the lptoken
+    // FIXME: hope this checking of owner is correct
+    Ownable.assert_only_owner();
+
+    // 2) Update following
+    lptoken_addr_for_given_pooled_token.write(
+        quote_token_address, base_token_address, option_type, lptoken_address
+    );
+    option_type_.write(lptoken_address, option_type);
+    if (option_type == OPTION_CALL) {
+        // base tokens (ETH in case of ETH/USDC) for call option
+        underlying_token_addres.write(lptoken_address, base_token_address);
+    } else {
+        // quote tokens (USDC in case of ETH/USDC) for put option
+        underlying_token_addres.write(lptoken_address, quote_token_address);
+    }
+
+    return ();
+}
+
+
+@external
+func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    option_side: OptionSide,
+    maturity: Int,
+    strike_price: Math64x61_,
+    quote_token_address: Address,
+    base_token_address: Address,
+    option_type: OptionType,
+    lptoken_address: Address,
+    option_token_address_: Address,
+    initial_volatility: Math64x61_,
+){
+
+    // This function adds option to the pool.
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    // 1) Check that owner (and no other entity) is adding the lptoken
+    // FIXME: hope this checking of owner is correct
+    Ownable.assert_only_owner();
+
+    // 2) Update following
+    let hundred = Math64x61.fromFelt(100);
+    pool_volatility.write(lptoken_address, maturity, initial_volatility);
+    append_to_available_options(
+        option_side,
+        maturity,
+        strike_price,
+        quote_token_address,
+        base_token_address,
+        option_type,
+        lptoken_address
+    );
+    option_token_address.write(
+        lptoken_address, option_side, maturity, strike_price, option_token_address_
+    );
+
     return ();
 }
 
