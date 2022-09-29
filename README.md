@@ -240,3 +240,138 @@ Currently using only Empiric oracle, which returns the median price(aggregated o
 Website: https://empiric.network/
 
 More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
+
+
+### Proxy Contracts 
+
+For proxy pattern, we decided to utilize OpenZeppelin library. Detailed explanation can be found here:
+
+NOTE: To prevent any errors, deploy a new wallet with `starknet deploy_account --account new_account`, otherwise you might not be able to declare/deploy and use the proxy pattern. 
+
+https://github.com/OpenZeppelin/cairo-contracts/blob/main/docs/Proxies.md
+
+Components: 
+
+- Implementation contract
+    - Contains the logic and functions that allow the use of proxy pattern
+
+- Proxy contract 
+    - Contains function that delegates the calls to the Implementation contract
+
+How to build:
+- Implementation contract
+    - Just run `protostar build` command
+
+- Proxy contract 
+    - Needs to be built separately (with `starknet-compile`, for example)
+    - Navigate to proxy_contract folder
+    - Run: 
+    ``` 
+            starknet-compile proxy.cairo    \ 
+                --output ../build/proxy.json    \
+                --abi ../build/proxy_abi.json   \
+                --cairo_path ../lib/cairo_contracts/src 
+    ```
+
+How to deploy:
+
+- Implementation contract
+    - This contract needs to be declared only, so protostar won't be of use since it can only deploy at the moment. 
+    - Navigate to build folder and run `starknet declare --contract amm.json`
+    - Save 'Contract class hash', ie. `export AMM_HASH=hash`
+
+- Proxy contract
+    - This contract need to be deployed along with the Implementation contract's class hash as an input.
+    - Run `starknet deploy --contract proxy.json --input $AMM_HASH`
+    - Save 'Contract address', ie. `export PROXY_ADDR=address`
+
+Use:
+
+First thing that needs to be done is initializing the implementation contract by sending a call to the proxy contract. This will act as a Implementation contract's constructor. 
+
+You can initialize the contract by calling the `initializer` function and passing the admin address as an input. 
+```
+starknet invoke \
+    --address $PROXY_ADDR \
+    --abi amm_abi.json \
+    --function initializer \
+    --input $ADMIN_ADDRESS \
+    --max_fee 500000000000000
+
+```
+
+**Important note**: When calling any function from the implementation contract through the proxy contract, you must use the Proxy contract's adress, but the Implementations contract's abi.
+
+Now you can verify that the admin stored inside the contract is the same as you specified.
+```
+starknet call \
+    --address $PROXY_ADD \
+    --abi amm_abi.json \ 
+    --function getAdmin \
+```
+Also you can try to invoke some function that can only be invoked by an admin to see that you won't be able to(provided you use different account).
+```
+starknet invoke \
+    --address $PROXY_ADD \
+    --abi amm_abi.json \
+    --function setAdmin --input 0x0000000000000000 \
+    --account not_admin
+
+Error message: Proxy: caller is not admin
+```
+
+But you can call/invoke any function that is not restricted, for example `init_pool`.
+```
+starknet invoke \
+    --address $PROXY_ADDR \
+    --abi amm_abi.json \
+    --function init_pool \
+    --max_fee 500000000000000
+```
+
+Or `get_pool_balance`.
+```
+starknet call \
+    --address $PROXY_ADDR \
+    --abi amm_abi.json \
+    --function get_pool_balance \
+    --input 0
+
+0x6072000000000000000
+```
+etc. 
+
+Upgrading:
+
+Upgrading is done by invoking the `upgrade` function stored in the Implementation contract and passing the new Implementation contract's class hash as an input. While the Proxy contract doesn't store any logic, it will preserve the state when upgrading, meaning that if you invoke the `init_pool` function and then upgrade the contract, it will still return 12345 when calling the `get_pool_balance` function(provided you didn't interact with the pool). 
+
+```
+starknet invoke \
+    --address $PROXY_ADDR \
+    --abi amm_abi.json \
+    --function upgrade \ 
+    --input $NEW_AMM_HASH 
+```
+
+After upgrading, interact with the contract using the upgraded abi. 
+
+Interacting via another contract:
+
+This works exactly the same as with regular contracts, just use the Proxy contract's address.
+```
+%lang starknet
+
+const PROXY_ADDR = $PROXY_ADDR
+
+@contract_interface
+namespace IAmm:
+    func get_pool_balance(option_type : felt) -> (pool_balance : felt):
+    end
+end
+
+@external
+func pool_balance{syscall_ptr : felt*, range_check_ptr}(option_type : felt) -> (balance : felt):
+    let (res) = IAmm.get_pool_balance(PROXY_ADDR, option_type)
+    return (res)
+end
+```
