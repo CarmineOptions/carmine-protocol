@@ -20,6 +20,6 @@ amm = [
 lptoken = [
     "./contracts/lptoken.cairo"
 ]
-#option_token = [
-#    "./contracts/option_token.cairo"
-#]
+option_token = [
+    "./contracts/option_token.cairo"
+]

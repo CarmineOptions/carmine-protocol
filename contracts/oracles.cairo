@@ -6,7 +6,8 @@ from starkware.cairo.common.bool import TRUE, FALSE
 
 from math64x61 import Math64x61
 
-from contracts._cfg import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
+from contracts.constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
+from contracts.types import Int, Math64x61_
 from lib.math_64x61_extended import Math64x61_div_imprecise
 from lib.pow import pow10
 
@@ -53,7 +54,7 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt
 }
 
 @view
-func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: felt) {
+func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: Math64x61_) {
     alloc_locals;
 
     let (
@@ -61,6 +62,18 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
     ) = IEmpiricOracle.get_value(EMPIRIC_ORACLE_ADDRESS, key, EMPIRIC_AGGREGATION_MODE);
 
     let (res) = convert_price(value, decimals);
+
+    return (res,);
+}
+
+
+func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (
+    price: Math64x61_
+) {
+    // FIXME: todo
+    alloc_locals;
+
+    let res = Math64x61.fromFelt(1500);
 
     return (res,);
 }

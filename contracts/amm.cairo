@@ -2,350 +2,171 @@
 
 %lang starknet
 
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-// from starkware.cairo.common.hash import hash2
-from starkware.cairo.common.math import assert_nn_le, assert_nn
-// from starkware.cairo.common.math import assert_le, unsigned_div_rem
-from starkware.starknet.common.syscalls import get_block_timestamp  // storage_write
+from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
+from starkware.cairo.common.math_cmp import is_le
+from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
 
 from contracts.constants import (
-    POOL_BALANCE_UPPER_BOUND,
-    ACCOUNT_BALANCE_UPPER_BOUND,
     VOLATILITY_LOWER_BOUND,
     VOLATILITY_UPPER_BOUND,
-    TOKEN_A,
-    TOKEN_B,
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
     TRADE_SIDE_SHORT,
+    RISK_FREE_RATE,
+    STOP_TRADING_BEFORE_MATURITY_SECONDS,
+    EMPIRIC_ETH_USD_KEY,
+    get_empiric_key,
     get_opposite_side,
-    STRIKE_PRICE_UPPER_BOUND,
 )
 from contracts.fees import get_fees
+from contracts.interface_liquidity_pool import ILiquidityPool
+// from contracts.liquidity_pool import (
+//     get_unlocked_capital,
+//     get_lptoken_addr_for_given_option,
+//     get_option_token_address,
+//     get_option_type,
+//     get_pool_volatility,
+//     mint_option_token,
+//     burn_option_token,
+//     expire_option_token
+// )
 from contracts.option_pricing import black_scholes
-from contracts.oracles import empiric_median_price
-from contracts._cfg import EMPIRIC_ETH_USD_KEY
+from contracts.oracles import empiric_median_price, get_terminal_price
+from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+from contracts.option_pricing_helpers import (
+    select_and_adjust_premia,
+    get_time_till_maturity,
+    add_premia_fees,
+    get_new_volatility,
+    convert_amount_to_option_currency_from_base
+)
 
-// FIXME: look into how the token sizes are dealt with across different protocols
-// A map from account and token type to the corresponding balance of that account in given pool.
-// Ie this describes how much of the given pool the given account owns.
-@storage_var
-func account_balance(account_id: felt, token_type: felt) -> (balance: felt) {
-}
 
-// A map from option type to the corresponding balance of the pool.
-@storage_var
-func pool_balance(option_type: felt) -> (balance: felt) {
-}
-
-// Stores information about underwritten or bought options that the AMM could
-// use instead of minting a new option. If balance > 0 -> pool does not have to
-// mint new options if user wants to buy, balance < 0 means the same when
-// user wants to sell.
-@storage_var
-func pool_option_balance(option_type: felt, strike_price: felt, maturity: felt, side: felt) -> (
-    balance: felt
+// owner should be caller
+@constructor
+func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    owner: felt
 ) {
-}
-
-// Stores current value of volatility for given pool (option type) and maturity.
-@storage_var
-func pool_volatility(option_type: felt, maturity: felt) -> (volatility: felt) {
-}
-
-// Determines whether an option is allowed or not. If 1 is returned, option is allowed.
-// FIXME: is this a good design?
-@storage_var
-func available_options(option_type: felt, strike_price: felt, maturity: felt) -> (
-    availability: felt
-) {
-}
-
-// ---------------storage_var handlers------------------
-
-func set_pool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, balance: felt
-) {
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1);
-    pool_balance.write(option_type, balance);
+    Ownable.initializer(owner);
     return ();
 }
 
-func set_account_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account_id: felt, token_type: felt, balance: felt
-) {
-    assert (token_type - TOKEN_A) * (token_type - TOKEN_B) = 0;
-    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1);
-    account_balance.write(account_id, token_type, balance);
-    return ();
+// FIXME: drop this down the line
+@view
+func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (owner: felt) {
+    let (owner: felt) = Ownable.owner();
+    return (owner,);
 }
 
-func set_pool_option_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, strike_price: felt, maturity: felt, side: felt, balance: felt
-) {
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-    assert (side - TRADE_SIDE_LONG) * (side - TRADE_SIDE_SHORT) = 0;
-    assert_nn_le(balance, POOL_BALANCE_UPPER_BOUND - 1);
-    // FIXME: assert maturity
-    // FIXME: assert side
 
-    pool_option_balance.write(option_type, strike_price, maturity, side, balance);
-    return ();
+@storage_var
+func pool_address_for_given_asset_and_option_type(asset: felt, option_type: OptionType) -> (
+    address: Address
+) {
 }
 
-func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, maturity: felt, volatility: felt
-) {
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-    assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
-    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);  // TODO why? vol - 1
-    pool_volatility.write(option_type, maturity, volatility);
-    return ();
-}
 
-func set_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, strike_price: felt, maturity: felt
-) {
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-    // FIXME: assert that maturity > current time
-    assert_nn_le(strike_price, STRIKE_PRICE_UPPER_BOUND - 1);
+// ############################
+// Pool information handlers
+// ############################
 
-    // Sets the availability of option to 1 (True)
-    available_options.write(option_type, strike_price, maturity, 1);
-    return ();
-}
 
 @view
-func get_pool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt
-) -> (pool_balance: felt) {
-    let (pool_balance_) = pool_balance.read(option_type);
+func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+) -> (pool_balance: Math64x61_) {
+    // Returns total capital in the pool minus the locked capital
+    // (ie capital available to locking).
+    let (pool_balance_) = get_unlocked_capital(
+        lptoken_address=lptoken_address
+    );
+
     return (pool_balance_,);
 }
 
-@view
-func get_account_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account_id: felt, token_type: felt
-) -> (account_balance: felt) {
-    let (account_balance_) = account_balance.read(account_id, token_type);
-    return (account_balance_,);
-}
 
 @view
-func get_pool_option_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, strike_price: felt, maturity: felt, side: felt
-) -> (pool_option_balance: felt) {
-    let (pool_option_balance_) = pool_option_balance.read(
-        option_type, strike_price, maturity, side
-    );
-    return (pool_option_balance_,);
-}
-
-@view
-func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, maturity: felt
-) -> (pool_volatility: felt) {
-    let (pool_volatility_) = pool_volatility.read(option_type, maturity);
-    return (pool_volatility_,);
-}
-
-@view
-func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: felt, strike_price: felt, maturity: felt
+func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
 ) -> (option_availability: felt) {
-    let (option_availability_) = available_options.read(option_type, strike_price, maturity);
-    return (option_availability_,);
-}
-
-// ---------------AMM logic------------------
-
-func _select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    call_premia: felt, put_premia: felt, option_type: felt, underlying_price: felt
-) -> (premia: felt) {
-    // Call and put premia are in quote tokens (in USDC in case of ETH/USDC)
-
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-
-    if (option_type == OPTION_CALL) {
-        let adjusted_call_premia = Math64x61.div(call_premia, underlying_price);
-        return (premia=adjusted_call_premia);
+    let (option_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    // FIXME: create unit test for this
+    if (option_address == 0) {
+        return (FALSE,);
     }
-    return (premia=put_premia);
+
+    return (TRUE,);
 }
 
-func _calc_new_pool_balance_with_premia{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(side: felt, current_pool_balance: felt, total_premia: felt) -> (pool_balance: felt) {
-    if (side == TRADE_SIDE_LONG) {
-        // User goes long and pays premia to the pool_balance
-        let long_pool_balance = Math64x61.add(current_pool_balance, total_premia);
-        return (long_pool_balance,);
-    }
-    // User goes short and pool pays premia to the user
-    let short_pool_balance = Math64x61.sub(current_pool_balance, total_premia);
-    return (short_pool_balance,);
-}
 
-func _time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: felt) -> (
-    time_till_maturity: felt
-) {
-    alloc_locals;
-    local syscall_ptr: felt* = syscall_ptr;  // Reference revoked fix
+// ############################
+// AMM Trade, Close and Expire
+// ############################
 
-    let (currtime) = get_block_timestamp();  // is number of seconds... unix timestamp
-    let currtime_math = Math64x61.fromFelt(currtime);
-    let maturity_math = Math64x61.fromFelt(maturity);
-    let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
-
-    let secs_left = Math64x61.sub(maturity_math, currtime_math);
-    assert_nn(secs_left);
-
-    let time_till_maturity = Math64x61.div(secs_left, secs_in_year);
-    return (time_till_maturity,);
-}
-
-func _calc_new_pool_balance_with_locked_capital{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(
-    side: felt,
-    option_type: felt,
-    current_pool_balance: felt,
-    strike_price: felt,
-    to_be_traded: felt,
-    to_be_minted: felt,
-) -> (pool_balance: felt) {
-    // if side==TRADE_SIDE_SHORT increase pool_balance by
-    // if option_type==OPTION_CALL increase (call pool) it by to_be_traded
-    // if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
-    // if side==TRADE_SIDE_LONG decrease pool_balance by
-    // if option_type==OPTION_CALL decrease it by to_be_minted
-    // if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
-
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-    assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0;
-
-    if (side == TRADE_SIDE_SHORT) {
-        // pool unlocks locked capital in size of to_be_traded
-        if (option_type == OPTION_CALL) {
-            let to_be_traded_call_short = Math64x61.add(current_pool_balance, to_be_traded);
-            return (to_be_traded_call_short,);
-        }
-        let to_be_traded_put = Math64x61.mul(to_be_traded, strike_price);
-        let to_be_traded_put_short = Math64x61.add(current_pool_balance, to_be_traded_put);
-        return (to_be_traded_put_short,);
-    }
-    // here the side = TRADE_SIDE_LONG
-    if (option_type == OPTION_CALL) {
-        assert_nn_le(to_be_minted, current_pool_balance - 1);
-        let to_be_minted_call_long = Math64x61.sub(current_pool_balance, to_be_minted);
-        return (to_be_minted_call_long,);
-    }
-    let to_be_minted_put = Math64x61.mul(to_be_minted, strike_price);
-    assert_nn_le(to_be_minted_put, current_pool_balance - 1);
-    let to_be_minted_put_long = Math64x61.sub(current_pool_balance, to_be_minted_put);
-    return (to_be_minted_put_long,);
-}
-
-func _add_premia_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    side: felt, total_premia_before_fees: felt, total_fees: felt
-) -> (total_premia: felt) {
-    assert (side - TRADE_SIDE_SHORT) * (side - TRADE_SIDE_LONG) = 0;
-
-    // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    // if side == TRADE_SIDE_SHORT (user receives premia) the fees are subtracted from the premia
-    if (side == TRADE_SIDE_LONG) {
-        let premia_fees_add = Math64x61.add(total_premia_before_fees, total_fees);
-        return (premia_fees_add,);
-    }
-    let premia_fees_sub = Math64x61.sub(total_premia_before_fees, total_fees);
-    return (premia_fees_sub,);
-}
-
-func _get_vol_update_denominator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    relative_option_size: felt, side: felt
-) -> (relative_option_size: felt) {
-    if (side == TRADE_SIDE_LONG) {
-        let long_denominator = Math64x61.sub(Math64x61.ONE, relative_option_size);
-        return (long_denominator,);
-    }
-    let short_denominator = Math64x61.add(Math64x61.ONE, relative_option_size);
-    return (short_denominator,);
-}
-
-func _get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    current_volatility: felt, option_size: felt, option_type: felt, side: felt
-) -> (new_volatility: felt, trade_volatility: felt) {
-    alloc_locals;
-
-    let (current_pool_balance) = get_pool_balance(option_type);
-    assert_nn_le(Math64x61.ONE, current_pool_balance);
-    assert_nn_le(option_size, current_pool_balance);
-    let relative_option_size = Math64x61.div(option_size, current_pool_balance);
-
-    // alpha – rate of change assumed to be 1
-    let (denominator) = _get_vol_update_denominator(relative_option_size, side);
-    let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
-    let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
-
-    let volsum = Math64x61.add(current_volatility, new_volatility);
-    let two = Math64x61.fromFelt(2);
-    let trade_volatility = Math64x61.div(volsum, two);
-
-    return (new_volatility=new_volatility, trade_volatility=trade_volatility);
-}
-
-func _get_option_size_in_pool_currency{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(option_size: felt, option_type: felt, underlying_price: felt) -> (relative_option_size: felt) {
-    if (option_type == OPTION_CALL) {
-        return (option_size,);
-    }
-    let adjusted_option_size = Math64x61.mul(option_size, underlying_price);
-    return (adjusted_option_size,);
-}
 
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account_id: felt,
-    option_type: felt,
-    strike_price: felt,
-    maturity: felt,
-    side: felt,
-    option_size: felt,
-) -> (premia: felt) {
+    option_type: OptionType,
+    strike_price: Math64x61_,
+    maturity: Int,
+    side: OptionSide,
+    option_size: Math64x61_,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
+) -> (premia: Math64x61_) {
     // options_size is always denominated in base tokens (ETH in case of ETH/USDC)
 
     alloc_locals;
 
-    // 0) Get current volatility
-    let (current_volatility) = get_pool_volatility(option_type, maturity);
-
-    // 1) Get price of underlying asset
-    let (underlying_price) = empiric_median_price(EMPIRIC_ETH_USD_KEY);
-
-    // 2) Calculate new volatility, calculate trade volatilit
-    let (option_size_in_pool_currency) = _get_option_size_in_pool_currency(
-        option_size, option_type, underlying_price
-    );
-    let (new_volatility, trade_volatility) = _get_new_volatility(
-        current_volatility, option_size_in_pool_currency, option_type, side
+    // 0) Helper values
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        strike_price
     );
 
-    // 3) Update volatility
-    set_pool_volatility(option_type, maturity, new_volatility);
+    // 1) Get current volatility
+    let (current_volatility) = get_pool_volatility(
+        lptoken_address=lptoken_address,
+        maturity=maturity
+    );
 
-    // 4) Get time till maturity
-    let (time_till_maturity) = _time_till_maturity(maturity);
+    // 2) Get price of underlying asset
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (underlying_price) = empiric_median_price(empiric_key);
 
-    // 5) risk free rate
-    // let three = Math64x61.fromFelt(3)
-    // let hundred = Math64x61.fromFelt(100)
-    // let risk_free_rate_annualized = Math64x61.div(three, hundred)
-    let risk_free_rate_annualized = Math64x61.fromFelt(0);
+    // 3) Calculate new volatility, calculate trade volatility
+    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
+    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
-    // 6) Get premia
+    let (new_volatility, trade_volatility) = get_new_volatility(
+        current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
+    );
+
+    // 4) Update volatility
+    set_pool_volatility(
+        lptoken_address=lptoken_address,
+        maturity=maturity,
+        volatility=new_volatility
+    );
+
+    // 5) Get time till maturity
+    let (time_till_maturity) = get_time_till_maturity(maturity);
+
+    // 6) risk free rate
+    let risk_free_rate_annualized = RISK_FREE_RATE;
+
+    // 7) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
     let (call_premia, put_premia) = black_scholes(
         sigma=trade_volatility,
@@ -354,130 +175,286 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         underlying_price=underlying_price,
         risk_free_rate_annualized=risk_free_rate_annualized,
     );
-
-    // trade_volatility -> Math64x61
-    // time_till_maturity -> Math64x61
-    // strike_price -> Math64x61
-    // underlying_price -> Math64x61
-    // risk_free_rate_annualized -> Math64x61
-
     // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
     // and in quote tokens (USDC in case of ETH/USDC) for put option.
-    let (premia) = _select_and_adjust_premia(
+    let (premia) = select_and_adjust_premia(
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
     let total_premia_before_fees = Math64x61.mul(premia, option_size);
 
-    // 7) Get fees
+    // 8) Get fees
     // fees are already in the currency same as premia
     // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
     // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
     let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = _add_premia_fees(side, total_premia_before_fees, total_fees);
+    let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
 
-    // 1) Update the pool_balance
-    // increase by the amount of fees (in corresponding TOKEN)
-    // if side==TRADE_SIDE_LONG increase pool_balance by premia (in corresponding TOKEN)
-    // if side==TRADE_SIDE_SHORT decrease pool_balance by premia (in corresponding TOKEN)
-    let (current_pool_balance) = get_pool_balance(option_type);
-
-    let (new_pool_balance) = _calc_new_pool_balance_with_premia(
-        side, current_pool_balance, total_premia
+    // 9) Make the trade
+    mint_option_token(
+        lptoken_address=lptoken_address,
+        option_size=option_size,
+        option_size_in_pool_currency=option_size_in_pool_currency,
+        option_side=side,
+        option_type=option_type,
+        maturity=maturity,
+        strike_price=strike_price,
+        premia_including_fees=total_premia,
+        underlying_price=underlying_price,
     );
-    // FIXME: the set_pool_balance is called here and below, this could be done only once
-    set_pool_balance(option_type, new_pool_balance);
-
-    // 2) get size of options that could be "traded" and not "minted" from pool_option_balance
-    // if there are available ones, trade them, if not mint new ones
-    // (could be partially traded and partially minted).
-    let (available_option_balance) = get_pool_option_balance(
-        option_type, strike_price, maturity, side
-    );
-    // option balance for opposite side
-    let (opposite_side) = get_opposite_side(side);
-    let (available_opposite_option_balance) = get_pool_option_balance(
-        option_type, strike_price, maturity, opposite_side
-    );
-    // size of option and hence the available_option_balance is always in terms of base token
-    // (ETH in case of ETH/USDC)
-
-    // available_option_balance is always >= 0
-    // FIXME test, check and potentially repair... that the option_balances are correctly updated
-    let to_be_traded = Math64x61.min(available_option_balance, option_size);
-    let to_be_minted = Math64x61.sub(option_size, to_be_traded);
-
-    // 3) Update the pool_option_balance
-    // decrease by to_be_traded (same side as is input "side")
-    // increase by to_be_minted (opposite side as is input "side")
-    // The reason behind different different sides is following (example)
-    // user goes long, so we want to resell long position to the user (to_be_traded)
-    //   -> decrease the "side" pool_option_balance
-    //      to level of available_option_balance - to_be_traded
-    // if we have to mint new options, we mint long and short, user gets long, pool
-    // keeps short and puts it into the pool
-    //   -> increase the "opposite_sied" of pool_option_balance
-
-    let new_pool_option_balance = Math64x61.sub(available_option_balance, to_be_traded);
-    set_pool_option_balance(option_type, strike_price, maturity, side, new_pool_option_balance);
-    let new_opposite_pool_option_balance = Math64x61.add(
-        available_opposite_option_balance, to_be_minted
-    );
-    set_pool_option_balance(
-        option_type, strike_price, maturity, opposite_side, new_opposite_pool_option_balance
-    );
-
-    // 4) Update the pool_balance
-    // if side==TRADE_SIDE_SHORT increase pool_balance by
-    // if option_type==OPTION_CALL increase (call pool) it by to_be_traded
-    // if option_type==OPTION_PUT increase (put pool) it by to_be_traded*underlying_price
-    // if side==TRADE_SIDE_LONG decrease pool_balance by
-    // if option_type==OPTION_CALL decrease it by to_be_minted
-    // if option_type==OPTION_PUT decrease it by to_be_minted*underlying_price
-
-    // new_pool_balance is current state of the pool (from above) in terms of the pool's token
-    let (new_pool_balance_after_locking_capital) = _calc_new_pool_balance_with_locked_capital(
-        side, option_type, new_pool_balance, strike_price, to_be_traded, to_be_minted
-    );
-    set_pool_balance(option_type, new_pool_balance_after_locking_capital);
 
     return (premia=premia);
 }
 
-@external
-func trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account_id: felt,
-    option_type: felt,
-    strike_price: felt,
-    maturity: felt,
-    side: felt,
-    option_size: felt,
-) -> (premia: felt) {
-    // FIXME: with get_available_options check that option is available
+func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    side : OptionSide,
+    option_size : Math64x61_,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
+) -> (premia : felt) {
+    // All of the unlocking of capital happens inside of the burn function below.
+    // Volatility is not updated since closing position is considered as
+    // "user does not have opinion on the market state" - this may change down the line
 
-    // option_type is from {OPTION_CALL, OPTION_PUT}
-    // option_size is denominated in TOKEN_A (ETH)
-    // side is from {TRADE_SIDE_LONG, TRADE_SIDE_SHORT}, where both are from user perspective,
-    // ie "TRADE_SIDE_LONG" means that the pool is underwriting option and the "TRADE_SIDE_SHORT"
-    // means that user is underwriting the option.
+    // When the user is closing, side is the side of the token being closed... for calculations
+    // we need opposite side, since the user is doing "opposite" action
+    // to acquiring the option token.
 
-    // 1) Check that account_id has enough amount of given token to
-    // - to pay the fee
-    // - to pay the premia in case of size==TRADE_SIDE_LONG
-    // - to lock in capital in case of size==TRADE_SIDE_SHORT
-    // FIXME: do this once test or actual capital is used
+    alloc_locals;
 
-    // 2) Check that there is enough available capital in the given pool_balance
-    // - to pay the premia in case of size==TRADE_SIDE_LONG
-    // - to lock in capital in case of size==TRADE_SIDE_SHORT
+    let (opposite_side) = get_opposite_side(side);
 
-    // 3) Check that the strike_price > 0, check that the maturity haven't passed yet
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
+        option_size,
+        option_type,
+        strike_price
+    );
 
-    // 4) Check that the strike_price x maturity option is at all available
+    // 1) Get current volatility
+    let (current_volatility) = get_pool_volatility(
+        lptoken_address=lptoken_address,
+        maturity=maturity
+    );
 
-    // 5) Check that option_size>0
+    // 2) Get price of underlying asset
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (underlying_price) = empiric_median_price(empiric_key);
 
-    let (premia) = do_trade(account_id, option_type, strike_price, maturity, side, option_size);
+    // 3) Calculate new volatility, calculate trade volatility
+    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
+    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+
+    let (new_volatility, trade_volatility) = get_new_volatility(
+        current_volatility, option_size, option_type, opposite_side, underlying_price, current_pool_balance
+    );
+
+    // 4) Update volatility
+    // Update volatility does not happen in this function - look at docstring
+
+    // 5) Get time till maturity
+    let (time_till_maturity) = get_time_till_maturity(maturity);
+
+    // 6) risk free rate
+    let risk_free_rate_annualized = RISK_FREE_RATE;
+
+    // 7) Get premia
+    // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+    let (call_premia, put_premia) = black_scholes(
+        sigma=trade_volatility,
+        time_till_maturity_annualized=time_till_maturity,
+        strike_price=strike_price,
+        underlying_price=underlying_price,
+        risk_free_rate_annualized=risk_free_rate_annualized,
+    );
+    // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
+    // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
+    // and in quote tokens (USDC in case of ETH/USDC) for put option.
+    let (premia) = select_and_adjust_premia(
+        call_premia, put_premia, option_type, underlying_price
+    );
+    // premia adjusted by size (multiplied by size)
+    let total_premia_before_fees = Math64x61.mul(premia, option_size);
+
+    // 8) Get fees
+    // fees are already in the currency same as premia
+    // if opposite_side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
+    // if opposite_side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+    let (total_fees) = get_fees(total_premia_before_fees);
+    let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
+
+    // 9) Make the trade    
+    burn_option_token(
+        lptoken_address=lptoken_address,
+        option_size=option_size,
+        option_size_in_pool_currency=option_size_in_pool_currency,
+        option_side=opposite_side,
+        option_type=option_type,
+        maturity=maturity,
+        strike_price=strike_price,
+        premia_including_fees=total_premia,
+        underlying_price=underlying_price
+    );
+
     return (premia=premia);
+}
+
+func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    side : OptionSide,
+    option_size : Math64x61_,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address,
+    open_position: Bool, // True or False... determines if the user wants to open or close the position
+) -> () {
+
+    alloc_locals;
+
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+
+    expire_option_token(
+        lptoken_address=lptoken_address,
+        option_type=option_type,
+        option_side=side,
+        strike_price=strike_price,
+        terminal_price=terminal_price,
+        option_size=option_size,
+        maturity=maturity,
+    );
+    return ();
+}
+
+
+@external
+func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    option_side : OptionSide,
+    option_size : Math64x61_,
+    // underlying_asset
+    quote_token_address: Address,
+    base_token_address: Address,
+    // True or False... determines if the user wants to open or close the position
+    open_position: Bool,
+) -> (premia : Math64x61_) {
+    // side is dependent on open_position...
+    //  if open_position=TRUE -> side is what the user want's to do as action
+    //  if open_position=False -> side is what the user want's to close
+    //      (side of the token that user holds)
+    //      This is very important is in close_position an opposite side is used
+    alloc_locals;
+
+    with_attr error_message("Given option_type is not available") {
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
+
+    with_attr error_message("Given option_side is not available") {
+        assert (option_side - TRADE_SIDE_LONG) * (option_side - TRADE_SIDE_SHORT) = 0;
+    }
+
+    with_attr error_message("open_position is not bool") {
+        assert (open_position - TRUE) * (open_position - FALSE) = 0;
+    }
+
+    // Check that option_size>0 (same as size>=1... because 1 is a smallest unit)
+    with_attr error_message("Option size is not positive") {
+        assert_le(1, option_size);
+    }
+
+    // lptoken_address serves as an identifier of selected liquidity pool
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        quote_token_address,
+        base_token_address,
+        option_type
+    );
+    let (option_is_available) = is_option_available(
+        lptoken_address,
+        option_side,
+        strike_price,
+        maturity
+    );
+    with_attr error_message("Option is not available") {
+        assert option_is_available = TRUE;
+    }
+
+    // Check that maturity hasn't matured in case of open_position=TRUE
+    // If open_position=FALSE it means the user wants to close or settle the option
+    let (current_block_time) = get_block_timestamp();
+    if (open_position == TRUE) {
+        with_attr error_message("Given maturity has already expired") {
+            assert_le(current_block_time, maturity);
+        }
+        with_attr error_message("Trading of given maturity has been stopped before expiration") {
+            assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+        }
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        let is_not_ripe = is_le(current_block_time, maturity);
+        let cannot_be_closed = is_le(maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS, current_block_time);
+        let cannot_be_closed_or_settled = is_not_ripe * cannot_be_closed;
+        with_attr error_message(
+            "Closing positions or settling option of given maturity is not possible just before expiration"
+        ) {
+            assert cannot_be_closed_or_settled = 0;
+        }
+        tempvar range_check_ptr = range_check_ptr;
+    }
+
+    // Check that account has enough amount of given token to pay for premia and/or locked capital.
+    // If this is not the case, the transaction fails, because the tokens can't be transfered.
+
+    // Check that there is enough available capital in the given pool.
+    // If this is not the case, the transaction fails, because the tokens can't be transfered.
+
+    if (open_position == TRUE) {
+        let (premia) = do_trade(
+            option_type,
+            strike_price,
+            maturity,
+            option_side,
+            option_size,
+            quote_token_address,
+            base_token_address,
+            lptoken_address
+        );
+        return (premia=premia);
+    } else {
+        let can_be_closed = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+        if (can_be_closed == TRUE) {
+            let (premia) = close_position(
+                option_type,
+                strike_price,
+                maturity,
+                option_side,
+                option_size,
+                quote_token_address,
+                base_token_address,
+                lptoken_address
+            );
+            return (premia=premia);
+        } else {
+            settle_option_token(
+                option_type=option_type,
+                strike_price=strike_price,
+                maturity=maturity,
+                side=option_side,
+                option_size=option_size,
+                quote_token_address=quote_token_address,
+                base_token_address=base_token_address,
+                lptoken_address=lptoken_address,
+                open_position=open_position,
+            );
+            return (premia=0);
+        }
+    }
 }
