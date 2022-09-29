@@ -20,7 +20,7 @@ from starkware.cairo.common.uint256 import (
     uint256_unsigned_div_rem,
     uint256_le,
 )
-from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
+from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.access.ownable.library import Ownable
 

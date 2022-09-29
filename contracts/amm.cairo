@@ -6,7 +6,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
 from starkware.cairo.common.math_cmp import is_le
-from starkware.starknet.common.syscalls import get_block_timestamp
+from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
 
 from contracts.constants import (
@@ -44,6 +44,23 @@ from contracts.option_pricing_helpers import (
     get_new_volatility,
     convert_amount_to_option_currency_from_base
 )
+
+
+// owner should be caller
+@constructor
+func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    owner: felt
+) {
+    Ownable.initializer(owner);
+    return ();
+}
+
+// FIXME: drop this down the line
+@view
+func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (owner: felt) {
+    let (owner: felt) = Ownable.owner();
+    return (owner,);
+}
 
 
 @storage_var
