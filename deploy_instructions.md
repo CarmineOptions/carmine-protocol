@@ -125,6 +125,9 @@ protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/
 	Contract address: 0x007a4c35ea9d27303dbffaeeb64cb71de68f42480e5f8957464ff60ca5006c39
 	Transaction hash: 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046f817f211e86f
 ```
+```
+export OPTION_TOKEN_ADDRESS_1="0x007a4c35ea9d27303dbffaeeb64cb71de68f42480e5f8957464ff60ca5006c39"
+```
 Test that the transaction was accepted
 ```
 starknet tx_status --hash 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046f817f211e86f --feeder_gateway_url "http://127.0.0.1:5050/"
@@ -136,3 +139,19 @@ starknet tx_status --hash 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046
 	}
 ```
 
+
+# ADD OPTION TOKEN TO LIQUIDITY POOL
+
+    option_side = 0,
+    maturity = 1664456400, # Thu Sep 29 2022 13:00:00 GMT+0000 -> Thu Sep 29 2022 15:00:00 GMT+0200 (CEST)
+    strike_price: 3458764513820540928000, # 1500 * 2 **61
+    quote_token_address = $ETH_ADDRESS,
+    base_token_address = $ETH_ADDRESS,
+    option_type = 0, # call
+    lptoken_address = $LPTOKEN_CONTRACT_ADDRESS,
+    option_token_address_ = $OPTION_TOKEN_ADDRESS_1,
+    initial_volatility = 230584300921369395200, # 100 * 2**61
+
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 1664456400 3458764513820540928000 $ETH_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
