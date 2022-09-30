@@ -45,24 +45,6 @@ from contracts.option_pricing_helpers import (
     convert_amount_to_option_currency_from_base
 )
 
-
-// owner should be caller
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    owner: felt
-) {
-    Ownable.initializer(owner);
-    return ();
-}
-
-// FIXME: drop this down the line
-@view
-func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (owner: felt) {
-    let (owner: felt) = Ownable.owner();
-    return (owner,);
-}
-
-
 @storage_var
 func pool_address_for_given_asset_and_option_type(asset: felt, option_type: OptionType) -> (
     address: Address

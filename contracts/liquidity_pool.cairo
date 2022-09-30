@@ -210,6 +210,7 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // If this doesn't look "good", there is an option to have the available_options instead of having
 // the argument i, it could have no argument and return array (it might be easier for the map above)
 
+@view
 func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (res: Math64x61_) {
@@ -476,7 +477,7 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
     // 1) Check that owner (and no other entity) is adding the lptoken
     // FIXME: hope this checking of owner is correct
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
 
     // 2) Update following
     lptoken_addr_for_given_pooled_token.write(
@@ -514,7 +515,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 
     // 1) Check that owner (and no other entity) is adding the lptoken
     // FIXME: hope this checking of owner is correct
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
 
     // 2) Update following
     let hundred = Math64x61.fromFelt(100);
