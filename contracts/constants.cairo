@@ -50,7 +50,7 @@ func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 // Token addresses
 // ############################
 
-const TOKEN_ETH_ADDRESS = 123;
+const TOKEN_ETH_ADDRESS = 0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488;
 const TOKEN_USD_ADDRESS = 456;
 const TOKEN_BTC_ADDRESS = 789;
 
@@ -62,7 +62,8 @@ const TOKEN_BTC_ADDRESS = 789;
 const FEE_PROPORTION_PERCENT = 3;
 const RISK_FREE_RATE = 0; // Same as Math64x61.fromFelt(0)
 // Stops trading x amount of seconds before given option matures.
-const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
+// const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
+const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 2;
 
 
 // ############################

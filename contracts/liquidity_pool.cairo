@@ -34,7 +34,15 @@ from openzeppelin.access.ownable.library import Ownable
 // from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
 
 
-
+// FIXME hotfix for conversion of math64x61 to uint256
+// Converts a fixed point 64.61 value to a uint256 value
+func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> Uint256 {
+    let dec = Math64x61.fromFelt(10 ** 18);
+    let x_ = Math64x61.mul(x, dec);
+    let amount_felt = Math64x61.toFelt(x_);
+    let res = Uint256(low = amount_felt, high = 0);
+    return res;
+}
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // Storage vars
@@ -396,10 +404,10 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-    let free_capital = Math64x61.toUint256(free_capital_Math64);
+    let free_capital = toUint256(free_capital_Math64);
 
     let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-    let value_of_position = Math64x61.toUint256(value_of_position_Math64);
+    let value_of_position = toUint256(value_of_position_Math64);
 
     let (value_of_pool, _) = uint256_add(free_capital, value_of_position);
     // FIXME: Should we handle carry from the line above somehow?
@@ -438,10 +446,10 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
 
     let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-    let free_capital = Math64x61.toUint256(free_capital_Math64);
+    let free_capital = toUint256(free_capital_Math64);
 
     let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-    let value_of_position = Math64x61.toUint256(value_of_position_Math64);
+    let value_of_position = toUint256(value_of_position_Math64);
     
     let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
     // FIXME: Should we handle carry from the line above somehow?
@@ -547,7 +555,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    amt: Math64x61_
+    amount: Math64x61_
 ) {
 
     alloc_locals;
@@ -561,22 +569,25 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Transfer tokens to pool.
     // We can do this optimistically;
     // any later exceptions revert the transaction anyway. saves some sanity checks
-    let amt_uint256 = Math64x61.toUint256(amt);
+    // NOTE: there is either incorrect comment or bug in the toUint256, to be able to get
+    // fromUint256(toUint256(toFelt(amount))) == amount, we have have the "toFelt" inside... and 
+    let amount_felt = Math64x61.toFelt(amount * 10 ** 18);
+    let amount_uint256 = toUint256(amount_felt);
     IERC20.transferFrom(
-        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amt_uint256
+        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount_uint256
     );
 
     // update the lpool_balance by the provided capital
     let (current_balance) = lpool_balance.read(lptoken_address);
-    let new_pb = Math64x61.add(current_balance, amt);
+    let new_pb = Math64x61.add(current_balance, amount);
 
     // Don't use Math.fromUint here since it would multiply the number by FRACT_PART again
     lpool_balance.write(lptoken_address, new_pb);
 
     // Calculates how many lp tokens will be minted for given amount of provided capital.
-    let (mint_amt) = get_lptokens_for_underlying(lptoken_address, amt_uint256);
+    let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount_uint256);
     // Mint LP tokens
-    ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amt);
+    ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
     return ();
 }
 
