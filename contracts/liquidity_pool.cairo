@@ -34,15 +34,23 @@ from openzeppelin.access.ownable.library import Ownable
 // from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
 
 
-// FIXME hotfix for conversion of math64x61 to uint256
-// Converts a fixed point 64.61 value to a uint256 value
-func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> Uint256 {
+// Custom conversions from Math64_61 to Uint256 and back
+func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: Math64x61_) -> Uint256 {
+    // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
     let dec = Math64x61.fromFelt(10 ** 18);
     let x_ = Math64x61.mul(x, dec);
     let amount_felt = Math64x61.toFelt(x_);
     let res = Uint256(low = amount_felt, high = 0);
     return res;
 }
+func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: Uint256) -> Math64x61_ {
+    // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
+    let dec = Math64x61.fromFelt(10 ** 18);
+    let x_ = Math64x61.fromUint256(x);
+    let x__ = Math64x61.div(x_, dec);
+    return x__;
+}
+
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // Storage vars
@@ -555,7 +563,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    amount: Math64x61_
+    amount: Uint256
 ) {
 
     alloc_locals;
@@ -569,27 +577,25 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Transfer tokens to pool.
     // We can do this optimistically;
     // any later exceptions revert the transaction anyway. saves some sanity checks
-    // NOTE: there is either incorrect comment or bug in the toUint256, to be able to get
-    // fromUint256(toUint256(toFelt(amount))) == amount, we have have the "toFelt" inside... and 
-    let amount_felt = Math64x61.toFelt(amount * 10 ** 18);
-    let amount_uint256 = toUint256(amount_felt);
     IERC20.transferFrom(
-        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount_uint256
+        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount
     );
 
     // update the lpool_balance by the provided capital
+    let amount_math64x61 = fromUint256(amount);
     let (current_balance) = lpool_balance.read(lptoken_address);
-    let new_pb = Math64x61.add(current_balance, amount);
+    let new_pb = Math64x61.add(current_balance, amount_math64x61);
 
     // Don't use Math.fromUint here since it would multiply the number by FRACT_PART again
     lpool_balance.write(lptoken_address, new_pb);
 
     // Calculates how many lp tokens will be minted for given amount of provided capital.
-    let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount_uint256);
+    let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount);
     // Mint LP tokens
     ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
     return ();
 }
+
 
 @external
 func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(

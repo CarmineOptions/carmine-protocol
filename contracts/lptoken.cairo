@@ -147,10 +147,6 @@ func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     Ownable.assert_only_owner();
     ERC20._burn(account, amount);
     return ();
-    // TBD... namespace ERC20 already has a burn method
-    // https://github.com/OpenZeppelin/cairo-contracts/blob/main/src/openzeppelin/token/erc20/library.cairo#L253
-    // alternative is ERC1155
-    // https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/token/ERC1155_Mintable_Burnable.cairo#L123
 }
 
 @external

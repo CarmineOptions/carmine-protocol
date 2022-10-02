@@ -7,29 +7,32 @@ sudo docker run --network host shardlabs/starknet-devnet
 ```
 Devnet account
 ```
-    Account #0
-    Address: 0x6d619877cb82355238fdc9506b99440d4456f3235c5cd412f9448c8dce69501
-    Public key: 0x4e68d92816227d207127c80427d86d069b63ed67218a5b86de2912d2f3dd2e7
-    Private key: 0x12dc9fbf6e4456f6f5314dbacba798d3
+    Address: 0x576d469c526981da5732ef2e15297110aa8e2c441cecc75f6f45884a2a8d1f8
+    Public key: 0x6dad7e776cccc6bae885031e4727856fbb7ab6aa6ce96afc31a1fe59ca4fd17
+    Private key: 0xbdeadec161489779382eae54932fc8a5
 ```
 ```
-export ACCOUNT_0_ADDRESS="0x6d619877cb82355238fdc9506b99440d4456f3235c5cd412f9448c8dce69501"
-export ACCOUNT_0_PUBLIC="0x4e68d92816227d207127c80427d86d069b63ed67218a5b86de2912d2f3dd2e7"
-export ACCOUNT_0_PRIVATE="0x12dc9fbf6e4456f6f5314dbacba798d3"
+export ACCOUNT_0_ADDRESS="0x576d469c526981da5732ef2e15297110aa8e2c441cecc75f6f45884a2a8d1f8"
+export ACCOUNT_0_PUBLIC="0x6dad7e776cccc6bae885031e4727856fbb7ab6aa6ce96afc31a1fe59ca4fd17"
+export ACCOUNT_0_PRIVATE="0xbdeadec161489779382eae54932fc8a5"
 
 export ETH_ADDRESS="0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488"
-export FAKE_USD_ADDRESS = "456"
+export FAKE_USD_ADDRESS="456"
 export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount
+
+
+export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
+export MATURITY_1=1664654400 # Sat Oct 01 2022 23:31:51 GMT+0200 (Central European Summer Time)
 ```
 
 
 # DEPLOY AMM
 
 ```
-protostar deploy ./build/amm.json --salt 666 --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --inputs $ACCOUNT_0_ADDRESS
+protostar deploy ./build/amm.json --salt 666 --gateway-url "http://127.0.0.1:5050/" --chain-id 1
 ```
 ```                                                         
-    Contract address: 0x02f23c067cd535b2b615192c4d7736cc9056e1f4e25866509aa7fb8c3fe7e84e
+    Contract address: 0x01359224b5897227288405a5e55ee555884ff15a0fbf736fa92f08497d5920fb
     Transaction hash: 0x028112ed4d2d7f0ba1f9edde590ad2e1470bf3f5c479b2e746641871998547fe
 ```
 
@@ -40,7 +43,7 @@ starknet tx_status --hash 0x028112ed4d2d7f0ba1f9edde590ad2e1470bf3f5c479b2e74664
 
 Export address of the contract
 ```
-export MAIN_CONTRACT_ADDRESS="0x005e949455800d4c9cc9733eef3fef2addad72c78f1633079d441fe4479679aa"
+export MAIN_CONTRACT_ADDRESS="0x06b695bf77c58ae0c41c7c520485d8b8ffd9927bc7922ee9ee317561fbc2b969"
 ```
 
 Validate owner address - should be equal to $ACCOUNT_0_ADDRESS
@@ -58,10 +61,10 @@ starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --func
         recipient = $ACCOUNT_0_ADDRESS,
         owner = $MAIN_CONTRACT_ADDRESS,
 ```
-protostar deploy ./build/lptoken.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS
+protostar deploy ./build/lptoken.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 777 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS
 ```
 ```
-    Contract address: 0x01c63f342fed14eda286ad17f0095e13c178eecbcc8318af463991909adf5dec
+    Contract address: 0x02309c8c2a3ffc464520ddb3e60a0564103b82a8ede38d212e7093e74a93f355
     Transaction hash: 0x06fbf13d508c35aed0b8d7e2b04815414f8cae323f64672d92345004f2994732
 ```
 
@@ -72,7 +75,7 @@ starknet tx_status --hash 0x06fbf13d508c35aed0b8d7e2b04815414f8cae323f64672d9234
 
 export address of the lptoken
 ```
-export LPTOKEN_CONTRACT_ADDRESS="0x0640b9f86b0266acd648ec70c0f2f451b7b031126cf247a6b9cfc2f235e72667"
+export LPTOKEN_CONTRACT_ADDRESS="0x0557ec5b3d56a6abd33e5bd6da166b05cc8d90e61e52d5f5a4f22713dbcb119c"
 ```
 
 Have a look at symbol name
@@ -89,12 +92,12 @@ starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json
 AMM address is `$MAIN_CONTRACT_ADDRESS` and address of the lptoken is `$LPTOKEN_CONTRACT_ADDRESS`.
 
 Params:
-    quote_token_address = $ETH_ADDRESS, # will change it to something more reasonable
+    quote_token_address = $FAKE_USD_ADDRESS, # will change it to something more reasonable
     base_token_address = $ETH_ADDRESS,
     option_type = 0, # call
     lptoken_address = $LPTOKEN_CONTRACT_ADDRESS
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_lptoken --inputs $ETH_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_lptoken --inputs $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
 Response from the invoke 
 ```
@@ -107,33 +110,26 @@ Look at `lptoken_addr_for_given_pooled_token` that the lptoken address (=$LPTOKE
 starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_lptoken_address_for_given_option --inputs $ETH_ADDRESS $ETH_ADDRESS 0 --feeder_gateway_url "http://127.0.0.1:5050/"
 ```
 
-# SEND WETH TO POOL
+# PROVIDE LIQUIDITY (ETH) TO POOL
 
-Get balance of LP tokens on `$ACCOUNT_0_ADDRESS` account.
-```
-curl http://127.0.0.1:5050/account_balance?address=$ACCOUNT_0_ADDRESS
-```
-or with for specific token (lptoken)
+Get balance of LP tokens on `$ACCOUNT_0_ADDRESS` account. For specific LP token (lptoken)
 ```
 starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
-
-
-    pooled_token_addr: Address,
-    quote_token_address: Address,
-    base_token_address: Address,
-    option_type: OptionType,
-    lp_token_amount: Math64x61_
-
-
+Same for ETH
 ```
-starknet invoke --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x2000000000000000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
-```
-```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $LPTOKEN_CONTRACT_ADDRESS $ETH_ADDRESS $ETH_ADDRESS 0 10 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+starknet call --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
 
 
+Approve the pool to transact the tokens from the account in size of 2ETH (2 * 10**18 -> 0x1bc16d674ec80000)
+```
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+Account is depositing 2ETH
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
 
 
 
