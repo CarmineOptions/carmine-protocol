@@ -22,7 +22,7 @@ export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAcco
 
 
 export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
-export MATURITY_1=1664654400 # Sat Oct 01 2022 23:31:51 GMT+0200 (Central European Summer Time)
+export MATURITY_1=1664733600
 ```
 
 
@@ -134,7 +134,6 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 
 # WITHDRAW LIQUIDITY (ETH) TO POOL
 
-
 Look at current balance of LP token (should be 0x1bc16d674ec80000 if the above was called)
 ```
 starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
@@ -169,20 +168,21 @@ starknet call --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function b
         initial_supply = 0 0,
         recipient = $ACCOUNT_0_ADDRESS,
         owner = $MAIN_CONTRACT_ADDRESS,
-        underlying_asset_address = 0,
+        quote_token_address = $FAKE_USD_ADDRESS, # will change it to something more reasonable
+        base_token_address = $ETH_ADDRESS,
         option_type = 0,  # call
-        strike_price = 3458764513820540928000, # 1500 * 2 **61
-        maturity = 1664456400, # Thu Sep 29 2022 13:00:00 GMT+0000 -> Thu Sep 29 2022 15:00:00 GMT+0200 (CEST)
+        strike_price = $STRIKE_PRICE
+        maturity = $MATURITY_1
         side = 0, # long
 ```
-protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS 0 0 3458764513820540928000 1664456400 0
+protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $STRIKE_PRICE $MATURITY_1 0
 ```
 ```
 	Contract address: 0x007a4c35ea9d27303dbffaeeb64cb71de68f42480e5f8957464ff60ca5006c39
 	Transaction hash: 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046f817f211e86f
 ```
 ```
-export OPTION_TOKEN_ADDRESS_1="0x007a4c35ea9d27303dbffaeeb64cb71de68f42480e5f8957464ff60ca5006c39"
+export OPTION_TOKEN_ADDRESS_1="0x0693f54a327c14e1ae3fb5c96cb802180ecf9e566fefeeab812cfeafa4199499"
 ```
 Test that the transaction was accepted
 ```
@@ -197,11 +197,13 @@ starknet tx_status --hash 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046
 
 
 # ADD OPTION TOKEN TO LIQUIDITY POOL
+export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
+export MATURITY_1=1664733600
 
     option_side = 0,
-    maturity = 1664456400, # Thu Sep 29 2022 13:00:00 GMT+0000 -> Thu Sep 29 2022 15:00:00 GMT+0200 (CEST)
-    strike_price: 3458764513820540928000, # 1500 * 2 **61
-    quote_token_address = $ETH_ADDRESS,
+    maturity = $MATURITY_1
+    strike_price: $STRIKE_PRICE
+    quote_token_address = $FAKE_USD_ADDRESS, # will change it to something more reasonable
     base_token_address = $ETH_ADDRESS,
     option_type = 0, # call
     lptoken_address = $LPTOKEN_CONTRACT_ADDRESS,
@@ -209,11 +211,11 @@ starknet tx_status --hash 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046
     initial_volatility = 230584300921369395200, # 100 * 2**61
 
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 1664456400 3458764513820540928000 $ETH_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 $MATURITY_1 $STRIKE_PRICE $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
 Check volatility - should return 0xc8000000000000000 (=100 in hex Math64x61)
 ```
-starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_pool_volatility --feeder_gateway_url "http://127.0.0.1:5050/" --inputs $LPTOKEN_CONTRACT_ADDRESS 1664456400
+starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_pool_volatility --feeder_gateway_url "http://127.0.0.1:5050/" --inputs $LPTOKEN_CONTRACT_ADDRESS $MATURITY_1
 ```
 
 

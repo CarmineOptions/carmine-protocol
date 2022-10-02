@@ -33,7 +33,11 @@ from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, 
 
 
 @storage_var
-func option_token_underlying_asset_address() -> (underlying_asset_address: felt) {
+func option_token_quote_token_address() -> (quote_token_address: felt) {
+}
+
+@storage_var
+func option_token_base_token_address() -> (base_token_address: felt) {
 }
 
 @storage_var
@@ -61,7 +65,8 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     initial_supply: Uint256,
     recipient: felt,
     owner: felt,
-    underlying_asset_address: felt,
+    quote_token_address: Address,
+    base_token_address: Address,
     option_type: OptionSide,
     strike_price: Math64x61_,
     maturity: Int,
@@ -72,7 +77,8 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC20._mint(recipient, initial_supply);
     Ownable.initializer(owner);
 
-    option_token_underlying_asset_address.write(underlying_asset_address);
+    option_token_quote_token_address.write(quote_token_address);
+    option_token_base_token_address.write(base_token_address);
     option_token_option_type.write(option_type);
     option_token_strike_price.write(strike_price);
     option_token_maturity.write(maturity);
@@ -137,10 +143,17 @@ func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() ->
 }
 
 @view
-func underlying_asset_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    ) -> (underlying_asset: felt) {
-    let (underlying_asset_address: felt) = option_token_underlying_asset_address.read();
-    return (underlying_asset_address,);
+func quote_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    ) -> (quote_token: felt) {
+    let (quote_token_address: felt) = option_token_quote_token_address.read();
+    return (quote_token_address,);
+}
+
+@view
+func base_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    ) -> (base_token: felt) {
+    let (base_token_address: felt) = option_token_base_token_address.read();
+    return (base_token_address,);
 }
 
 @view

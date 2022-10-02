@@ -29,7 +29,10 @@ namespace IOptionToken {
     func owner() -> (owner: felt) {
     }
 
-    func underlying_asset_address() -> (underlying_asset: felt) {
+    func quote_token_address() -> (quote_token: felt) {
+    }
+
+    func base_token_address() -> (base_token: felt) {
     }
 
     func option_type() -> (option_type: felt) {
