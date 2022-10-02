@@ -7,14 +7,14 @@ sudo docker run --network host shardlabs/starknet-devnet
 ```
 Devnet account
 ```
-    Address: 0x576d469c526981da5732ef2e15297110aa8e2c441cecc75f6f45884a2a8d1f8
-    Public key: 0x6dad7e776cccc6bae885031e4727856fbb7ab6aa6ce96afc31a1fe59ca4fd17
-    Private key: 0xbdeadec161489779382eae54932fc8a5
+    Address: 0x5fab4700a21fa270b34625e175379f175e4cd60f69122c29364d31f2a9f3337
+    Public key: 0x3e3facd1db301294e0439492d9d09ad8bc45cfe6e7f164727079d7bf5456d38
+    Private key: 0x45c29f06f5e9de3f0c639f8fb7db4c87
 ```
 ```
-export ACCOUNT_0_ADDRESS="0x576d469c526981da5732ef2e15297110aa8e2c441cecc75f6f45884a2a8d1f8"
-export ACCOUNT_0_PUBLIC="0x6dad7e776cccc6bae885031e4727856fbb7ab6aa6ce96afc31a1fe59ca4fd17"
-export ACCOUNT_0_PRIVATE="0xbdeadec161489779382eae54932fc8a5"
+export ACCOUNT_0_ADDRESS="0x5fab4700a21fa270b34625e175379f175e4cd60f69122c29364d31f2a9f3337"
+export ACCOUNT_0_PUBLIC="0x3e3facd1db301294e0439492d9d09ad8bc45cfe6e7f164727079d7bf5456d38"
+export ACCOUNT_0_PRIVATE="0x45c29f06f5e9de3f0c639f8fb7db4c87"
 
 export ETH_ADDRESS="0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488"
 export FAKE_USD_ADDRESS="456"
@@ -130,6 +130,19 @@ Account is depositing 2ETH
 ```
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
+
+
+# WITHDRAW LIQUIDITY (ETH) TO POOL
+
+
+Look at current balance of LP token (should be 0x1bc16d674ec80000 if the above was called)
+```
+starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+```
+starknet call --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
 
 
 
