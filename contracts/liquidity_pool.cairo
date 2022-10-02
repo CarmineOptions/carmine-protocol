@@ -633,9 +633,8 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     // Transfer underlying (base or quote depending on call/put)
     // We can do this transfer optimistically;
     // any later exceptions revert the transaction anyway. saves some sanity checks
-    IERC20.transferFrom(
+    IERC20.transfer(
         contract_address=pooled_token_addr,
-        sender=own_addr,
         recipient=caller_addr,
         amount=underlying_amount_uint256
     );

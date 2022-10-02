@@ -143,7 +143,22 @@ starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json
 starknet call --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
 
+Withdraw liquidity in size of half of the LP tokens (1*10**18 = 0xde0b6b3a7640000).
+Balance of account should decrease by this size in terms of LP token and increase by 1 ETH adjusted for fees (since basically nothing has happened in the pool yet).
+```
+starknet invoke --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0xde0b6b3a7640000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function withdraw_liquidity --inputs $ETH_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 0xde0b6b3a7640000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
 
+Check the balances after the capital was withdrawned.
+```
+starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+```
+starknet call --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
 
 
 # DEPLOY OPTION TOKEN
