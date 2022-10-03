@@ -962,6 +962,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     return ();
 }
 
+
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -984,13 +985,12 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Burn the tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-    let premia_including_fees_uint256 = Math64x61.toUint256(premia_including_fees);
-    IERC20.transferFrom(
+    let premia_including_fees_uint256 = toUint256(premia_including_fees);
+    IERC20.transfer(
         contract_address=currency_address,
-        sender=current_contract_address,
         recipient=user_address,
         amount=premia_including_fees_uint256,
     );
@@ -1061,6 +1061,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return ();
 }
 
+
 func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -1081,15 +1082,14 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Burn the tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
-    let total_user_payment_uint256 = Math64x61.toUint256(total_user_payment);
-    IERC20.transferFrom(
+    let total_user_payment_uint256 = toUint256(total_user_payment);
+    IERC20.transfer(
         contract_address=currency_address,
-        sender=current_contract_address,
         recipient=user_address,
         amount=total_user_payment_uint256,
     );
@@ -1240,7 +1240,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // Make sure that user owns the option tokens
     let (user_address) = get_caller_address();
     let (user_tokens_owned) = IOptionToken.balanceOf(
-        contract_address=current_contract_address, account=user_address
+        contract_address=option_token_address, account=user_address
     );
     with_attr error_message("User doesn't own any tokens.") {
         assert_nn(user_tokens_owned.low);
@@ -1257,11 +1257,11 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (long_value, short_value) = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
     );
-    let long_value_uint256 = Math64x61.toUint256(long_value);
-    let short_value_uint256 = Math64x61.toUint256(short_value);
+    let long_value_uint256 = toUint256(long_value);
+    let short_value_uint256 = toUint256(short_value);
 
     // Validate that the user is not burning more than he/she has.
-    let option_size_uint256 = Math64x61.toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size);
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         // Match64x61 adn Uint256
@@ -1272,16 +1272,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // Burn the user tokens
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-
     if (option_side == TRADE_SIDE_LONG) {
         // User is long
         // When user was long there is a possibility, that the pool is short,
         // which means that pool has locked in some capital.
         // We assume pool is able to "expire" it's functions pretty quickly so the updates
         // of storage_vars has already happened.
-        IERC20.transferFrom(
+        IERC20.transfer(
             contract_address=currency_address,
-            sender=current_contract_address,
             recipient=user_address,
             amount=long_value_uint256,
         );
@@ -1289,9 +1287,8 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // User is short
         // User locked in capital (no locking happened from pool - no locked capital and similar
         // storage vars were updated).
-        IERC20.transferFrom(
+        IERC20.transfer(
             contract_address=currency_address,
-            sender=current_contract_address,
             recipient=user_address,
             amount=short_value_uint256,
         );

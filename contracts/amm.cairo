@@ -189,6 +189,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (premia=premia);
 }
 
+
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -270,12 +271,12 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_fees) = get_fees(total_premia_before_fees);
     let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
-    // 9) Make the trade    
+    // 9) Make the trade
     burn_option_token(
         lptoken_address=lptoken_address,
         option_size=option_size,
         option_size_in_pool_currency=option_size_in_pool_currency,
-        option_side=opposite_side,
+        option_side=side,
         option_type=option_type,
         maturity=maturity,
         strike_price=strike_price,
@@ -285,6 +286,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     return (premia=premia);
 }
+
 
 func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,

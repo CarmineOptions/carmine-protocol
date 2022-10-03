@@ -7,14 +7,14 @@ sudo docker run --network host shardlabs/starknet-devnet
 ```
 Devnet account
 ```
-    Address: 0x7289abb44c5d8c5be8ad28829bb6d1d2aeb03e95d7754adc14af761b049016b
-    Public key: 0x7ddf1de5272bf3b608451d8d7450d61c7a5f4ec4a9f2715cb31b6553b400971
-    Private key: 0x5bd5c37672beeda064910bfbf1d7ccee
+    Address: 0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2
+    Public key: 0x4deb60053c9cd8e0788c7926ffc9afd7486dbbf2ba6e56b7a951468f6475172
+    Private key: 0x8f760a064908548039d2d03069861c21
 ```
 ```
-export ACCOUNT_0_ADDRESS="0x7289abb44c5d8c5be8ad28829bb6d1d2aeb03e95d7754adc14af761b049016b"
-export ACCOUNT_0_PUBLIC="0x7ddf1de5272bf3b608451d8d7450d61c7a5f4ec4a9f2715cb31b6553b400971"
-export ACCOUNT_0_PRIVATE="0x5bd5c37672beeda064910bfbf1d7ccee"
+export ACCOUNT_0_ADDRESS="0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2"
+export ACCOUNT_0_PUBLIC="0x4deb60053c9cd8e0788c7926ffc9afd7486dbbf2ba6e56b7a951468f6475172"
+export ACCOUNT_0_PRIVATE="0x8f760a064908548039d2d03069861c21"
 
 export ETH_ADDRESS="0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488"
 export FAKE_USD_ADDRESS="456"
@@ -22,7 +22,7 @@ export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAcco
 
 
 export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
-export MATURITY_1=1664829000
+export MATURITY_1=1664823300
 ```
 
 
@@ -247,12 +247,21 @@ starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json -
 
 # TRADE - CLOSE HALF OF PREVIOUSLY BOUGHT OPTION
 
-TBD
+At this point, there should be position in lptoken = 0.1 (0.1*10**18). This invoke burns half of it and pays premia to $ACCOUNT_0_ADDRESS.
+
+    option_type = 0,
+    strike_price = $STRIKE_PRICE,
+    maturity = $MATURITY_1,
+    option_side = OptionSide,
+    option_size = 115292150460684697,
+    quote_token_address = $FAKE_USD_ADDRESS,
+    base_token_address = $ETH_ADDRESS,
 
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs 0 $STRIKE_PRICE $MATURITY_1 0 115292150460684697 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
 
+Check that the position of $ACCOUNT_0_ADDRESS has decreased
 ```
 starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
