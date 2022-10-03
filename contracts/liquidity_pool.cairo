@@ -195,6 +195,7 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
+@view
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (unlocked_capital: Math64x61_) {
@@ -212,6 +213,7 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
 }
 
 
+@view
 func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
 ) -> (option_token_address: Address) {
@@ -238,6 +240,7 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
     let (res) = _get_value_of_pool_position(lptoken_address, 0);
     return (res = res);
 }
+
 
 func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, index: Int

@@ -290,3 +290,73 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 ```
 starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 ```
+
+
+
+# ############################################################################################
+
+# DEPLOY ON DEVNET
+
+protostar deploy ./build/amm.json --salt 666 --gateway-url "http://127.0.0.1:5050/" --chain-id 1
+
+export MAIN_CONTRACT_ADDRESS="
+
+protostar deploy ./build/lptoken.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 777 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS
+
+export LPTOKEN_CONTRACT_ADDRESS="
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_lptoken --inputs $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $STRIKE_PRICE $MATURITY_1 0
+
+export OPTION_TOKEN_ADDRESS_1="
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 $MATURITY_1 $STRIKE_PRICE $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x2000000000000000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+
+# ############################################################################################
+
+# DEPLOYED
+
+
+export ACCOUNT_0_ADDRESS=0x0305b9156d9e4cf59f51e1bae7f74456c65f5f2159e9d6780fa8e0a30a44a23f
+export USD_ADDRESS="0x005a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426"
+export ETH_ADDRESS=0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+export MATURITY_1=1664863200
+
+
+
+protostar deploy ./build/amm.json --salt 667 --network alpha-goerli
+
+export MAIN_CONTRACT_ADDRESS="0x036912baeb88d2c34ee8f9081bed7f6044d8fc40ccc82323e87887ed1e1509ea"
+
+protostar deploy ./build/lptoken.json --network alpha-goerli --salt 778 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS
+
+export LPTOKEN_CONTRACT_ADDRESS="0x07fa635eafc89f99ca734fdb6c5e6108a294f6503ea47ad91276cdc370cc2795"
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_lptoken --inputs $USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS --network alpha-goerli
+
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x5AF3107A4000 0 --network alpha-goerli
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $USD_ADDRESS $ETH_ADDRESS 0 0x5AF3107A4000 0 --network alpha-goerli
+
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 667 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS 0 $STRIKE_PRICE $MATURITY_1 0
+
+export OPTION_TOKEN_ADDRESS_1="0x041ee130e44a21a5c612f2e93d6b7e22594f5a7b22894f2f291ef520ac96d376"
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 $MATURITY_1 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --network alpha-goerli
+
+
+
+
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0xE8D4A51000 0 --network alpha-goerli
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs 0 $STRIKE_PRICE $MATURITY_1 0 2305843009200 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
