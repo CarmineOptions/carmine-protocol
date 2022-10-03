@@ -453,7 +453,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     base_token_address: Address,
 ) -> (premia : Math64x61_) {
     // User is closing a position before the option has expired
-    //  -> side is what the user want's to close
+    //  -> side is what the user wants to close
     //      - (side of the token that user holds)
     //      - This is very important is in close_position an opposite side is used
 

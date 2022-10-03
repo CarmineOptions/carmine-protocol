@@ -5,6 +5,9 @@ All the export values are manually set and might differ. Same txhashes, addresse
 ```
 sudo docker run --network host shardlabs/starknet-devnet
 ```
+
+Seed: 2340797347
+
 Devnet account
 ```
     Address: 0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2
@@ -15,6 +18,8 @@ Devnet account
 export ACCOUNT_0_ADDRESS="0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2"
 export ACCOUNT_0_PUBLIC="0x4deb60053c9cd8e0788c7926ffc9afd7486dbbf2ba6e56b7a951468f6475172"
 export ACCOUNT_0_PRIVATE="0x8f760a064908548039d2d03069861c21"
+
+Also update the account values in `starknet_open_zeppelin_accounts.json`
 
 export ETH_ADDRESS="0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488"
 export FAKE_USD_ADDRESS="456"
