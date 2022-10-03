@@ -316,24 +316,17 @@ func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
 }
 
 
-@external
-func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
     option_size : Math64x61_,
-    // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
-    // True or False... determines if the user wants to open or close the position
+    lptoken_address: Address,
     open_position: Bool,
-) -> (premia : Math64x61_) {
-    // side is dependent on open_position...
-    //  if open_position=TRUE -> side is what the user want's to do as action
-    //  if open_position=False -> side is what the user want's to close
-    //      (side of the token that user holds)
-    //      This is very important is in close_position an opposite side is used
+) {
     alloc_locals;
 
     with_attr error_message("Given option_type is not available") {
@@ -354,11 +347,6 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     }
 
     // lptoken_address serves as an identifier of selected liquidity pool
-    let (lptoken_address) = get_lptoken_address_for_given_option(
-        quote_token_address,
-        base_token_address,
-        option_type
-    );
     let (option_is_available) = is_option_available(
         lptoken_address,
         option_side,
@@ -398,45 +386,175 @@ func trade{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     // Check that there is enough available capital in the given pool.
     // If this is not the case, the transaction fails, because the tokens can't be transfered.
 
-    if (open_position == TRUE) {
-        let (premia) = do_trade(
-            option_type,
-            strike_price,
-            maturity,
-            option_side,
-            option_size,
-            quote_token_address,
-            base_token_address,
-            lptoken_address
-        );
-        return (premia=premia);
-    } else {
-        let can_be_closed = is_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
-        if (can_be_closed == TRUE) {
-            let (premia) = close_position(
-                option_type,
-                strike_price,
-                maturity,
-                option_side,
-                option_size,
-                quote_token_address,
-                base_token_address,
-                lptoken_address
-            );
-            return (premia=premia);
-        } else {
-            settle_option_token(
-                option_type=option_type,
-                strike_price=strike_price,
-                maturity=maturity,
-                side=option_side,
-                option_size=option_size,
-                quote_token_address=quote_token_address,
-                base_token_address=base_token_address,
-                lptoken_address=lptoken_address,
-                open_position=open_position,
-            );
-            return (premia=0);
-        }
+    return ();
+}
+
+
+@external
+func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    option_side : OptionSide,
+    option_size : Math64x61_,
+    // underlying_asset
+    quote_token_address: Address,
+    base_token_address: Address,
+) -> (premia : Math64x61_) {
+    // User wants to open a position
+
+    alloc_locals;
+
+    // lptoken_address serves as an identifier of selected liquidity pool
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        quote_token_address,
+        base_token_address,
+        option_type
+    );
+
+    // Validate the validity of the input.
+    validate_trade_input(
+        option_type=option_type,
+        strike_price=strike_price,
+        maturity=maturity,
+        option_side=option_side,
+        option_size=option_size,
+        quote_token_address=quote_token_address,
+        base_token_address=base_token_address,
+        lptoken_address=lptoken_address,
+        open_position=TRUE,
+    );
+
+    let (premia) = do_trade(
+        option_type,
+        strike_price,
+        maturity,
+        option_side,
+        option_size,
+        quote_token_address,
+        base_token_address,
+        lptoken_address
+    );
+    return (premia=premia);
+}
+
+
+@external
+func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    option_side : OptionSide,
+    option_size : Math64x61_,
+    // underlying_asset
+    quote_token_address: Address,
+    base_token_address: Address,
+) -> (premia : Math64x61_) {
+    // User is closing a position before the option has expired
+    //  -> side is what the user want's to close
+    //      - (side of the token that user holds)
+    //      - This is very important is in close_position an opposite side is used
+
+    alloc_locals;
+
+    // lptoken_address serves as an identifier of selected liquidity pool
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        quote_token_address,
+        base_token_address,
+        option_type
+    );
+
+    // Validate the validity of the input.
+    validate_trade_input(
+        option_type=option_type,
+        strike_price=strike_price,
+        maturity=maturity,
+        option_side=option_side,
+        option_size=option_size,
+        quote_token_address=quote_token_address,
+        base_token_address=base_token_address,
+        lptoken_address=lptoken_address,
+        open_position=FALSE,
+    );
+
+    // Position can be closed only if the option has not expired yet
+    // and if there is enough time before expiration.
+    let (current_block_time) = get_block_timestamp();
+    with_attr error_message("Given maturity has already expired") {
+        assert_le(current_block_time, maturity);
     }
+    with_attr error_message("Trading of given maturity has been stopped before expiration") {
+        assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+    }
+    let (premia) = close_position(
+        option_type,
+        strike_price,
+        maturity,
+        option_side,
+        option_size,
+        quote_token_address,
+        base_token_address,
+        lptoken_address
+    );
+    return (premia=premia);
+
+}
+
+
+@external
+func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type : OptionType,
+    strike_price : Math64x61_,
+    maturity : Int,
+    option_side : OptionSide,
+    option_size : Math64x61_,
+    // underlying_asset
+    quote_token_address: Address,
+    base_token_address: Address,
+) {
+    // User is expiring/settling a position AFTER the option has expired
+    //  -> side is what the user want's to close
+    //      - (side of the token that user holds)
+    //      - This is very important is in close_position an opposite side is used
+
+    alloc_locals;
+
+    // lptoken_address serves as an identifier of selected liquidity pool
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        quote_token_address,
+        base_token_address,
+        option_type
+    );
+
+    // Validate the validity of the input.
+    validate_trade_input(
+        option_type=option_type,
+        strike_price=strike_price,
+        maturity=maturity,
+        option_side=option_side,
+        option_size=option_size,
+        quote_token_address=quote_token_address,
+        base_token_address=base_token_address,
+        lptoken_address=lptoken_address,
+        open_position=FALSE,
+    );
+
+    // Position can be expired/settled only if the maturity has passed.
+    let (current_block_time) = get_block_timestamp();
+    with_attr error_message("Given maturity has not passed yet") {
+        assert_le(maturity, current_block_time);
+    }
+
+    settle_option_token(
+        option_type=option_type,
+        strike_price=strike_price,
+        maturity=maturity,
+        side=option_side,
+        option_size=option_size,
+        quote_token_address=quote_token_address,
+        base_token_address=base_token_address,
+        lptoken_address=lptoken_address,
+        open_position=FALSE,
+    );
+    return ();
 }

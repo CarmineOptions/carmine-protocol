@@ -185,6 +185,9 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // volatility has to be above 1 (in terms of Math64x61.FRACT_PART units...
     // ie volatility = 1 is very very close to 0 and 100% volatility would be
     // volatility=Math64x61.FRACT_PART)
+
+    alloc_locals;
+
     assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
     assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
     pool_volatility.write(lptoken_address, maturity, volatility);
@@ -665,6 +668,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 // This corresponds to something like "mint_option_token", but does more, it also changes internal state of the pool
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is unlocked, how much is locked,...
+
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_size: Math64x61_, // in base tokens (ETH in case of ETH/USDC)
@@ -693,10 +697,16 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (contract_maturity) = IOptionToken.maturity(option_token_address);
     let (contract_option_side) = IOptionToken.side(option_token_address);
 
-    with_attr error_message("Required contract doesn't match the address.") {
+    with_attr error_message("Required contract doesn't match the option_type specification.") {
         assert contract_option_type = option_type;
+    }
+    with_attr error_message("Required contract doesn't match the strike_price specification.") {
         assert contract_strike = strike_price;
+    }
+    with_attr error_message("Required contract doesn't match the maturity specification.") {
         assert contract_maturity = maturity;
+    }
+    with_attr error_message("Required contract doesn't match the option_side specification.") {
         assert contract_option_side = option_side;
     }
 
@@ -728,6 +738,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     return ();
 }
 
+
 func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -745,11 +756,11 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     // Move premia and fees from user to the pool
-    let premia_including_fees_uint256 = Math64x61.toUint256(premia_including_fees);
+    let premia_including_fees_uint256 = toUint256(premia_including_fees);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
@@ -800,6 +811,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return ();
 }
 
+
 func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -818,13 +830,13 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let (currency_address) = underlying_token_addres.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = Math64x61.toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
     // Move (option_size minus (premia minus fees)) from user to the pool
-    let to_be_paid_by_user_uint256 = Math64x61.toUint256(to_be_paid_by_user);
+    let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,

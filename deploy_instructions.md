@@ -7,14 +7,14 @@ sudo docker run --network host shardlabs/starknet-devnet
 ```
 Devnet account
 ```
-    Address: 0x5fab4700a21fa270b34625e175379f175e4cd60f69122c29364d31f2a9f3337
-    Public key: 0x3e3facd1db301294e0439492d9d09ad8bc45cfe6e7f164727079d7bf5456d38
-    Private key: 0x45c29f06f5e9de3f0c639f8fb7db4c87
+    Address: 0x7289abb44c5d8c5be8ad28829bb6d1d2aeb03e95d7754adc14af761b049016b
+    Public key: 0x7ddf1de5272bf3b608451d8d7450d61c7a5f4ec4a9f2715cb31b6553b400971
+    Private key: 0x5bd5c37672beeda064910bfbf1d7ccee
 ```
 ```
-export ACCOUNT_0_ADDRESS="0x5fab4700a21fa270b34625e175379f175e4cd60f69122c29364d31f2a9f3337"
-export ACCOUNT_0_PUBLIC="0x3e3facd1db301294e0439492d9d09ad8bc45cfe6e7f164727079d7bf5456d38"
-export ACCOUNT_0_PRIVATE="0x45c29f06f5e9de3f0c639f8fb7db4c87"
+export ACCOUNT_0_ADDRESS="0x7289abb44c5d8c5be8ad28829bb6d1d2aeb03e95d7754adc14af761b049016b"
+export ACCOUNT_0_PUBLIC="0x7ddf1de5272bf3b608451d8d7450d61c7a5f4ec4a9f2715cb31b6553b400971"
+export ACCOUNT_0_PRIVATE="0x5bd5c37672beeda064910bfbf1d7ccee"
 
 export ETH_ADDRESS="0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488"
 export FAKE_USD_ADDRESS="456"
@@ -22,7 +22,7 @@ export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAcco
 
 
 export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
-export MATURITY_1=1664733600
+export MATURITY_1=1664829000
 ```
 
 
@@ -132,7 +132,7 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 ```
 
 
-# WITHDRAW LIQUIDITY (ETH) TO POOL
+# WITHDRAW LIQUIDITY (ETH) FROM POOL
 
 Look at current balance of LP token (should be 0x1bc16d674ec80000 if the above was called)
 ```
@@ -198,7 +198,7 @@ starknet tx_status --hash 0x034c1877848d3741f608e8f3ac1b4028b23faf3f3f4ac4b05046
 
 # ADD OPTION TOKEN TO LIQUIDITY POOL
 export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
-export MATURITY_1=1664733600
+export MATURITY_1=1664742600
 
     option_side = 0,
     maturity = $MATURITY_1
@@ -219,3 +219,53 @@ starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --func
 ```
 
 
+# TRADE - BUY OPTION
+
+    option_type = 0, # call
+    strike_price = $STRIKE_PRICE
+    maturity = $MATURITY_1,
+    option_side = 0, # long
+    option_size = 230584300921369395 (=2**61 / 10 -> 0.1ETH) 
+    quote_token_address = $FAKE_USD_ADDRESS, # will change it to something more reasonable
+    base_token_address = $ETH_ADDRESS,
+    open_position = 0
+
+
+Notice that much higher volume is approved than will be actually paid for in premia and fees.
+```
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x2000000000000000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+```
+starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+
+# TRADE - CLOSE HALF OF PREVIOUSLY BOUGHT OPTION
+
+TBD
+
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+```
+starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+
+# TRADE - SETTLE (EXPIRE) PREVIOUSLY BOUGHT OPTION
+
+TBD
+
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+
+```
+starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
