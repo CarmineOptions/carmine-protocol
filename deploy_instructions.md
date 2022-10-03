@@ -10,14 +10,14 @@ Seed: 2340797347
 
 Devnet account
 ```
-    Address: 0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2
-    Public key: 0x4deb60053c9cd8e0788c7926ffc9afd7486dbbf2ba6e56b7a951468f6475172
-    Private key: 0x8f760a064908548039d2d03069861c21
+    Address: 0x5a9ff56db4fc6fd4494cf98e8a4b67b3a294bc45109ed9f68dcfe159de2562d
+    Public key: 0x4125a3a6b20fe4cd11d65f9f8ba4285644a16063d9a2eb1bf5abcf476c2de14
+    Private key: 0x45099ebb98a9fd8d8ae5fdca1f37c55c
 ```
 ```
-export ACCOUNT_0_ADDRESS="0x7f2cd5efe590fbfbe06cadf1229b8e585dffdc488ab22bf4fb68a4aec7711e2"
-export ACCOUNT_0_PUBLIC="0x4deb60053c9cd8e0788c7926ffc9afd7486dbbf2ba6e56b7a951468f6475172"
-export ACCOUNT_0_PRIVATE="0x8f760a064908548039d2d03069861c21"
+export ACCOUNT_0_ADDRESS="0x5a9ff56db4fc6fd4494cf98e8a4b67b3a294bc45109ed9f68dcfe159de2562d"
+export ACCOUNT_0_PUBLIC="0x4125a3a6b20fe4cd11d65f9f8ba4285644a16063d9a2eb1bf5abcf476c2de14"
+export ACCOUNT_0_PRIVATE="0x45099ebb98a9fd8d8ae5fdca1f37c55c"
 
 Also update the account values in `starknet_open_zeppelin_accounts.json`
 
@@ -274,7 +274,14 @@ starknet call --address $OPTION_TOKEN_ADDRESS_1 --abi ./build/lptoken_abi.json -
 
 # TRADE - SETTLE (EXPIRE) PREVIOUSLY BOUGHT OPTION
 
-TBD
+
+    option_type = 0,
+    strike_price = $STRIKE_PRICE,
+    maturity = $MATURITY_1,
+    option_side = 0,
+    option_size = 230584300921369395,
+    quote_token_address = $FAKE_USD_ADDRESS,
+    base_token_address = $ETH_ADDRESS,
 
 ```
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
