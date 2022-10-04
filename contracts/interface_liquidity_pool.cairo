@@ -11,6 +11,14 @@ namespace ILiquidityPool {
     // FIXME: we might not need all of the following function...
     // FIXME: and some of them are not external at the moment
 
+    func add_lptoken(
+        quote_token_address: felt,
+        base_token_address: felt,
+        option_type: felt,
+        lptoken_address: felt
+    ){
+    }
+
     func get_option_token_address(
         option_side: felt, option_type: felt, maturity: felt, strike_price: felt
     ) {
