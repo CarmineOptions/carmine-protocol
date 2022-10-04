@@ -334,9 +334,15 @@ export MATURITY_1=1664863200
 
 
 
-protostar deploy ./build/amm.json --salt 667 --network alpha-goerli
+protostar declare ./build/amm.json --salt 667 --network alpha-goerli
+export AMM_HASH=...
 
-export MAIN_CONTRACT_ADDRESS="0x036912baeb88d2c34ee8f9081bed7f6044d8fc40ccc82323e87887ed1e1509ea"
+protostar deploy ./build/proxy.json --salt 667 --network alpha-goerli --input $AMM_HASH
+export MAIN_CONTRACT_ADDRESS=....
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $ACCOUNT_0_ADDRESS
+-> input here specifies the admin of the proxy contract
+<!-- export MAIN_CONTRACT_ADDRESS="0x036912baeb88d2c34ee8f9081bed7f6044d8fc40ccc82323e87887ed1e1509ea" -->
 
 protostar deploy ./build/lptoken.json --network alpha-goerli --salt 778 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS
 
@@ -360,3 +366,9 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0xE8D4A51000 0 --network alpha-goerli
 
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs 0 $STRIKE_PRICE $MATURITY_1 0 2305843009200 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+
+For upgrades:
+    starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $NEW_AMM_HASH
+
+For changing admin:
+    starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function setAdmin --input $NEW_ADMIN_ADDRESS
