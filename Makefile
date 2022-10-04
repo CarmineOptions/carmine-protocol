@@ -1,10 +1,12 @@
 # Build and test
 build: contracts/*
 	protostar build
-test: contracts/* tests/*.cairo testpy
-	mkdir -p build
-	# TODO remove duplicit %lang starknet
-	cat contracts/amm.cairo contracts/liquidity_pool.cairo > build/ammcontract.cairo 
+test: contracts/* tests/*.cairo testpy build/ammcontract.cairo
 	protostar test ./tests
 testpy: tests/*.py
-	#pytest tests/
+	#pytest tests/  # TODO FIXME, is broken
+build/ammcontract.cairo: contracts/amm.cairo contracts/liquidity_pool.cairo
+	mkdir -p build
+	cat contracts/amm.cairo contracts/liquidity_pool.cairo contracts/proxy_utils.cairo > build/ammcontract.cairo 
+	sed -i '/%lang starknet/d' build/ammcontract.cairo
+	sed -i '1i %lang starknet' build/ammcontract.cairo
