@@ -2,7 +2,7 @@
 build: contracts/*
 	protostar build
 test: contracts/* tests/*.cairo testpy build/ammcontract.cairo
-	protostar test ./tests
+	~/.protostar/dist/protostar/protostar test ./tests
 testpy: tests/*.py
 	#pytest tests/  # TODO FIXME, is broken
 build/ammcontract.cairo: contracts/amm.cairo contracts/liquidity_pool.cairo
