@@ -128,7 +128,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     // 3) Calculate new volatility, calculate trade volatility
     let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(1, current_pool_balance);
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
     let (new_volatility, trade_volatility) = get_new_volatility(
@@ -230,7 +230,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 3) Calculate new volatility, calculate trade volatility
     let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-    assert_nn_le(Math64x61.ONE, current_pool_balance);
+    assert_nn_le(1, current_pool_balance);
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
     let (new_volatility, trade_volatility) = get_new_volatility(
