@@ -334,10 +334,10 @@ export MATURITY_1=1664863200
 
 
 
-protostar declare ./build/amm.json --salt 667 --network alpha-goerli
+protostar declare ./build/amm.json --network alpha-goerli
 export AMM_HASH=...
 
-protostar deploy ./build/proxy.json --salt 667 --network alpha-goerli --input $AMM_HASH
+starknet deploy --contract ./build/proxy.json --network alpha-goerli --no_wallet --input $AMM_HASH 0 0
 export MAIN_CONTRACT_ADDRESS=....
 
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $ACCOUNT_0_ADDRESS
