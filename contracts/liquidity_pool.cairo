@@ -139,6 +139,18 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 
 
 @view
+func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, order_i: Int
+) -> (
+    option: Option
+) {
+    alloc_locals;
+    let (option) = available_options.read(lptoken_address, order_i);
+    return (option,);
+}
+
+
+@view
 func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_address: Address,
     base_token_address: Address,
