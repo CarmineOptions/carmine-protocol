@@ -536,7 +536,6 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let value_of_position = toUint256(value_of_position_Math64);
 
     let (value_of_pool, _) = uint256_add(free_capital, value_of_position);
-    // FIXME: Should we handle carry from the line above somehow?
 
     if (value_of_pool.low == 0) {
         return (underlying_amt,);
@@ -578,7 +577,6 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let value_of_position = toUint256(value_of_position_Math64);
     
     let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
-    // FIXME: Should we handle carry from the line above somehow?
 
     let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt);
     let (b_low, b_high) = uint256_mul(a_quot, lpt_amt);
@@ -610,7 +608,6 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     // 1) Check that owner (and no other entity) is adding the lptoken
-    // FIXME: hope this checking of owner is correct
     Proxy.assert_only_admin();
 
     // 2) Update following
@@ -649,7 +646,6 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     // 1) Check that owner (and no other entity) is adding the lptoken
-    // FIXME: hope this checking of owner is correct
     Proxy.assert_only_admin();
 
     // 2) Update following
