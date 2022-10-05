@@ -287,37 +287,6 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     return (premia=premia);
 }
 
-
-func settle_option_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    option_type : OptionType,
-    strike_price : Math64x61_,
-    maturity : Int,
-    side : OptionSide,
-    option_size : Math64x61_,
-    quote_token_address: Address,
-    base_token_address: Address,
-    lptoken_address: Address,
-    open_position: Bool, // True or False... determines if the user wants to open or close the position
-) -> () {
-
-    alloc_locals;
-
-    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
-
-    expire_option_token(
-        lptoken_address=lptoken_address,
-        option_type=option_type,
-        option_side=side,
-        strike_price=strike_price,
-        terminal_price=terminal_price,
-        option_size=option_size,
-        maturity=maturity,
-    );
-    return ();
-}
-
-
 func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -547,16 +516,18 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
         assert_le(maturity, current_block_time);
     }
 
-    settle_option_token(
-        option_type=option_type,
-        strike_price=strike_price,
-        maturity=maturity,
-        side=option_side,
-        option_size=option_size,
-        quote_token_address=quote_token_address,
-        base_token_address=base_token_address,
+    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+
+    expire_option_token(
         lptoken_address=lptoken_address,
-        open_position=FALSE,
+        option_type=option_type,
+        option_side=option_side,
+        strike_price=strike_price,
+        terminal_price=terminal_price,
+        option_size=option_size,
+        maturity=maturity,
     );
+
     return ();
 }

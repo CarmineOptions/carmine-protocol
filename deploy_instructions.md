@@ -315,11 +315,26 @@ protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/
 
 export OPTION_TOKEN_ADDRESS_1="
 
+protostar deploy ./build/option_token.json --gateway-url "http://127.0.0.1:5050/" --chain-id 1 --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $STRIKE_PRICE $MATURITY_1 1
+
+export OPTION_TOKEN_ADDRESS_1_opposite="
+
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 0 $MATURITY_1 $STRIKE_PRICE $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs 1 $MATURITY_1 $STRIKE_PRICE $FAKE_USD_ADDRESS $ETH_ADDRESS 0 $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1_opposite 230584300921369395200 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 
 starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x2000000000000000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 
 starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+
+
+
+!!!! This motherfucker needs opposite side as user (if user is long, pool is short -> use short)
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function expire_option_token_for_pool --inputs $LPTOKEN_CONTRACT_ADDRESS 1 $STRIKE_PRICE $MATURITY_1 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+
+
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs 0 $STRIKE_PRICE $MATURITY_1 0 230584300921369395 $FAKE_USD_ADDRESS $ETH_ADDRESS --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
 
 
 # ############################################################################################
