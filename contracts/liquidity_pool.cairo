@@ -139,6 +139,33 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 
 
 @view
+func get_pool_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) -> (res: Math64x61_) {
+    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
+    return (position,);
+}
+
+
+@view
+func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (res: Math64x61_) {
+    let (balance) = lpool_balance.read(lptoken_address);
+    return (balance,);
+}
+
+
+@view
+func get_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (res: Math64x61_) {
+    let (locked_capital) = pool_locked_capital.read(lptoken_address);
+    return (locked_capital,);
+}
+
+
+@view
 func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, order_i: Int
 ) -> (
@@ -542,6 +569,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     option_token_address_: Address,
     initial_volatility: Math64x61_,
 ){
+    alloc_locals;
 
     // This function adds option to the pool.
 
@@ -698,7 +726,6 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     alloc_locals;
 
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
     let (option_token_address) = get_option_token_address(
         lptoken_address=lptoken_address,
         option_side=option_side,
@@ -1313,7 +1340,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
-func adjust_capital_for_pools_expired_options{
+func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     lptoken_address: Address,
@@ -1385,7 +1412,7 @@ func adjust_capital_for_pools_expired_options{
         }
 
         lpool_balance.write(lptoken_address, new_lpool_balance);
-        pool_locked_capital.write(lptoken_address, new_lpool_balance);
+        pool_locked_capital.write(lptoken_address, new_locked_balance);
     }
     return ();
 }
@@ -1435,6 +1462,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     strike_price: Math64x61_,
     maturity: Int,
 ) -> () {
+    // Side is from perspective of pool!!!
 
     alloc_locals;
 
@@ -1480,7 +1508,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         option_type, option_side, option_size, strike_price, terminal_price
     );
 
-    adjust_capital_for_pools_expired_options(
+    // Adjusts only the lpool_balance and pool_locked_capital storage_vars
+    adjust_lpool_balance_and_pool_locked_capital_expired_options(
         lptoken_address=lptoken_address,
         long_value=long_value,
         short_value=short_value,
@@ -1489,6 +1518,9 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         maturity=maturity,
         strike_price=strike_price
     );
+
+    // We have to adjust the pools option position too.
+    option_position.write(lptoken_address, option_side, maturity, strike_price, 0);
 
     return ();
 }
