@@ -329,7 +329,9 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (res = res);
 }
 
-func _get_available_options_usable_index{
+
+@view
+func get_available_options_usable_index{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     lptoken_address: Address,
@@ -348,7 +350,7 @@ func _get_available_options_usable_index{
         return (usable_index = starting_index);
     }
     
-    let (usable_index) = _get_available_options_usable_index(lptoken_address, starting_index + 1);
+    let (usable_index) = get_available_options_usable_index(lptoken_address, starting_index + 1);
 
     return (usable_index = usable_index);
 }
@@ -395,6 +397,43 @@ func _get_option_info{
     return (option = option);
 }
 
+
+@view
+func get_option_info_from_addresses{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address,
+    option_token_address: Address
+) -> (option: Option) {
+    // Returns Option (struct) information.
+
+    alloc_locals;
+
+    let (option_) = available_options.read(lptoken_address, starting_index);
+
+    // Verify that we have not run at the end of the stored values. The end is with "empty" Option.
+    with_attr error_message("Specified option is not available"){
+        let option_sum = option_.maturity + option_.strike_price;
+        assert_not_zero(option_sum);
+    }
+
+    let (tested_option_token_address) = get_option_token_address(
+        lptoken_address, option_.option_side, option_.maturity, option_.strike_price
+    );
+
+    if (tested_option_token_address == option_token_address) {
+        return (option=option_);
+    }
+
+    let (option) = get_option_info_from_addresses(
+        lptoken_address=lptoken_address,
+        option_token_address=option_token_address
+    );
+
+    return (option = option);
+}
+
+
 func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_side: OptionSide,
     maturity: Int,
@@ -414,7 +453,7 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         option_type=option_type
     );
 
-    let (usable_index) = _get_available_options_usable_index(lptoken_address, 0);
+    let (usable_index) = get_available_options_usable_index(lptoken_address, 0);
 
     available_options.write(lptoken_address, usable_index, new_option);
 
