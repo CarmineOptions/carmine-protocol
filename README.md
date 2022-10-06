@@ -91,19 +91,22 @@ of the account in the json file corresponds to the `ACCOUNT_0_ADDRESS`.
 
 ### Deploy the AMM
 
-Deploy AMM
+Declare the AMM
 ```
-protostar deploy ./build/amm.json --salt 666 --network alpha-goerli
+protostar declare ./build/amm.json --network alpha-goerli
 ```
-
-Export address of the contract
+Export the returned hash
 ```
-export MAIN_CONTRACT_ADDRESS="0x06b695bf77c58ae0c41c7c520485d8b8ffd9927bc7922ee9ee317561fbc2b969"
+export AMM_HASH=...
 ```
-
-Validate owner address - should be equal to $ACCOUNT_0_ADDRESS
+Deploy the proxy contract
 ```
-starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function owner --network alpha-goerli
+starknet deploy --contract ./build/proxy.json --network alpha-goerli --no_wallet --input $AMM_HASH 0 0
+export MAIN_CONTRACT_ADDRESS=...
+```
+Specify the admin of the contract
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $ACCOUNT_0_ADDRESS
 ```
 
 
@@ -271,11 +274,14 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 
 ## Oracles
 
-Currently using only Empiric oracle, which returns the median price(aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
+Currently using only Empiric oracle, which returns the median price (aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
 
 Website: https://empiric.network/
 
 More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
+
+
+For calculating settlement price of the options we are waiting to get historical data on chain. At the moment we are using constant "1500" price.
 
 
 ## Proxy Contracts 
