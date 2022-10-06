@@ -20,7 +20,7 @@ selling specific options directly.
 
 ## Current State
 
-Just started building.
+We have early alpha up and running on testnet
 
 
 ## Documentation
@@ -36,204 +36,214 @@ Code docs will be published soon
 - [Discord](https://discord.com/invite/uRs7j8w3bX)
 - [Docs](https://carmine-finance.gitbook.io/carmine-options-amm/)
 
-## Demo
 
-We are building a simple demo.
+## Currently deployed contracts on testnet
 
-### What can and can't the demo do
-
-The demo is meant to showcase the pricing model that sits at its core. Ie it shows how the internal
-metrics are updated and how the prices are created, everything else is heavily mocked.
-
-It assumes only one currency pair is being used.
-
-The demo is initialized with one fixed priced of the underlying asset equal to 1000.
-
-The options are created as follows
-- strike price 1000 and maturity 1644145200 (Sun Feb 06 2022 11:00:00 GMT+0000)
-- strike price 1000 and maturity 1672527600 (Sat Dec 31 2022 23:00:00 GMT+0000)
-- strike price 1100 and maturity 1644145200 (Sun Feb 06 2022 11:00:00 GMT+0000)
-- strike price 1100 and maturity 1672527600 (Sat Dec 31 2022 23:00:00 GMT+0000)
-
-which means that only the 1672527600 maturity can be traded in the demo (the other fails).
-
-Most of the numbers coming in and out to/from the demo are in a Math64x61 format
-(number 1.1 is send as int(1.1 * 2**61)).
-
-### Interact with the demo
-
-Demo is at this moment deployed here `0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090`
-to simply use it, create env var
 ```
-    export AMM_DEMO_ADDRESS='0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090'
-```
-and download the ABI file from the repo from `build/amm_abi.json`
-```
-    export ABI_PATH='build/amm_abi.json'
+MAIN_CONTRACT_ADDRESS=0x031bc941e58ee989d346a3e12b2d367228c6317bb9533821ce7a29d487ae12bc
+# ETH/USD CALL pool
+LPTOKEN_CONTRACT_ADDRESS=0x02733d9218f96aaa5908ec99eff401f5239aa49d8102aae8f4c7f520c5260d5c
+# Option 1
+    option_side=0
+    maturity=1664992981
+    strike_price=0xbb8000000000000000
+    quote_token_address=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426
+    base_token_address=0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+    option_type=0
+    address=0x304a6f21c609c59201f8f2086e85dcf570edc1379abb01f9a06fd4f7062c42a
+# Option 2
+    option_side=0
+    maturity=1665511435
+    strike_price=0xbb8000000000000000
+    quote_token_address=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426
+    base_token_address=0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+    option_type=0
+    address=0xae002dea00cd617a468a3caafa2832124aed60750b921c1e53ebcb5c3acc46
 ```
 
-The demo was already initialized.
 
-The example assumes that user's starknet account is existing and some tokens on it to pay for fees
+## Alpha version deploy and test on testnet
+
+This deploy assumes only one pool (in our case ETH/USD CALL pool) and only one option
+(two tokens one for short the other for long).
+
+First get following env vars
 ```
-export STARKNET_NETWORK=alpha-goerli
+export ACCOUNT_0_ADDRESS=YOUR_ADDRESS
+
+export ETH_ADDRESS=0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7  # goerli address
+export USD_ADDRESS=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426  # goerli address
 export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount
+
+export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
+export MATURITY_1=1664992981
+export MATURITY_2=1665511435
+export OPTION_TYPE=0
+export OPTION_SIDE=0
+export INITIAL_VOLATILITY=230584300921369395200
 ```
 
-#### Add tokens to the pools
-First possible interaction is to add fake tokens to the pool
-```
-    starknet invoke \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function add_fake_tokens \
-    --network alpha-goerli \
-    --max_fee 50000000000000 \
-    --inputs 123 230584300921369395200 461168601842738790400
-```
-the `--inputs 123 230584300921369395200 461168601842738790400` says add 230584300921369395200
-(100 * 2 ** 61) TOKEN_1 tokens into the CALL pool and 461168601842738790400 (200 * 2 ** 61) TOKEN_2
-into the PUT pool, both for account 123. The tokens used are fake and virtual tokens.
-
-To validate that the tokens were added, and to see how many were added in total
-(run before and after the addition to see the difference)
-```
-    starknet call \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function get_account_balance \
-    --network alpha-goerli \
-    --inputs 123 1
-```
-where `--inputs 123 1` for TOKEN_1 (call pool) and `--inputs 123 2` for TOKEN_2 (put pool).
-
-To validate that the tokens were added into the CALL and PUT pools validate the size of the pool
-before and after the addition.
-```
-    starknet call \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function get_pool_balance \
-    --network alpha-goerli \
-    --inputs 0
-```
-`--inputs 0` for call pool and `--inputs 1` and put option.
-
-#### Get price of an option
-
-TBD
-
-#### Trade option
-
-Trading an option means that a note of the trade is made, the size of the pool gets updated
-and volatility gets updated.
-```
-    starknet invoke \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function trade \
-    --network alpha-goerli \
-    --max_fee 50000000000000 \
-    --inputs 123 0 2305843009213693952000 1672527600 0 1
-```
-the `--inputs` correspond to the following
-`account_id, option_type, strike_price, maturity, side, option_size`
-
-You can check the call pool_balance with one of the above mentioned calls. The account_balance
-does not change (since it measures only the staked capital). You can also check
-the available_options with
-```
-    starknet call \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function get_pool_option_balance \
-    --network alpha-goerli \
-    --max_fee 50000000000000 \
-    --inputs 0 2305843009213693952000 1672527600 1
-```
-where `--inputs` contains `option_type, strike_price, maturity, side`.
+Make sure that your account address, public and private keys are correctly stored as per `starknet`
+library definition in `starknet_open_zeppelin_accounts.json`. Also make sure that the address
+of the account in the json file corresponds to the `ACCOUNT_0_ADDRESS`.
 
 
+### Deploy the AMM
 
-### Deploy demo
-
-Assumes the following to be set in .env: `STARKNET_NETWORK=alpha-goerli`, `PROTOSTAR_ACCOUNT_PRIVATE_KEY`, `PROTOSTAR_ACCOUNT_ADDRESS`
-
+Deploy AMM
 ```
-    protostar build
-    protostar deploy ./build/amm.json --network testnet
+protostar deploy ./build/amm.json --salt 666 --network alpha-goerli
 ```
 
-Save the contract address printed by the last command like this:
-
-(Note how initial_supply is two zeros since it's uint256)
-
-(Unclear how to pass strings)
-
+Export address of the contract
 ```
-    export MAIN_CONTRACT_ADDRESS="0x040fa3b63f3c844c67c6e47c9fa4c289f41f86e36e5aaead81299a6915b90858"
-    protostar deploy build/lptoken.json --network testnet --salt 666 --inputs 111 11 18 0 0 0 $MAIN_CONTRACT_ADDRESS
+export MAIN_CONTRACT_ADDRESS="0x06b695bf77c58ae0c41c7c520485d8b8ffd9927bc7922ee9ee317561fbc2b969"
 ```
 
-Write down or save the contract address.
-
+Validate owner address - should be equal to $ACCOUNT_0_ADDRESS
 ```
-    export LPTOKEN_ONE_CONTRACT_ADDRESS="0x037fd36a3b34cc0405bf7662f15ce91bd598b5f47c2e356755527379b385d51a"
-    # Run starknet invoke on add_lptoken. (Untested because of dependency hell:/
+starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function owner --network alpha-goerli
 ```
 
-Now it should be possible to poke around the contract.
 
+### Deploy lptoken
 
-### Init demo
+Deploying lptoken and adding it to the AMM is equivalent to creating new pool!
 
-Have an account set up including the env vars, as described [here](https://starknet.io/docs/hello_starknet/account_setup.html)
-
-Deploy the contract
+Deploy with following arguments
 ```
-    protostar deploy build/amm.json --network alpha-goerli
-```
-From the deployment save the address
-```
-    export AMM_DEMO_ADDRESS='0x01989a6d90c470d05a3259680891a0180e7c5ab8050a52f22e50ce9facf84090'
-```
-and use the ABI file `build/amm_abi.json`
-```
-    export ABI_PATH='build/amm_abi.json'
+    name = 111
+    symbol = 11
+    decimals = 18
+    initial_supply = 0 0
+    recipient = $ACCOUNT_0_ADDRESS
+    owner = $MAIN_CONTRACT_ADDRESS
 ```
 
-To initialize the pool run
+Deploy
 ```
-    starknet invoke \
-    --address $AMM_DEMO_ADDRESS \
-    --abi $ABI_PATH \
-    --function init_pool \
-    --network alpha-goerli \
-    --max_fee 50000000000000
+protostar deploy ./build/lptoken.json  --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS --network alpha-goerli
 ```
 
-To add "demo" tokens to account (some id)
+Export address of the lptoken
 ```
-    starknet invoke \
-    --address $AMM_DEMO_ADDRESS \
-    --abi build/amm_abi.json \
-    --function add_fake_tokens \
-    --network alpha-goerli \
-    --max_fee 50000000000000 \
-    --inputs 123 100000 100000
+export LPTOKEN_CONTRACT_ADDRESS="0x0557ec5b3d56a6abd33e5bd6da166b05cc8d90e61e52d5f5a4f22713dbcb119c"
 ```
 
-To validate that tokens were added
+### Add lptoken to the AMM
+
+AMM address is `$MAIN_CONTRACT_ADDRESS` and address of the lptoken is `$LPTOKEN_CONTRACT_ADDRESS`.
+
+For given lptoken the pool specific parameters have to be selected
+    quote and base tokens => ETH/USD
+    option type => call(0) or put(1)
 ```
-    starknet call \
-    --address 0x025aae26c014bc2f0ea8a2e7148697f4a04929ae30db65a72aaa860d746a51a5 \
-    --abi build/amm_abi.json \
-    --function get_account_balance \
-    --network alpha-goerli \
-    --inputs 123 1
+    quote_token_address = $USD_ADDRESS
+    base_token_address = $ETH_ADDRESS
+    option_type = $OPTION_TYPE
+    lptoken_address = $LPTOKEN_CONTRACT_ADDRESS
+```
+Add the lptoken
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_lptoken --inputs $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS --network alpha-goerli
 ```
 
-### Oracles
+
+### Provide liquidity (ETH) to the pool
+
+You can test that at the moment the `$ACCOUNT_0_ADDRESS` account has no lptokens.
+```
+starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $ACCOUNT_0_ADDRESS --network alpha-goerli
+```
+
+To deposit liquidity first approve the pool to transact the tokens from the account to the pool. We select size of 2ETH (2 * 10**18 -> 0x1bc16d674ec80000 0 in Uint256)
+```
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+```
+Actually deposit the liquidity of 2ETH
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE 0x1bc16d674ec80000 0 --network alpha-goerli
+```
+
+
+### Withdraw liquidity (ETH) from the pool
+
+To withdraw capital use following, assume you will be will be withdrawing 1*10**18 = 0xde0b6b3a7640000 (check that the account actually has this many).
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function withdraw_liquidity --inputs $ETH_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE 0xde0b6b3a7640000 0 --network alpha-goerli
+```
+
+
+### Deploy option token 1 and 2
+
+Deploy the first option token
+```
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 123 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE
+```
+Export the address
+```
+export OPTION_TOKEN_ADDRESS_1=...
+```
+Deploy the second option token
+```
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 123 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_2 $OPTION_SIDE
+```
+Export the address
+```
+export OPTION_TOKEN_ADDRESS_2=...
+```
+
+To be able to settle the options down the line and for the amm to work correctly same options have to be deployd also with opposite side (each option has to have both long and short positions).
+```
+FIXME
+```
+
+
+### Connect option tokens to AMM
+
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE $MATURITY_1 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 $INITIAL_VOLATILITY --network alpha-goerli
+```
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE $MATURITY_2 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_2 $INITIAL_VOLATILITY --network alpha-goerli
+```
+
+
+### Trade option
+
+Trade 0x746A528800 size (measured in ETH).
+
+First approve the sending of the capital from account to the amm.
+```
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x746A528800 0 --network alpha-goerli
+```
+Trade the OPTION_TOKEN_ADDRESS_1 (where 0x746A528800=1152921504606 in terms of Math64x61)
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 1152921504606 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+```
+
+
+### Close part of the option 1
+
+"Get rid of" half of the position (size 576460752303 in terms of Math64x61)
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+```
+
+
+### Settle the position
+
+Once a maturity has passed someone (1 entity for everyone - any entity) settles the option position from perspective of the pool.
+```
+FIXME
+```
+After the option has been settled for pool, then users can settle their position for them selves.
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+```
+
+
+## Oracles
 
 Currently using only Empiric oracle, which returns the median price(aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
 
@@ -242,7 +252,7 @@ Website: https://empiric.network/
 More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
 
 
-### Proxy Contracts 
+## Proxy Contracts 
 
 For proxy pattern, we decided to utilize OpenZeppelin library. Detailed explanation can be found here:
 
