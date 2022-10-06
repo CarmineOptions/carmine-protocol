@@ -45,11 +45,6 @@ from contracts.option_pricing_helpers import (
     convert_amount_to_option_currency_from_base
 )
 
-@storage_var
-func pool_address_for_given_asset_and_option_type(asset: felt, option_type: OptionType) -> (
-    address: Address
-) {
-}
 
 
 // ############################
