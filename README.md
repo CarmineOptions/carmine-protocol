@@ -79,7 +79,8 @@ export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
 export MATURITY_1=1664992981
 export MATURITY_2=1665511435
 export OPTION_TYPE=0
-export OPTION_SIDE=0
+export OPTION_SIDE_LONG=0
+export OPTION_SIDE_SHORT=1
 export INITIAL_VOLATILITY=230584300921369395200
 ```
 
@@ -178,7 +179,7 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 
 Deploy the first option token
 ```
-protostar deploy ./build/option_token.json --network alpha-goerli --salt 123 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE_LONG
 ```
 Export the address
 ```
@@ -186,7 +187,7 @@ export OPTION_TOKEN_ADDRESS_1=...
 ```
 Deploy the second option token
 ```
-protostar deploy ./build/option_token.json --network alpha-goerli --salt 123 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_2 $OPTION_SIDE
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_2 $OPTION_SIDE_LONG
 ```
 Export the address
 ```
@@ -195,17 +196,37 @@ export OPTION_TOKEN_ADDRESS_2=...
 
 To be able to settle the options down the line and for the amm to work correctly same options have to be deployd also with opposite side (each option has to have both long and short positions).
 ```
-FIXME
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE_SHORT
+```
+Export the address
+```
+export OPTION_TOKEN_ADDRESS_3=...
+```
+
+Same for the second option
+```
+protostar deploy ./build/option_token.json --network alpha-goerli --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $STRIKE_PRICE $MATURITY_2 $OPTION_SIDE_SHORT
+```
+```
+export OPTION_TOKEN_ADDRESS_4=...
 ```
 
 
 ### Connect option tokens to AMM
 
+ALL OPTIONS WITH THE SAME MATURITY HAVE TO ADDED AT ONCE, SINCE THE SAME VOLATILITY STORAGE_VAR IS USED FOR ALL OPTIONS WITH GIVEN MATURITY AT THE MOMENT.
+
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE $MATURITY_1 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 $INITIAL_VOLATILITY --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE_LONG $MATURITY_1 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_1 $INITIAL_VOLATILITY --network alpha-goerli
 ```
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE $MATURITY_2 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_2 $INITIAL_VOLATILITY --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE_LONG $MATURITY_2 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_2 $INITIAL_VOLATILITY --network alpha-goerli
+```
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE_SHORT $MATURITY_1 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_3 $INITIAL_VOLATILITY --network alpha-goerli
+```
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function add_option --inputs $OPTION_SIDE_SHORT $MATURITY_2 $STRIKE_PRICE $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE $LPTOKEN_CONTRACT_ADDRESS $OPTION_TOKEN_ADDRESS_4 $INITIAL_VOLATILITY --network alpha-goerli
 ```
 
 
@@ -219,7 +240,7 @@ starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function
 ```
 Trade the OPTION_TOKEN_ADDRESS_1 (where 0x746A528800=1152921504606 in terms of Math64x61)
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 1152921504606 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE_LONG 1152921504606 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
 ```
 
 
@@ -227,7 +248,7 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 
 "Get rid of" half of the position (size 576460752303 in terms of Math64x61)
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE_LONG 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
 ```
 
 
@@ -235,11 +256,16 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 
 Once a maturity has passed someone (1 entity for everyone - any entity) settles the option position from perspective of the pool.
 ```
-FIXME
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function expire_option_token_for_pool --inputs $LPTOKEN_CONTRACT_ADDRESS $OPTION_SIDE_SHORT $STRIKE_PRICE $MATURITY_1 --network alpha-goerli
 ```
+and same for the other side
+```
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function expire_option_token_for_pool --inputs $LPTOKEN_CONTRACT_ADDRESS $OPTION_SIDE_LONG $STRIKE_PRICE $MATURITY_1 --network alpha-goerli
+```
+
 After the option has been settled for pool, then users can settle their position for them selves.
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_settle --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY_1 $OPTION_SIDE_LONG 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli
 ```
 
 
