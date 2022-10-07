@@ -178,6 +178,18 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 
 
 @view
+func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) -> (
+    res: Math64x61_
+) {
+    alloc_locals;
+    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
+    return (position,);
+}
+
+
+@view
 func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_address: Address,
     base_token_address: Address,
@@ -403,6 +415,26 @@ func get_option_info_from_addresses{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     lptoken_address: Address,
+    option_token_address: Address
+) -> (option: Option) {
+    // Returns Option (struct) information.
+
+    alloc_locals;
+
+    let (option) = _get_option_info_from_addresses(
+        lptoken_address=lptoken_address,
+        option_token_address=option_token_address,
+        starting_index=1
+    );
+
+    return (option = option);
+}
+
+
+func _get_option_info_from_addresses{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address,
     option_token_address: Address,
     starting_index: felt
 ) -> (option: Option) {
@@ -426,7 +458,7 @@ func get_option_info_from_addresses{
         return (option=option_);
     }
 
-    let (option) = get_option_info_from_addresses(
+    let (option) = _get_option_info_from_addresses(
         lptoken_address=lptoken_address,
         option_token_address=option_token_address,
         starting_index=starting_index+1
