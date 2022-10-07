@@ -8,26 +8,14 @@ For crypto funds, traders and investors who need to hedge their portfolios or tr
 options AMM will provide a possibility to do so. Different from competitors, this AMM allows for
 selling specific options directly.
 
-
-## Set up
-
-- Clone this repo with `git clone --recurse-submodules` (Protostar uses submodules)
-- [Cairo quickstart](https://www.cairo-lang.org/docs/quickstart.html)
-    - On a M1 Macbook, fastecdsa build might fail; [https://github.com/OpenZeppelin/nile/issues/22](this) might help.
-- [Install Protostar](https://docs.swmansion.com/protostar/docs/tutorials/installation)
-- setup a virtualenv, install requirements.txt...
-- `make build`; `make test`
-
 ## Current State
 
-We have early alpha up and running on testnet
-
+We have an early alpha up and running on testnet, see below for addresses. We don't have a working frontend yet.
 
 ## Documentation
 
 High level docs [here](https://carmine-finance.gitbook.io/carmine-options-amm/).
 Code docs will be published soon
-
 
 ## Other Links
 
@@ -35,7 +23,6 @@ Code docs will be published soon
 - [Web](https://carmine.finance)
 - [Discord](https://discord.com/invite/uRs7j8w3bX)
 - [Docs](https://carmine-finance.gitbook.io/carmine-options-amm/)
-
 
 ## Currently deployed contracts on testnet
 
@@ -60,6 +47,18 @@ LPTOKEN_CONTRACT_ADDRESS=0x02733d9218f96aaa5908ec99eff401f5239aa49d8102aae8f4c7f
     option_type=0
     address=0xae002dea00cd617a468a3caafa2832124aed60750b921c1e53ebcb5c3acc46
 ```
+
+# Development
+
+## Setup
+
+- Clone this repo with `git clone --recurse-submodules` (Protostar uses submodules)
+- [Cairo quickstart](https://www.cairo-lang.org/docs/quickstart.html)
+    - On a M1 Macbook, fastecdsa build might fail; [https://github.com/OpenZeppelin/nile/issues/22](this) might help.
+    - note that Cairo requires Python 3.9
+- [Install Protostar](https://docs.swmansion.com/protostar/docs/tutorials/installation)
+- setup a virtualenv, install requirements.txt...
+- `make build`; `make test`
 
 
 ## Alpha version deploy and test on testnet
@@ -281,7 +280,7 @@ Website: https://empiric.network/
 More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
 
 
-For calculating settlement price of the options we are waiting to get historical data on chain. At the moment we are using constant "1500" price.
+For calculating settlement price of the options we are waiting for Empiric to put historical data on-chain. At the moment we are using constant "1500" price.
 
 
 ## Proxy Contracts 
