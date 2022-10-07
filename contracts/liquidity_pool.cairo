@@ -421,6 +421,50 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return ();
 }
 
+func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: felt,
+    index: felt
+
+) {
+
+    // Write zero option in provided index
+    let zero_option = Option (0,0,0,0,0,0);
+    available_options.write(lptoken_address, index, zero_option);
+    shift_available_options(lptoken_address, index);
+
+    return ();
+}
+
+func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: felt,
+    index: felt
+) {
+    alloc_locals;
+
+    // Assert that provided index stores zero option
+    let (old_option) = available_options.read(lptoken_address, index);
+    let old_option_sum = old_option.strike_price + old_option.maturity;
+    assert old_option_sum = 0;
+
+    // Read option on next index and assert that it is not zero option
+    // since that would mean that we're at the end of list 
+    let (next_option) = available_options.read(lptoken_address, index + 1);
+    let next_option_sum = next_option.strike_price + next_option.maturity;
+    if (next_option_sum == 0) {
+        return();
+    }
+
+    // Assign next_option to current index and zero_option to next_index
+    let zero_option = Option(0, 0, 0, 0, 0, 0);
+    available_options.write(lptoken_address, index, next_option);
+    available_options.write(lptoken_address, index + 1, zero_option);
+
+    // Continue to next index
+    shift_available_options(lptoken_address, index + 1);
+
+    return ();
+}
+
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
@@ -590,6 +634,26 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     option_token_address.write(
         lptoken_address, option_side, maturity, strike_price, option_token_address_
     );
+
+    return ();
+}
+
+// Function for removing option 
+// Currently removes only from available_options storage_var
+// Beacuse it storing duplicate options would cause provide 
+// wrong result when calculating value of pool's position
+@external
+func remove_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: felt,
+    index: felt
+) {
+    alloc_locals;
+
+    // Assert that only admin can access this function
+    Proxy.assert_only_admin();
+
+    // Remove option at given index and shift remaining options to the left
+    remove_and_shift_available_options(lptoken_address, index);
 
     return ();
 }
