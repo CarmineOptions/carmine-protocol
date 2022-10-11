@@ -52,6 +52,44 @@ from contracts.option_pricing_helpers import (
 // ############################
 
 
+
+@storage_var
+func latest_premia(
+    option_type: OptionType,
+    strike_price: Math64x61_,
+    side: OptionSide,
+    maturity: Int,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
+) -> (premia: Premia){
+}
+
+@view
+func get_latest_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    option_type: OptionType,
+    strike_price: Math64x61_,
+    side: OptionSide,
+    maturity: Int,
+    quote_token_address: Address,
+    base_token_address: Address,
+    lptoken_address: Address
+) -> (premia: Premia){
+
+    let premia = latest_premia.read(
+        option_type,
+        strike_price,
+        side,
+        maturity,
+        quote_token_address,
+        base_token_address,
+        lptoken_address,
+    );
+
+    return premia;
+
+}
+
 @view
 func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
@@ -401,6 +439,26 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         base_token_address,
         lptoken_address
     );
+
+    let (trade_time) = get_block_timestamp();
+
+    let _premia = Premia (
+        option_size = option_size,
+        trade_time = trade_time,
+        premia = premia
+    );
+
+    latest_premia.write(
+        option_type,
+        strike_price,
+        option_side,
+        maturity,
+        quote_token_address,
+        base_token_address,
+        lptoken_address,
+        _premia        
+    );
+
     return (premia=premia);
 }
 
