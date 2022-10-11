@@ -115,7 +115,7 @@ export MAIN_CONTRACT_ADDRESS=...
 ```
 Specify the admin of the contract
 ```
-starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $ACCOUNT_0_ADDRESS
+starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function initializer --input $ACCOUNT_0_ADDRESS --network alpha-goerli
 ```
 
 
@@ -171,7 +171,7 @@ starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json
 
 To deposit liquidity first approve the pool to transact the tokens from the account to the pool. We select size of 2ETH (2 * 10**18 -> 0x1bc16d674ec80000 0 in Uint256)
 ```
-starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --gateway_url "http://127.0.0.1:5050/" --feeder_gateway_url "http://127.0.0.1:5050/" --network alpha-goerli
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --network alpha-goerli
 ```
 Actually deposit the liquidity of 2ETH
 ```
