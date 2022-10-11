@@ -1,0 +1,54 @@
+LAST_COMMIT=a25550db5d195e99bbab10cefb30d0751997a58a
+STRIKE_PRICE = 1_500
+MATURITYY = 1665782981 -> 14/10/2022 21:29
+-> deribit 14/10
+
+export MAIN_CONTRACT_ADDRESS=0x063d8a24f394d09de9ae0162b87762571c7cb1a07879a86e903d76088d846c0e
+export LPTOKEN_CONTRACT_ADDRESS=0x040032cff8be935aae8768d3d54ad5000f4feb69f39d496e0aeadbf789852aea
+export OPTION_TOKEN_ADDRESS_LONG=0x07fd606952fea41580082477c723d5125b4425d52839af431477aba1c5ecb2a1
+export OPTION_TOKEN_ADDRESS_SHORT=0x00bc7bbac0aeb1542120924ccbbc6406aa738a0f5d16b770a297c165b27bcfd9
+
+> starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $USER_ACC --network alpha-goerli 
+0 0
+
+> starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function approve --inputs $MAIN_CONTRACT_ADDRESS 0x1bc16d674ec80000 0 --network alpha-goerli
+
+> starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function deposit_liquidity --inputs $ETH_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE 0x71afd498d0000 0 --network alpha-goerli
+
+> starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $USER_ACC --network alpha-goerli 
+0x71afd498d0000 0
+
+> starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function withdraw_liquidity --inputs $ETH_ADDRESS $USD_ADDRESS $ETH_ADDRESS $OPTION_TYPE 0x38d7ea4c68000 0 --network alpha-goerli 
+> starknet call --address $LPTOKEN_CONTRACT_ADDRESS --abi ./build/lptoken_abi.json --function balanceOf --inputs $USER_ACC --network alpha-goerli
+0x38d7ea4c68000 0
+
+Deploy/connect option tokens ...
+
+Trade
+> starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_open --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY $OPTION_SIDE_LONG 576460752303 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli 
+> starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_latest_premia --inputs $OPTION_TYPE $STRIKE_PRICE $OPTION_SIDE_LONG $MATURITY $USD_ADDRESS $ETH_ADDRESS $LPTOKEN_CONTRACT_ADDRESS --network alpha-goerli
+576460752303 1665489765 0x1ffffcc48591bf7b
+
+Latest premia from do_trade func -> last ouput ^
+Eth price at the time of trade: 1287
+Premia on deribit at the time of trade: 0.64 usd, 0.0005 eth
+
+> starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_pool_volatility --inputs $LPTOKEN_CONTRACT_ADDRESS $MATURITY --network alpha-goerli
+0xc80ccd9e9150f0924
+
+> starknet call --address $OPTION_TOKEN_ADDRESS_LONG --abi ./build/lptoken_abi.json --function balanceOf --inputs $USER_ACC --network alpha-goerli
+249999999999 0
+
+> starknet call --address $OPTION_TOKEN_ADDRESS_SHORT --abi ./build/lptoken_abi.json --function balanceOf --inputs 0x360ad194f33dbbdd5b1acb9629cd54a9b94d6066d6ec5a1b80d9e8685149315 --network alpha-goerli
+0 0
+
+Close half of trade:
+> starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function trade_close --inputs $OPTION_TYPE $STRIKE_PRICE $MATURITY $OPTION_SIDE_LONG 288230376151 $USD_ADDRESS $ETH_ADDRESS --network alpha-goerli 
+> starknet call --address $OPTION_TOKEN_ADDRESS_LONG --abi ./build/lptoken_abi.json --function balanceOf --inputs 0x360ad194f33dbbdd5b1acb9629cd54a9b94d6066d6ec5a1b80d9e8685149315 --network alpha-goerli 
+125000000000 0
+
+> starknet call --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --function get_pool_volatility --inputs $LPTOKEN_CONTRACT_ADDRESS $MATURITY --network alpha-goerli
+0xc80ccd9e9150f0924
+
+Expire the option: 
+WIP
