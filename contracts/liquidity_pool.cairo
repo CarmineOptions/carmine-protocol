@@ -538,6 +538,88 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return ();
 }
 
+@external 
+func update_all_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    lptoken_address: Address
+) {
+    alloc_locals;
+    // Retrieve callers address so the function get_caller_address is called only once
+    // Same for latest block
+    let (updater_address) = get_caller_address();
+    let (current_block_time) = get_block_timestamp();
+
+    // Iterate over available options and update terminal prices
+    _update_all_available_options_tickers(
+        lptoken_address,
+        updater_address,
+        current_block_time,
+        0
+    );
+
+    return ();
+}
+
+// Function for iterating and updating terminal prices
+// TBD: With all the Empiric calls, will this reach end? 
+//      What about updating only based on base token or maturity?
+func _update_all_available_options_tickers{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    updater_address: Address,
+    current_block_time,
+    index
+) {
+    alloc_locals;
+
+    // Read option at index
+    let (option) = available_options.read(lptoken_address, index);
+    
+    // If the option contains zeros only it means we're at the end of the list
+    let option_sum = option.maturity + option.strike_price;
+    if (option_sum == 0) {
+        return ();
+    }
+
+    // Read latest terminal ticker for given base/quote and maturity
+    let (latest_ticker) = get_terminal_ticker(
+        option.base_token_address,
+        option.quote_token_address,
+        option.maturity
+    );
+
+    // Check that option is not outdated and if it is,
+    // continue to next index
+    let is_expired = is_le(option.maturity - 1, current_block_time);
+    if (is_expired == 1) {
+        _update_all_available_options_tickers(
+            lptoken_address,
+            updater_address,
+            current_block_time,
+            index + 1
+        );
+        tempvar syscall_ptr: felt* = syscall_ptr;
+    } else {
+
+        // Update the ticker
+        update_terminal_ticker(
+            option.base_token_address,
+            option.quote_token_address,
+            option.maturity
+        );
+
+        // Continue to next index
+        _update_all_available_options_tickers(
+            lptoken_address,
+            updater_address,
+            current_block_time,
+            index + 1
+        );
+
+        tempvar syscall_ptr: felt* = syscall_ptr;
+    }
+
+    return ();
+}
+
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
