@@ -3,10 +3,15 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.math import abs_value, assert_not_zero
 
 from math64x61 import Math64x61
 
+from interface_lptoken import ILPToken
 from types import Address
+
+
+
 // The maximum amount of token in a pool.
 const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // The maximum amount of token for account balance
@@ -105,4 +110,22 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
         }
     }
     return (0,);
+}
+
+
+func get_decimal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    token_address: Address
+) -> (dec: felt) {
+    if (token_address == TOKEN_ETH_ADDRESS) {
+        return (18,);
+    }
+    if (token_address == TOKEN_USD_ADDRESS) {
+        return (6,);
+    }
+    let (dec) = ILPToken.decimals(token_address);
+
+    with_attr error_message("Specified token_address possibly does not exist - decimals=0"){
+        assert_not_zero(dec);
+    }
+    return (dec,);
 }
