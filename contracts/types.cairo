@@ -24,3 +24,9 @@ struct Option {
     base_token_address: felt,
     option_type: felt,
 }
+
+struct PremiaInfo {
+    option_size: felt,
+    trade_time: felt,
+    premia: felt,
+}
