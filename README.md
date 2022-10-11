@@ -30,23 +30,30 @@ Code docs will be published soon
 MAIN_CONTRACT_ADDRESS=0x031bc941e58ee989d346a3e12b2d367228c6317bb9533821ce7a29d487ae12bc
 # ETH/USD CALL pool
 LPTOKEN_CONTRACT_ADDRESS=0x02733d9218f96aaa5908ec99eff401f5239aa49d8102aae8f4c7f520c5260d5c
-# Option 1
-    option_side=0
-    maturity=1664992981
-    strike_price=0xbb8000000000000000
-    quote_token_address=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426
-    base_token_address=0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-    option_type=0
-    address=0x304a6f21c609c59201f8f2086e85dcf570edc1379abb01f9a06fd4f7062c42a
-# Option 2
-    option_side=0
-    maturity=1665511435
-    strike_price=0xbb8000000000000000
-    quote_token_address=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426
-    base_token_address=0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-    option_type=0
-    address=0xae002dea00cd617a468a3caafa2832124aed60750b921c1e53ebcb5c3acc46
+# ETH/USD PUT pool
+LPTOKEN_CONTRACT_ADDRESS_PUT=0x03f510585d678a03b1a95e20c5b5f13bd0a3dea9e43b0de2b71b81a2e9f1b278
+
+export ETH_ADDRESS=0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7  # goerli address
+export USD_ADDRESS=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426  # goerli address
 ```
+Available options (including expired ones)
+| Side  | Maturity   | Strike  | Quote token address  | Base token address  | Call/Put  | Option token address  |
+|-------|------------|---------|----------------------|---------------------|-----------|-----------------------|
+| Long  | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x304a6f21c609c59201f8f2086e85dcf570edc1379abb01f9a06fd4f7062c42a |
+| Long  | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0xae002dea00cd617a468a3caafa2832124aed60750b921c1e53ebcb5c3acc46 |
+| Short | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x1ff82740cb4a2dfe332e3d1ded3b7fcc1042612cf9d2ae70b0b5ca520c635ea |
+| Short | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x0626ebb9d8be8bf3f113780e39b409ba22edc248f7915d39a1b253c9a7614ec9 |
+| Long  | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x051cc0a93cf22935493a56959c3f34eda20707cb306949e9da390b2b97120332 |
+| Short | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x03385b9a4dc48a8d696c98f11768680b7f57e4e1fc19a0318b4ab676d80f758d |
+| Long  | 1669849199 | 1700    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x06bc44f42f834c6c0e8c5e225a638362bc778152bd451d62cef8379addb11232 |
+| Short | 1669849199 | 1700    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x02c293cabfbc1c82230e59561678729e6f3d6584c1d35b501f473e8c17133066 |
+| Long  | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x000c6729d7bdcec32c210f2368a08623898cd9a6460654dbc43afd382d449fcb |
+| Short | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x01d99bfa805d4d4c82dc39ab398453e346c54f3d47db24121d1f92af73836292 |
+| Long  | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x06e0c3790e2b79b1e9b0287641e67c9d024a0c01239708899b8c4d523cbb7191 |
+| Short | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x001f763c94f97f542394d27b158a855197a3244180c0829dc2782b4cdfb1f0be |
+| Long  | 1669849199 | 1200    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x06a7bb14708840cffd1da80edbb08662c1d3d21ce911789ed3aad02f87754e83 |
+| Short | 1669849199 | 1200    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x03ed8efb021436393b458ecc4f422c36c1230e482dc4957f68b539e47cd6cb71 |
+
 
 # Development
 
@@ -75,8 +82,11 @@ export USD_ADDRESS=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34
 export STARKNET_WALLET=starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount
 
 export STRIKE_PRICE=3458764513820540928000 # 1500 * 2**61
+export STRIKE_PRICE_2=3919933115663279718400 # 1700 * 2**61
+export STRIKE_PRICE_3=2767011611056432742400 # 1200 * 2**61
 export MATURITY_1=1664992981
 export MATURITY_2=1665511435
+export MATURITY_3=1669849199
 export OPTION_TYPE=0
 export OPTION_SIDE_LONG=0
 export OPTION_SIDE_SHORT=1
