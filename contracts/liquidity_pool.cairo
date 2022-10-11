@@ -1,6 +1,7 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
+from constants import get_decimal
 from helpers import max, _get_value_of_position, min
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
@@ -35,17 +36,39 @@ from openzeppelin.access.ownable.library import Ownable
 
 
 // Custom conversions from Math64_61 to Uint256 and back
-func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: Math64x61_) -> Uint256 {
+func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Math64x61_,
+    lptoken_address: Address
+) -> Uint256 {
+    alloc_locals;
+
     // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-    let dec = Math64x61.fromFelt(10 ** 18);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
+    let (decimal) = get_decimal(currency_address);
+    let decimal_ = Math64x61.fromFelt(decimal);
+    let ten = Math64x61.fromFelt(10);
+    let dec = Math64x61.pow(ten, decimal_);
+
     let x_ = Math64x61.mul(x, dec);
     let amount_felt = Math64x61.toFelt(x_);
     let res = Uint256(low = amount_felt, high = 0);
     return res;
 }
-func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: Uint256) -> Math64x61_ {
+
+
+func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Uint256,
+    lptoken_address: Address
+) -> Math64x61_ {
+    alloc_locals;
+
     // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-    let dec = Math64x61.fromFelt(10 ** 18);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
+    let (decimal) = get_decimal(currency_address);
+    let decimal_ = Math64x61.fromFelt(decimal);
+    let ten = Math64x61.fromFelt(10);
+    let dec = Math64x61.pow(ten, decimal_);
+
     let x_ = Math64x61.fromUint256(x);
     let x__ = Math64x61.div(x_, dec);
     return x__;
@@ -80,7 +103,7 @@ func option_type_(lptoken_address: Address) -> (option_type: OptionType) {
 // Address of the underlying token (for example address of ETH or USD or...).
 // Will return base/quote according to option_type
 @storage_var
-func underlying_token_addres(lptoken_address: Address) -> (res: Address) {
+func underlying_token_address(lptoken_address: Address) -> (res: Address) {
 }
 
 
@@ -274,6 +297,7 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     return (option_token_address=option_token_addr);
 }
 
+
 // Returns a total value of pools position (sum of value of all options held by pool).
 // Goes through all options in storage var "available_options"... is able to iterate by i
 // (from 0 to n)
@@ -281,7 +305,6 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
 // If this doesn't look "good", there is an option to have the available_options instead of having
 // the argument i, it could have no argument and return array (it might be easier for the map above)
-
 @view
 func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -366,6 +389,7 @@ func get_available_options_usable_index{
 
     return (usable_index = usable_index);
 }
+
 
 func _get_option_info{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -494,6 +518,7 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return ();
 }
 
+
 func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: felt,
     index: felt
@@ -507,6 +532,7 @@ func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBu
 
     return ();
 }
+
 
 func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: felt,
@@ -538,30 +564,10 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return ();
 }
 
-// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-// @external
-// func initializer{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(...):
-// sets pair, liquidity currency and hence the option type
-// for example pair is ETH/USDC and this pool is only for ETH hence only call options are handled here
-// end
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // Provide/remove liquidity
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-// lptoken_amt * exchange_rate = underlying_amt
-// @returns Math64x61 fp num
-// func get_lptoken_exchange_rate{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-//     pooled_token_addr: felt
-// ) -> (exchange_rate: felt):
-//     let (lpt_supply) = totalSupply()
-//     let (own_addr) = get_contract_address()
-//     let (reserves) = IERC20.balanceOf(contract_address=pooled_token_addr, account=own_addr)
-//     let exchange_rate = Math64x61_div(lpt_supply, reserves)
-//     return (exchange_rate)
-// end
 
 
 func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -574,10 +580,10 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-    let free_capital = toUint256(free_capital_Math64);
+    let free_capital = toUint256(free_capital_Math64, lptoken_address);
 
     let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-    let value_of_position = toUint256(value_of_position_Math64);
+    let value_of_position = toUint256(value_of_position_Math64, lptoken_address);
 
     let (value_of_pool, _) = uint256_add(free_capital, value_of_position);
 
@@ -615,10 +621,10 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
 
     let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-    let free_capital = toUint256(free_capital_Math64);
+    let free_capital = toUint256(free_capital_Math64, lptoken_address);
 
     let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-    let value_of_position = toUint256(value_of_position_Math64);
+    let value_of_position = toUint256(value_of_position_Math64, lptoken_address);
     
     let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
 
@@ -661,10 +667,10 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     option_type_.write(lptoken_address, option_type);
     if (option_type == OPTION_CALL) {
         // base tokens (ETH in case of ETH/USDC) for call option
-        underlying_token_addres.write(lptoken_address, base_token_address);
+        underlying_token_address.write(lptoken_address, base_token_address);
     } else {
         // quote tokens (USDC in case of ETH/USDC) for put option
-        underlying_token_addres.write(lptoken_address, quote_token_address);
+        underlying_token_address.write(lptoken_address, quote_token_address);
     }
 
     return ();
@@ -767,7 +773,10 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
-    let amount_math64x61 = fromUint256(amount);
+    let (lptoken_address) = lptoken_addr_for_given_pooled_token.read(
+        quote_token_address, base_token_address, option_type
+    );
+    let amount_math64x61 = fromUint256(amount, lptoken_address);
     let (current_balance) = lpool_balance.read(lptoken_address);
     let new_pb = Math64x61.add(current_balance, amount_math64x61);
     lpool_balance.write(lptoken_address, new_pb);
@@ -797,7 +806,10 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
     // Get the amount of underlying that corresponds to given amount of lp tokens
     let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
-    let underlying_amount_Math64 = fromUint256(underlying_amount_uint256);
+    let (lptoken_address) = lptoken_addr_for_given_pooled_token.read(
+        quote_token_address, base_token_address, option_type
+    );
+    let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, lptoken_address);
     
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
@@ -928,14 +940,14 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size, lptoken_address);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     // Move premia and fees from user to the pool
-    let premia_including_fees_uint256 = toUint256(premia_including_fees);
+    let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
@@ -1002,16 +1014,16 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
 
     // Mint tokens
-    let option_size_uint256 = toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size, lptoken_address);
     IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
     let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
     // Move (option_size minus (premia minus fees)) from user to the pool
-    let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user);
+    let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, lptoken_address);
     IERC20.transferFrom(
         contract_address=currency_address,
         sender=user_address,
@@ -1157,13 +1169,13 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size, lptoken_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-    let premia_including_fees_uint256 = toUint256(premia_including_fees);
+    let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -1254,15 +1266,15 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size, lptoken_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
-    let total_user_payment_uint256 = toUint256(total_user_payment);
+    let total_user_payment_uint256 = toUint256(total_user_payment, lptoken_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -1382,7 +1394,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         strike_price=strike_price
     );
 
-    let (currency_address) = underlying_token_addres.read(lptoken_address);
+    let (currency_address) = underlying_token_address.read(lptoken_address);
 
     // The option (underlying asset x maturity x option type x strike) has to be "expired"
     // (settled) on the pool's side in terms of locked capital. Ie check that SHORT position
@@ -1432,11 +1444,11 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (long_value, short_value) = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
     );
-    let long_value_uint256 = toUint256(long_value);
-    let short_value_uint256 = toUint256(short_value);
+    let long_value_uint256 = toUint256(long_value, lptoken_address);
+    let short_value_uint256 = toUint256(short_value, lptoken_address);
 
     // Validate that the user is not burning more than he/she has.
-    let option_size_uint256 = toUint256(option_size);
+    let option_size_uint256 = toUint256(option_size, lptoken_address);
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         // Match64x61 adn Uint256
