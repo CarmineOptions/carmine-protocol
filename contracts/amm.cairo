@@ -36,7 +36,7 @@ from contracts.interface_liquidity_pool import ILiquidityPool
 // )
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price, get_terminal_price
-from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option, PremiaInfo)
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
@@ -62,7 +62,7 @@ func latest_premia(
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
-) -> (premia: Premia){
+) -> (premia: PremiaInfo){
 }
 
 @view
@@ -74,7 +74,7 @@ func get_latest_premia{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
-) -> (premia: Premia){
+) -> (premia: PremiaInfo){
 
     let premia = latest_premia.read(
         option_type,
@@ -442,7 +442,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 
     let (trade_time) = get_block_timestamp();
 
-    let _premia = Premia (
+    let premia_info = PremiaInfo (
         option_size = option_size,
         trade_time = trade_time,
         premia = premia
@@ -456,7 +456,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         quote_token_address,
         base_token_address,
         lptoken_address,
-        _premia        
+        premia_info
     );
 
     return (premia=premia);
