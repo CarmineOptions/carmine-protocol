@@ -539,7 +539,7 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 @external 
-func update_all_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+func update_all_available_options_ticker{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     lptoken_address: Address
 ) {
     alloc_locals;
@@ -588,7 +588,7 @@ func _update_all_available_options_tickers{syscall_ptr: felt*, pedersen_ptr: Has
 
     // Check that option is not outdated and if it is,
     // continue to next index
-    let is_expired = is_le(option.maturity - 1, current_block_time);
+    let is_expired = is_le(option.maturity, current_block_time - 1);
     if (is_expired == 1) {
         _update_all_available_options_tickers(
             lptoken_address,
