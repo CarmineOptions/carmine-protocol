@@ -104,69 +104,71 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     alloc_locals;
 
-    // 0) Helper values
-    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-        option_size,
-        option_type,
-        strike_price
-    );
+    with_attr error_message("do_trade premia calculation and updates failed") {
+        // 0) Helper values
+        let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
+            option_size,
+            option_type,
+            strike_price
+        );
 
-    // 1) Get current volatility
-    let (current_volatility) = get_pool_volatility(
-        lptoken_address=lptoken_address,
-        maturity=maturity
-    );
+        // 1) Get current volatility
+        let (current_volatility) = get_pool_volatility(
+            lptoken_address=lptoken_address,
+            maturity=maturity
+        );
 
-    // 2) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (underlying_price) = empiric_median_price(empiric_key);
+        // 2) Get price of underlying asset
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (underlying_price) = empiric_median_price(empiric_key);
 
-    // 3) Calculate new volatility, calculate trade volatility
-    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-    assert_nn_le(1, current_pool_balance);
-    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+        // 3) Calculate new volatility, calculate trade volatility
+        let (current_pool_balance) = get_pool_available_balance(lptoken_address);
+        assert_nn_le(1, current_pool_balance);
+        assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
-    let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
-    );
+        let (new_volatility, trade_volatility) = get_new_volatility(
+            current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
+        );
 
-    // 4) Update volatility
-    set_pool_volatility(
-        lptoken_address=lptoken_address,
-        maturity=maturity,
-        volatility=new_volatility
-    );
+        // 4) Update volatility
+        set_pool_volatility(
+            lptoken_address=lptoken_address,
+            maturity=maturity,
+            volatility=new_volatility
+        );
 
-    // 5) Get time till maturity
-    let (time_till_maturity) = get_time_till_maturity(maturity);
+        // 5) Get time till maturity
+        let (time_till_maturity) = get_time_till_maturity(maturity);
 
-    // 6) risk free rate
-    let risk_free_rate_annualized = RISK_FREE_RATE;
+        // 6) risk free rate
+        let risk_free_rate_annualized = RISK_FREE_RATE;
 
-    // 7) Get premia
-    // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-    let (call_premia, put_premia) = black_scholes(
-        sigma=trade_volatility,
-        time_till_maturity_annualized=time_till_maturity,
-        strike_price=strike_price,
-        underlying_price=underlying_price,
-        risk_free_rate_annualized=risk_free_rate_annualized,
-    );
-    // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
-    // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
-    // and in quote tokens (USDC in case of ETH/USDC) for put option.
-    let (premia) = select_and_adjust_premia(
-        call_premia, put_premia, option_type, underlying_price
-    );
-    // premia adjusted by size (multiplied by size)
-    let total_premia_before_fees = Math64x61.mul(premia, option_size);
+        // 7) Get premia
+        // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+        let (call_premia, put_premia) = black_scholes(
+            sigma=trade_volatility,
+            time_till_maturity_annualized=time_till_maturity,
+            strike_price=strike_price,
+            underlying_price=underlying_price,
+            risk_free_rate_annualized=risk_free_rate_annualized,
+        );
+        // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
+        // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
+        // and in quote tokens (USDC in case of ETH/USDC) for put option.
+        let (premia) = select_and_adjust_premia(
+            call_premia, put_premia, option_type, underlying_price
+        );
+        // premia adjusted by size (multiplied by size)
+        let total_premia_before_fees = Math64x61.mul(premia, option_size);
 
-    // 8) Get fees
-    // fees are already in the currency same as premia
-    // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
-    // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
-    let (total_fees) = get_fees(total_premia_before_fees);
-    let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
+        // 8) Get fees
+        // fees are already in the currency same as premia
+        // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
+        // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
+        let (total_fees) = get_fees(total_premia_before_fees);
+        let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
+    }
 
     // 9) Make the trade
     mint_option_token(
@@ -391,16 +393,18 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         open_position=TRUE,
     );
 
-    let (premia) = do_trade(
-        option_type,
-        strike_price,
-        maturity,
-        option_side,
-        option_size,
-        quote_token_address,
-        base_token_address,
-        lptoken_address
-    );
+    with_attr error_message("do_trade failed") {
+        let (premia) = do_trade(
+            option_type,
+            strike_price,
+            maturity,
+            option_side,
+            option_size,
+            quote_token_address,
+            base_token_address,
+            lptoken_address
+        );
+    }
     return (premia=premia);
 }
 

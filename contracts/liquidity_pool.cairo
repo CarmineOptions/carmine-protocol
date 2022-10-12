@@ -10,6 +10,7 @@ from interface_option_token import IOptionToken
 //  commented out code already imported in amm.cairo
 //  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
+from lib.pow import pow10
 
 from starkware.cairo.common.math import abs_value, assert_not_zero
 from starkware.cairo.common.math_cmp import is_nn//, is_le
@@ -42,16 +43,17 @@ func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> Uint256 {
     alloc_locals;
 
-    // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-    let (currency_address) = underlying_token_address.read(lptoken_address);
-    let (decimal) = get_decimal(currency_address);
-    let decimal_ = Math64x61.fromFelt(decimal);
-    let ten = Math64x61.fromFelt(10);
-    let dec = Math64x61.pow(ten, decimal_);
+    with_attr error_message("Failed toUint256"){
+        // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
+        let (currency_address) = underlying_token_address.read(lptoken_address);
+        let (decimal) = get_decimal(currency_address);
+        let (dec_) = pow10(decimal);
+        let dec = Math64x61.fromFelt(dec_);
 
-    let x_ = Math64x61.mul(x, dec);
-    let amount_felt = Math64x61.toFelt(x_);
-    let res = Uint256(low = amount_felt, high = 0);
+        let x_ = Math64x61.mul(x, dec);
+        let amount_felt = Math64x61.toFelt(x_);
+        let res = Uint256(low = amount_felt, high = 0);
+    }
     return res;
 }
 
@@ -62,15 +64,16 @@ func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 ) -> Math64x61_ {
     alloc_locals;
 
-    // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-    let (currency_address) = underlying_token_address.read(lptoken_address);
-    let (decimal) = get_decimal(currency_address);
-    let decimal_ = Math64x61.fromFelt(decimal);
-    let ten = Math64x61.fromFelt(10);
-    let dec = Math64x61.pow(ten, decimal_);
+    with_attr error_message("Failed fromUint256"){
+        // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
+        let (currency_address) = underlying_token_address.read(lptoken_address);
+        let (decimal) = get_decimal(currency_address);
+        let (dec_) = pow10(decimal);
+        let dec = Math64x61.fromFelt(dec_);
 
-    let x_ = Math64x61.fromUint256(x);
-    let x__ = Math64x61.div(x_, dec);
+        let x_ = Math64x61.fromUint256(x);
+        let x__ = Math64x61.div(x_, dec);
+    }
     return x__;
 }
 
@@ -250,6 +253,15 @@ func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 ) -> (pool_volatility: Math64x61_) {
     let (pool_volatility_) = pool_volatility.read(lptoken_address, maturity);
     return (pool_volatility_,);
+}
+
+
+@view
+func get_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (underlying_token_address_: Address) {
+    let (underlying_token_address_) = underlying_token_address.read(lptoken_address);
+    return (underlying_token_address_,);
 }
 
 
@@ -871,55 +883,58 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
     alloc_locals;
 
-    let (option_token_address) = get_option_token_address(
-        lptoken_address=lptoken_address,
-        option_side=option_side,
-        maturity=maturity,
-        strike_price=strike_price
-    );
+    with_attr error_message("mint_option_token failed") {
 
-    // Make sure the contract is the one that user wishes to trade
-    let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    let (contract_strike) = IOptionToken.strike_price(option_token_address);
-    let (contract_maturity) = IOptionToken.maturity(option_token_address);
-    let (contract_option_side) = IOptionToken.side(option_token_address);
-
-    with_attr error_message("Required contract doesn't match the option_type specification.") {
-        assert contract_option_type = option_type;
-    }
-    with_attr error_message("Required contract doesn't match the strike_price specification.") {
-        assert contract_strike = strike_price;
-    }
-    with_attr error_message("Required contract doesn't match the maturity specification.") {
-        assert contract_maturity = maturity;
-    }
-    with_attr error_message("Required contract doesn't match the option_side specification.") {
-        assert contract_option_side = option_side;
-    }
-
-    if (option_side == TRADE_SIDE_LONG) {
-        _mint_option_token_long(
+        let (option_token_address) = get_option_token_address(
             lptoken_address=lptoken_address,
-            option_token_address=option_token_address,
-            option_size=option_size,
-            option_size_in_pool_currency=option_size_in_pool_currency,
-            premia_including_fees=premia_including_fees,
-            option_type=option_type,
+            option_side=option_side,
             maturity=maturity,
-            strike_price=strike_price,
+            strike_price=strike_price
         );
-    } else {
-        _mint_option_token_short(
-            lptoken_address=lptoken_address,
-            option_token_address=option_token_address,
-            option_size=option_size,
-            option_size_in_pool_currency=option_size_in_pool_currency,
-            premia_including_fees=premia_including_fees,
-            option_type=option_type,
-            maturity=maturity,
-            strike_price=strike_price,
-            underlying_price=underlying_price,
-        );
+
+        // Make sure the contract is the one that user wishes to trade
+        let (contract_option_type) = IOptionToken.option_type(option_token_address);
+        let (contract_strike) = IOptionToken.strike_price(option_token_address);
+        let (contract_maturity) = IOptionToken.maturity(option_token_address);
+        let (contract_option_side) = IOptionToken.side(option_token_address);
+
+        with_attr error_message("Required contract doesn't match the option_type specification.") {
+            assert contract_option_type = option_type;
+        }
+        with_attr error_message("Required contract doesn't match the strike_price specification.") {
+            assert contract_strike = strike_price;
+        }
+        with_attr error_message("Required contract doesn't match the maturity specification.") {
+            assert contract_maturity = maturity;
+        }
+        with_attr error_message("Required contract doesn't match the option_side specification.") {
+            assert contract_option_side = option_side;
+        }
+
+        if (option_side == TRADE_SIDE_LONG) {
+            _mint_option_token_long(
+                lptoken_address=lptoken_address,
+                option_token_address=option_token_address,
+                option_size=option_size,
+                option_size_in_pool_currency=option_size_in_pool_currency,
+                premia_including_fees=premia_including_fees,
+                option_type=option_type,
+                maturity=maturity,
+                strike_price=strike_price,
+            );
+        } else {
+            _mint_option_token_short(
+                lptoken_address=lptoken_address,
+                option_token_address=option_token_address,
+                option_size=option_size,
+                option_size_in_pool_currency=option_size_in_pool_currency,
+                premia_including_fees=premia_including_fees,
+                option_type=option_type,
+                maturity=maturity,
+                strike_price=strike_price,
+                underlying_price=underlying_price,
+            );
+        }
     }
 
     return ();
@@ -938,62 +953,86 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 ) {
     alloc_locals;
 
-    let (current_contract_address) = get_contract_address();
-    let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_address.read(lptoken_address);
+    with_attr error_message("_mint_option_token_long failed") {
+        let (current_contract_address) = get_contract_address();
+        let (user_address) = get_caller_address();
+        let (currency_address) = underlying_token_address.read(lptoken_address);
 
-    // Mint tokens
-    let option_size_uint256 = toUint256(option_size, lptoken_address);
-    IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+        with_attr error_message("_mint_option_token_long option_token_address is zero") {
+            assert_not_zero(option_token_address);
+        }
+        with_attr error_message("_mint_option_token_long lptoken_address is zero") {
+            assert_not_zero(lptoken_address);
+        }
+        with_attr error_message("_mint_option_token_long current_contract_address is zero") {
+            assert_not_zero(current_contract_address);
+        }
+        with_attr error_message("_mint_option_token_long user_address is zero") {
+            assert_not_zero(user_address);
+        }
+        with_attr error_message("_mint_option_token_long lptoken_address is zero") {
+            assert_not_zero(lptoken_address);
+        }
+        with_attr error_message("_mint_option_token_long currency_address is zero") {
+            assert_not_zero(currency_address);
+        }
+        with_attr error_message("_mint_option_token_long option_token_address is zero") {
+            assert_not_zero(option_token_address);
+        }
 
-    // Move premia and fees from user to the pool
-    let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
-    IERC20.transferFrom(
-        contract_address=currency_address,
-        sender=user_address,
-        recipient=current_contract_address,
-        amount=premia_including_fees_uint256,
-    );  // Transaction will fail if there is not enough fund on users account
+        // Mint tokens
+        let option_size_uint256 = toUint256(option_size, lptoken_address);
+        IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
-    // Pool is locking in capital inly if there is no previous position to cover the user's long
-    //      -> if pool does not have sufficient long to "pass down to user", it has to lock
-    //           capital... option position has to be updated too!!!
+        // Move premia and fees from user to the pool
+        let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
+        IERC20.transferFrom(
+            contract_address=currency_address,
+            sender=user_address,
+            recipient=current_contract_address,
+            amount=premia_including_fees_uint256,
+        );  // Transaction will fail if there is not enough fund on users account
 
-    // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
-    // since only locked_capital storage_var exists
-    let (current_balance) = lpool_balance.read(lptoken_address);
-    let new_balance = Math64x61.add(current_balance, premia_including_fees);
-    lpool_balance.write(lptoken_address, new_balance);
+        // Pool is locking in capital inly if there is no previous position to cover the user's long
+        //      -> if pool does not have sufficient long to "pass down to user", it has to lock
+        //           capital... option position has to be updated too!!!
 
-    // Update pool's position, lock capital... lpool_balance was already updated above
-    let (current_long_position) = option_position.read(
-        lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
-    );
-    let (current_short_position) = option_position.read(
-        lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
-    );
-    let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
+        // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+        // since only locked_capital storage_var exists
+        let (current_balance) = lpool_balance.read(lptoken_address);
+        let new_balance = Math64x61.add(current_balance, premia_including_fees);
+        lpool_balance.write(lptoken_address, new_balance);
 
-    // Get diffs to update everything
-    let (decrease_long_by) = min(option_size, current_long_position);
-    let increase_short_by = Math64x61.sub(option_size, decrease_long_by);
-    let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
+        // Update pool's position, lock capital... lpool_balance was already updated above
+        let (current_long_position) = option_position.read(
+            lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
+        );
+        let (current_short_position) = option_position.read(
+            lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
+        );
+        let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
 
-    // New state
-    let new_long_position = Math64x61.sub(current_long_position, decrease_long_by);
-    let new_short_position = Math64x61.add(current_short_position, increase_short_by);
-    let new_locked_capital = Math64x61.add(current_locked_balance, increase_locked_by);
+        // Get diffs to update everything
+        let (decrease_long_by) = min(option_size, current_long_position);
+        let increase_short_by = Math64x61.sub(option_size, decrease_long_by);
+        let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
 
-    // Check that there is enough capital to be locked.
-    with_attr error_message("Not enough unlocked capital in pool") {
-        let assert_res = Math64x61.sub(new_balance, new_locked_capital);
-        assert_nn(assert_res); 
+        // New state
+        let new_long_position = Math64x61.sub(current_long_position, decrease_long_by);
+        let new_short_position = Math64x61.add(current_short_position, increase_short_by);
+        let new_locked_capital = Math64x61.add(current_locked_balance, increase_locked_by);
+
+        // Check that there is enough capital to be locked.
+        with_attr error_message("Not enough unlocked capital in pool") {
+            let assert_res = Math64x61.sub(new_balance, new_locked_capital);
+            assert_nn(assert_res);
+        }
+
+        // Update the state
+        option_position.write(lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
+        option_position.write(lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
+        pool_locked_capital.write(lptoken_address, new_locked_capital);
     }
-
-    // Update the state
-    option_position.write(lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
-    option_position.write(lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
-    pool_locked_capital.write(lptoken_address, new_locked_capital);
 
     return ();
 }
@@ -1012,70 +1051,94 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 ) {
     alloc_locals;
 
-    let (current_contract_address) = get_contract_address();
-    let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_address.read(lptoken_address);
+    with_attr error_message("_mint_option_token_short failed") {
+        let (current_contract_address) = get_contract_address();
+        let (user_address) = get_caller_address();
+        let (currency_address) = underlying_token_address.read(lptoken_address);
 
-    // Mint tokens
-    let option_size_uint256 = toUint256(option_size, lptoken_address);
-    IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+        with_attr error_message("_mint_option_token_short option_token_address is zero") {
+            assert_not_zero(option_token_address);
+        }
+        with_attr error_message("_mint_option_token_short lptoken_address is zero") {
+            assert_not_zero(lptoken_address);
+        }
+        with_attr error_message("_mint_option_token_short current_contract_address is zero") {
+            assert_not_zero(current_contract_address);
+        }
+        with_attr error_message("_mint_option_token_short user_address is zero") {
+            assert_not_zero(user_address);
+        }
+        with_attr error_message("_mint_option_token_short lptoken_address is zero") {
+            assert_not_zero(lptoken_address);
+        }
+        with_attr error_message("_mint_option_token_short currency_address is zero") {
+            assert_not_zero(currency_address);
+        }
+        with_attr error_message("_mint_option_token_short option_token_address is zero") {
+            assert_not_zero(option_token_address);
+        }
 
-    let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
+        // Mint tokens
+        let option_size_uint256 = toUint256(option_size, lptoken_address);
+        IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
-    // Move (option_size minus (premia minus fees)) from user to the pool
-    let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, lptoken_address);
-    IERC20.transferFrom(
-        contract_address=currency_address,
-        sender=user_address,
-        recipient=current_contract_address,
-        amount=to_be_paid_by_user_uint256,
-    );
-    
-    // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
-    // since only locked_capital storage_var exists
-    let (current_balance) = lpool_balance.read(lptoken_address);
-    let new_balance = Math64x61.sub(current_balance, premia_including_fees);
-    lpool_balance.write(lptoken_address, new_balance);
+        let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
-    // User is going short, hence user is locking in capital...
-    //      if pool has short position -> unlock pool's capital
-    // pools_position is in terms of base tokens (ETH in case of ETH/USD)...
-    //      in same units is option_size
-    // since user wants to go short, the pool can "sell off" its short... and unlock its capital
+        // Move (option_size minus (premia minus fees)) from user to the pool
+        let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, lptoken_address);
+        IERC20.transferFrom(
+            contract_address=currency_address,
+            sender=user_address,
+            recipient=current_contract_address,
+            amount=to_be_paid_by_user_uint256,
+        );
 
-    // Update pool's short position
-    let (pools_short_position) = option_position.read(
-        lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
-    );
-    let (size_to_be_unlocked_in_base) = min(option_size, pools_short_position);
-    let new_pools_short_position = Math64x61.sub(pools_short_position, size_to_be_unlocked_in_base);
-    option_position.write(
-        lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
-    );
+        // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
+        // since only locked_capital storage_var exists
+        let (current_balance) = lpool_balance.read(lptoken_address);
+        let new_balance = Math64x61.sub(current_balance, premia_including_fees);
+        lpool_balance.write(lptoken_address, new_balance);
 
-    // Update pool's long position
-    let (pools_long_position) = option_position.read(
-        lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
-    );
-    let size_to_increase_long_position = Math64x61.sub(option_size, size_to_be_unlocked_in_base);
-    let new_pools_long_position = Math64x61.add(pools_long_position, size_to_increase_long_position);
-    option_position.write(
-        lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
-    );
+        // User is going short, hence user is locking in capital...
+        //      if pool has short position -> unlock pool's capital
+        // pools_position is in terms of base tokens (ETH in case of ETH/USD)...
+        //      in same units is option_size
+        // since user wants to go short, the pool can "sell off" its short... and unlock its capital
 
-    // Update the locked capital
-    let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(
-        size_to_be_unlocked_in_base, option_type, strike_price
-    );
-    let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
-    let new_locked_balance = Math64x61.sub(current_locked_balance, size_to_be_unlocked);
+        // Update pool's short position
+        let (pools_short_position) = option_position.read(
+            lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
+        );
+        let (size_to_be_unlocked_in_base) = min(option_size, pools_short_position);
+        let new_pools_short_position = Math64x61.sub(pools_short_position, size_to_be_unlocked_in_base);
+        option_position.write(
+            lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
+        );
 
-    with_attr error_message("Not enough capital") {
-        // This will never happen. It is here just as sanity check.
-        assert_nn(new_locked_balance);
+        // Update pool's long position
+        let (pools_long_position) = option_position.read(
+            lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
+        );
+        let size_to_increase_long_position = Math64x61.sub(option_size, size_to_be_unlocked_in_base);
+        let new_pools_long_position = Math64x61.add(pools_long_position, size_to_increase_long_position);
+        option_position.write(
+            lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
+        );
+
+        // Update the locked capital
+        let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(
+            size_to_be_unlocked_in_base, option_type, strike_price
+        );
+        let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
+        let new_locked_balance = Math64x61.sub(current_locked_balance, size_to_be_unlocked);
+
+        with_attr error_message("Not enough capital") {
+            // This will never happen. It is here just as sanity check.
+            assert_nn(new_locked_balance);
+        }
+
+        pool_locked_capital.write(lptoken_address, new_locked_balance);
     }
-       
-    pool_locked_capital.write(lptoken_address, new_locked_balance);
 
     return ();
 }
