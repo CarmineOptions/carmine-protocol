@@ -27,9 +27,9 @@ Code docs will be published soon
 ## Currently deployed contracts on testnet
 
 ```
-MAIN_CONTRACT_ADDRESS=0x031bc941e58ee989d346a3e12b2d367228c6317bb9533821ce7a29d487ae12bc
+MAIN_CONTRACT_ADDRESS=0x042a7d485171a01b8c38b6b37e0092f0f096e9d3f945c50c77799171916f5a54
 # ETH/USD CALL pool
-LPTOKEN_CONTRACT_ADDRESS=0x02733d9218f96aaa5908ec99eff401f5239aa49d8102aae8f4c7f520c5260d5c
+LPTOKEN_CONTRACT_ADDRESS=0x018551e22deb00c3f745e886fdb1f9fcbb15fb297708db4d1c320b5048992d2c
 # ETH/USD PUT pool
 LPTOKEN_CONTRACT_ADDRESS_PUT=0x03f510585d678a03b1a95e20c5b5f13bd0a3dea9e43b0de2b71b81a2e9f1b278
 
@@ -39,11 +39,11 @@ export USD_ADDRESS=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34
 Available options (including expired ones)
 | Side  | Maturity   | Strike  | Quote token address  | Base token address  | Call/Put  | Option token address  |
 |-------|------------|---------|----------------------|---------------------|-----------|-----------------------|
-| Long  | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x304a6f21c609c59201f8f2086e85dcf570edc1379abb01f9a06fd4f7062c42a |
-| Long  | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0xae002dea00cd617a468a3caafa2832124aed60750b921c1e53ebcb5c3acc46 |
-| Short | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x1ff82740cb4a2dfe332e3d1ded3b7fcc1042612cf9d2ae70b0b5ca520c635ea |
-| Short | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x0626ebb9d8be8bf3f113780e39b409ba22edc248f7915d39a1b253c9a7614ec9 |
-| Long  | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x051cc0a93cf22935493a56959c3f34eda20707cb306949e9da390b2b97120332 |
+| Long  | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x038fd226ba98e75c99feb12dcd937ae54035092b4ad394b30a536ff5f6b9ee92 |
+| Long  | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x0338892a69601d673eca64cb5467e69ad2acdbc093627cb45e901375de96587f |
+| Short | 1664992981 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x04b61a721b2e98646d2f62382fef2dd05af0ae5770ea195ea124ce1c89485e44 |
+| Short | 1665511435 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x07bc1ab0f818e751c33a244d9fb1a2f0173228b2e5a3f4295c390fb8426e9ed1 |
+| Long  | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x0397eaae9456321e81db0659350c1a6fba4d8be9ea66554583eb710e2ee99286 |
 | Short | 1669849199 | 1500    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x03385b9a4dc48a8d696c98f11768680b7f57e4e1fc19a0318b4ab676d80f758d |
 | Long  | 1669849199 | 1700    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x06bc44f42f834c6c0e8c5e225a638362bc778152bd451d62cef8379addb11232 |
 | Short | 1669849199 | 1700    | $USD_ADDRESS         | $ETH_ADDRESS        | Call      | 0x02c293cabfbc1c82230e59561678729e6f3d6584c1d35b501f473e8c17133066 |
