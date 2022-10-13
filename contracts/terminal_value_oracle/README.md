@@ -1,6 +1,7 @@
 # Terminal value contract
 
 This contract stores updates of different values, that are updated by keeper bots, who are incetivized to do this based on the reward assigned by the person from requested the updates. 
+Currently only supports rewards in ETH.
 
 Basic Concept:
     - The main contract stored the updates, request and the logic around it. 

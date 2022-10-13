@@ -16,8 +16,7 @@ cairo-path = [
 amm = [
     "./contracts/amm.cairo",
     "./contracts/liquidity_pool.cairo",
-    "./contracts/proxy_utils.cairo",
-    "./contracts/terminal_price.cairo"
+    "./contracts/proxy_utils.cairo"
 ]
 lptoken = [
     "./contracts/lptoken.cairo"
@@ -25,3 +24,8 @@ lptoken = [
 option_token = [
     "./contracts/option_token.cairo"
 ]
+terminal_value_oracle = [
+    "./contracts/terminal_value_oracle/main.cairo",
+    "./contracts/terminal_value_oracle/types_const.cairo"
+]
+
