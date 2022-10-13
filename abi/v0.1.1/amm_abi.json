@@ -1,0 +1,825 @@
+[
+    {
+        "members": [
+            {
+                "name": "option_side",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "offset": 1,
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "offset": 2,
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "offset": 3,
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "offset": 4,
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "offset": 5,
+                "type": "felt"
+            }
+        ],
+        "name": "Option",
+        "size": 6,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "low",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "high",
+                "offset": 1,
+                "type": "felt"
+            }
+        ],
+        "name": "Uint256",
+        "size": 2,
+        "type": "struct"
+    },
+    {
+        "inputs": [
+            {
+                "name": "sigma",
+                "type": "felt"
+            },
+            {
+                "name": "time_till_maturity_annualized",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "underlying_price",
+                "type": "felt"
+            },
+            {
+                "name": "risk_free_rate_annualized",
+                "type": "felt"
+            }
+        ],
+        "name": "black_scholes",
+        "outputs": [
+            {
+                "name": "call_premia",
+                "type": "felt"
+            },
+            {
+                "name": "put_premia",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "key",
+                "type": "felt"
+            }
+        ],
+        "name": "empiric_median_price",
+        "outputs": [
+            {
+                "name": "price",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_available_balance",
+        "outputs": [
+            {
+                "name": "pool_balance",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "is_option_available",
+        "outputs": [
+            {
+                "name": "option_availability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_open",
+        "outputs": [
+            {
+                "name": "premia",
+                "type": "felt"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_close",
+        "outputs": [
+            {
+                "name": "premia",
+                "type": "felt"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_settle",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "data": [
+            {
+                "name": "previousOwner",
+                "type": "felt"
+            },
+            {
+                "name": "newOwner",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_option_position",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_lpool_balance",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_locked_capital",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "order_i",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_options",
+        "outputs": [
+            {
+                "name": "option",
+                "type": "Option"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pools_option_position",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            }
+        ],
+        "name": "get_lptoken_address_for_given_option",
+        "outputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_type",
+        "outputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_volatility",
+        "outputs": [
+            {
+                "name": "pool_volatility",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_underlying_token_address",
+        "outputs": [
+            {
+                "name": "underlying_token_address_",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_unlocked_capital",
+        "outputs": [
+            {
+                "name": "unlocked_capital",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_token_address",
+        "outputs": [
+            {
+                "name": "option_token_address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_value_of_pool_position",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "starting_index",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_options_usable_index",
+        "outputs": [
+            {
+                "name": "usable_index",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_info_from_addresses",
+        "outputs": [
+            {
+                "name": "option",
+                "type": "Option"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "add_lptoken",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_token_address_",
+                "type": "felt"
+            },
+            {
+                "name": "initial_volatility",
+                "type": "felt"
+            }
+        ],
+        "name": "add_option",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "index",
+                "type": "felt"
+            }
+        ],
+        "name": "remove_option",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "pooled_token_addr",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "amount",
+                "type": "Uint256"
+            }
+        ],
+        "name": "deposit_liquidity",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "pooled_token_addr",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lp_token_amount",
+                "type": "Uint256"
+            }
+        ],
+        "name": "withdraw_liquidity",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "expire_option_token_for_pool",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "data": [
+            {
+                "name": "implementation",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "Upgraded",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "previousAdmin",
+                "type": "felt"
+            },
+            {
+                "name": "newAdmin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "AdminChanged",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "proxy_admin",
+                "type": "felt"
+            }
+        ],
+        "name": "initializer",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "new_implementation",
+                "type": "felt"
+            }
+        ],
+        "name": "upgrade",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getAdmin",
+        "outputs": [
+            {
+                "name": "address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "address",
+                "type": "felt"
+            }
+        ],
+        "name": "setAdmin",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getImplementationHash",
+        "outputs": [
+            {
+                "name": "implementation_hash",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
