@@ -29,9 +29,9 @@ Code docs will be published soon
 ```
 MAIN_CONTRACT_ADDRESS=0x042a7d485171a01b8c38b6b37e0092f0f096e9d3f945c50c77799171916f5a54
 # ETH/USD CALL pool
-LPTOKEN_CONTRACT_ADDRESS=0x018551e22deb00c3f745e886fdb1f9fcbb15fb297708db4d1c320b5048992d2c
+LPTOKEN_CONTRACT_ADDRESS=0x03b176f8e5b4c9227b660e49e97f2d9d1756f96e5878420ad4accd301dd0cc17
 # ETH/USD PUT pool
-LPTOKEN_CONTRACT_ADDRESS_PUT=0x018551e22deb00c3f745e886fdb1f9fcbb15fb297708db4d1c320b5048992d2c
+LPTOKEN_CONTRACT_ADDRESS_PUT=0x0030fe5d12635ed696483a824eca301392b3f529e06133b42784750503a24972
 
 export ETH_ADDRESS=0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7  # goerli address
 export USD_ADDRESS=0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426  # goerli address
@@ -133,14 +133,14 @@ Deploy with following arguments
     owner = $MAIN_CONTRACT_ADDRESS
 ```
 
-Deploy
+Deploy (NOTE: DO NOT USE SALT HERE)
 ```
-protostar deploy ./build/lptoken.json  --salt 666 --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS --network alpha-goerli
+protostar deploy ./build/lptoken.json --inputs 111 11 18 0 0 $ACCOUNT_0_ADDRESS $MAIN_CONTRACT_ADDRESS --network alpha-goerli
 ```
 
 Export address of the lptoken
 ```
-export LPTOKEN_CONTRACT_ADDRESS="0x0557ec5b3d56a6abd33e5bd6da166b05cc8d90e61e52d5f5a4f22713dbcb119c"
+export LPTOKEN_CONTRACT_ADDRESS=...
 ```
 
 ### Add lptoken to the AMM

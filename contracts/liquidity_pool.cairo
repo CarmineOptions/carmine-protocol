@@ -228,10 +228,8 @@ func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: Hash
         quote_token_address, base_token_address, option_type
     );
 
-    if (lptoken_addres == 0) {
-        with_attr error_message("Specified pool does not exist"){
-            assert 1 = 0;
-        }
+    with_attr error_message("Specified pool does not exist"){
+        assert_not_zero(lptoken_addres);
     }
 
     return (lptoken_address=lptoken_addres);
@@ -355,8 +353,18 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         option.maturity,
         option.strike_price
     );
+
+    // If option position is 0, the value of given position is zero.
+    if (_option_position == 0) {
+        let (value_of_rest_of_the_pool_) = _get_value_of_pool_position(
+            lptoken_address, index = index + 1
+        );
+        return (res = value_of_rest_of_the_pool_);
+    }
+
     let (current_volatility) = pool_volatility.read(lptoken_address, option.maturity);
     let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+
     let (value_of_option) = _get_value_of_position(
         option,
         _option_position,
@@ -602,6 +610,7 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     if (value_of_pool.low == 0) {
         return (underlying_amt,);
     }
+
     let (lpt_supply) = ILPToken.totalSupply(contract_address=lptoken_address);
     let (quot, rem) = uint256_unsigned_div_rem(lpt_supply, value_of_pool);
     let (to_mint_low, to_mint_high) = uint256_mul(quot, underlying_amt);
@@ -620,6 +629,7 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // Doesn't take into account whether this underlying is actually free to be withdrawn.
 // computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
 // notation used: ... = (a)*my_lpt = b
+@view
 func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     lpt_amt: Uint256
@@ -764,6 +774,8 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) {
     alloc_locals;
 
+    // FIXME: validate that the pooled_token_addr is correct (quote, base and option define the pooled)
+
     with_attr error_message("pooled_token_addr address is zero"){
         assert_not_zero(pooled_token_addr);
     }
@@ -827,21 +839,31 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     // lp_token_amount is in terms of lp tokens, not underlying as deposit_liquidity
 
     alloc_locals;
-    let (caller_addr_) = get_caller_address();
-    local caller_addr = caller_addr_;
-    let (own_addr) = get_contract_address();
 
-    let (lptoken_address: felt) = lptoken_addr_for_given_pooled_token.read(
+    let (caller_addr_) = get_caller_address();
+    with_attr error_message("caller_addr_ is zero"){
+        assert_not_zero(caller_addr_);
+    }
+    local caller_addr = caller_addr_;
+    with_attr error_message("caller_addr is zero"){
+        assert_not_zero(caller_addr);
+    }
+    let (own_addr) = get_contract_address();
+    with_attr error_message("own_addr is zero"){
+        assert_not_zero(own_addr);
+    }
+
+    let (lptoken_address: felt) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
 
     // Get the amount of underlying that corresponds to given amount of lp tokens
-    let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
-    let (lptoken_address) = lptoken_addr_for_given_pooled_token.read(
-        quote_token_address, base_token_address, option_type
-    );
-    let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, lptoken_address);
-    
+
+    with_attr error_message("Failed to calculate underlying"){
+        let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
+        let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, lptoken_address);
+    }
+
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
     ){

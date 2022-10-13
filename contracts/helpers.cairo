@@ -59,7 +59,7 @@ func _get_value_of_position{
 ) -> (position_value: felt){
     // Gets value of position ADJUSTED for fees!!!
 
-    alloc_locals; 
+    alloc_locals;
 
     let side = option.option_side;
     let maturity = option.maturity;
@@ -70,50 +70,63 @@ func _get_value_of_position{
     let option_size = position_size;
 
     // 1) Get price of underlying asset
-    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (underlying_price) = empiric_median_price(empiric_key);
+    with_attr error_message("helpers._get_value_of_position getting undrelying price FAILED"){
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (underlying_price) = empiric_median_price(empiric_key);
+    }
 
     // 2) Calculate new volatility, calculate trade volatility
-    let (_, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
-    );
+    with_attr error_message("helpers._get_value_of_position getting volatility FAILED"){
+        let (_, trade_volatility) = get_new_volatility(
+            current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
+        );
+    }
 
     // 3) Get time till maturity
-    let (time_till_maturity) = get_time_till_maturity(maturity);
+    with_attr error_message("helpers._get_value_of_position getting time_till_maturity FAILED"){
+        let (time_till_maturity) = get_time_till_maturity(maturity);
+    }
 
     // 4) risk free rate
     let risk_free_rate_annualized = RISK_FREE_RATE;
 
     // 5) Get premia
-    // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-    let (call_premia, put_premia) = black_scholes(
-        sigma=trade_volatility,
-        time_till_maturity_annualized=time_till_maturity,
-        strike_price=strike_price,
-        underlying_price=underlying_price,
-        risk_free_rate_annualized=risk_free_rate_annualized,
-    );
-    // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
-    // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
-    // and in quote tokens (USDC in case of ETH/USDC) for put option.
-    let (premia) = select_and_adjust_premia(
-        call_premia, put_premia, option_type, underlying_price
-    );
-    // premia adjusted by size (multiplied by size)
-    let total_premia_before_fees = Math64x61.mul(premia, option_size);
+    with_attr error_message("helpers._get_value_of_position getting premia FAILED"){
+        // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+        let (call_premia, put_premia) = black_scholes(
+            sigma=trade_volatility,
+            time_till_maturity_annualized=time_till_maturity,
+            strike_price=strike_price,
+            underlying_price=underlying_price,
+            risk_free_rate_annualized=risk_free_rate_annualized,
+        );
+    }
+
+    with_attr error_message("helpers._get_value_of_position adjusting premia FAILED"){
+        // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
+        // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
+        // and in quote tokens (USDC in case of ETH/USDC) for put option.
+        let (premia) = select_and_adjust_premia(
+            call_premia, put_premia, option_type, underlying_price
+        );
+        // premia adjusted by size (multiplied by size)
+        let total_premia_before_fees = Math64x61.mul(premia, option_size);
+    }
 
     // 6) Get fees and total premia
-    // fees are already in the currency same as premia
-    // Value of position is calculated as "how much remaining value would holder get if liquidated"
-    // For long the holder's position is valued as "premia - fees", this is similar to closing
-    //      the given position.
-    // For short the holder's position is valued as "locked capital - premia - fees" since it would
-    //      be the remaining capital if closed position
-    let (total_fees) = get_fees(total_premia_before_fees);
-    let (opposite_side) = get_opposite_side(side);
-    let (premia_with_fees) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
-    if (side == TRADE_SIDE_LONG) {
-        return (position_value=premia_with_fees);
+    with_attr error_message("helpers._get_value_of_position getting fees FAILED"){
+        // fees are already in the currency same as premia
+        // Value of position is calculated as "how much remaining value would holder get if liquidated"
+        // For long the holder's position is valued as "premia - fees", this is similar to closing
+        //      the given position.
+        // For short the holder's position is valued as "locked capital - premia - fees" since it would
+        //      be the remaining capital if closed position
+        let (total_fees) = get_fees(total_premia_before_fees);
+        let (opposite_side) = get_opposite_side(side);
+        let (premia_with_fees) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
+        if (side == TRADE_SIDE_LONG) {
+            return (position_value=premia_with_fees);
+        }
     }
 
     if (option_type == OPTION_CALL) {
