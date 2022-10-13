@@ -762,36 +762,55 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     option_type: OptionType,
     amount: Uint256
 ) {
-
     alloc_locals;
+
+    with_attr error_message("pooled_token_addr address is zero"){
+        assert_not_zero(pooled_token_addr);
+    }
+    with_attr error_message("quote_token_address address is zero"){
+        assert_not_zero(quote_token_address);
+    }
+    with_attr error_message("base_token_address address is zero"){
+        assert_not_zero(base_token_address);
+    }
+
     let (caller_addr) = get_caller_address();
     let (own_addr) = get_contract_address();
 
-    let (lptoken_address: felt) = lptoken_addr_for_given_pooled_token.read(
+    with_attr error_message("Caller address is zero"){
+        assert_not_zero(caller_addr);
+    }
+    with_attr error_message("Owner address is zero"){
+        assert_not_zero(own_addr);
+    }
+
+    let (lptoken_address) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
+    with_attr error_message("Failed to transfer token from account to pool"){
+        // Transfer tokens to pool.
+        // We can do this optimistically;
+        // any later exceptions revert the transaction anyway. saves some sanity checks
+        IERC20.transferFrom(
+            contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount
+        );
+    }
 
-    // Transfer tokens to pool.
-    // We can do this optimistically;
-    // any later exceptions revert the transaction anyway. saves some sanity checks
-    IERC20.transferFrom(
-        contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount
-    );
-
-    // Calculates how many lp tokens will be minted for given amount of provided capital.
-    let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount);
-    // Mint LP tokens
-    ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
+    with_attr error_message("Failed to mint lp tokens"){
+        // Calculates how many lp tokens will be minted for given amount of provided capital.
+        let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount);
+        // Mint LP tokens
+        ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
+    }
 
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
-    let (lptoken_address) = lptoken_addr_for_given_pooled_token.read(
-        quote_token_address, base_token_address, option_type
-    );
-    let amount_math64x61 = fromUint256(amount, lptoken_address);
-    let (current_balance) = lpool_balance.read(lptoken_address);
-    let new_pb = Math64x61.add(current_balance, amount_math64x61);
-    lpool_balance.write(lptoken_address, new_pb);
+    with_attr error_message("Failed to update the lpool_balance"){
+        let amount_math64x61 = fromUint256(amount, lptoken_address);
+        let (current_balance) = lpool_balance.read(lptoken_address);
+        let new_pb = Math64x61.add(current_balance, amount_math64x61);
+        lpool_balance.write(lptoken_address, new_pb);
+    }
 
     return ();
 }
