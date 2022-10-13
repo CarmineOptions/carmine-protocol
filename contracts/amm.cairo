@@ -409,13 +409,6 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 
     alloc_locals;
 
-    // Update terminal price
-    update_terminal_ticker(
-        base_token_address,
-        quote_token_address,
-        maturity
-    );  
-
     // lptoken_address serves as an identifier of selected liquidity pool
     let (lptoken_address) = get_lptoken_address_for_given_option(
         quote_token_address,
@@ -487,13 +480,6 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     //      - This is very important is in close_position an opposite side is used
 
     alloc_locals;
-
-    // Update terminal price
-    update_terminal_ticker(
-        base_token_address,
-        quote_token_address,
-        maturity
-    );  
 
     // lptoken_address serves as an identifier of selected liquidity pool
     let (lptoken_address) = get_lptoken_address_for_given_option(
