@@ -21,6 +21,7 @@ from contracts.option_pricing_helpers import (
 from contracts.types import Option
 
 from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.math import assert_nn
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
 from math64x61 import Math64x61
@@ -92,14 +93,20 @@ func _get_value_of_position{
 
     // 5) Get premia
     with_attr error_message("helpers._get_value_of_position getting premia FAILED"){
+        let HUNDRED = Math64x61.fromFelt(100);
+        let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         let (call_premia, put_premia) = black_scholes(
-            sigma=trade_volatility,
+            sigma=sigma,
             time_till_maturity_annualized=time_till_maturity,
             strike_price=strike_price,
             underlying_price=underlying_price,
             risk_free_rate_annualized=risk_free_rate_annualized,
         );
+    }
+    with_attr error_message("helpers._get_value_of_position call/put premia is negative FAILED"){
+        assert_nn(call_premia);
+        assert_nn(put_premia);
     }
 
     with_attr error_message("helpers._get_value_of_position adjusting premia FAILED"){
@@ -112,6 +119,12 @@ func _get_value_of_position{
         // premia adjusted by size (multiplied by size)
         let total_premia_before_fees = Math64x61.mul(premia, option_size);
     }
+    with_attr error_message("helpers._get_value_of_position premia is negative FAILED"){
+        assert_nn(premia);
+    }
+    with_attr error_message("helpers._get_value_of_position total_premia_before_fees is negative FAILED"){
+        assert_nn(total_premia_before_fees);
+    }
 
     // 6) Get fees and total premia
     with_attr error_message("helpers._get_value_of_position getting fees FAILED"){
@@ -122,8 +135,14 @@ func _get_value_of_position{
         // For short the holder's position is valued as "locked capital - premia - fees" since it would
         //      be the remaining capital if closed position
         let (total_fees) = get_fees(total_premia_before_fees);
+        with_attr error_message("helpers._get_value_of_position total_fees is negative FAILED"){
+            assert_nn(total_fees);
+        }
         let (opposite_side) = get_opposite_side(side);
         let (premia_with_fees) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
+        with_attr error_message("helpers._get_value_of_position premia_with_fees is negative FAILED"){
+            assert_nn(premia_with_fees);
+        }
         if (side == TRADE_SIDE_LONG) {
             return (position_value=premia_with_fees);
         }
@@ -133,11 +152,18 @@ func _get_value_of_position{
         let locked_capital = option_size;
         let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
 
+        with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 1 is negative FAILED"){
+            assert_nn(locked_and_premia_with_fees);
+        }
         return (position_value = locked_and_premia_with_fees);
     } else {
 
         let locked_capital = Math64x61.mul(option_size, strike_price);
         let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
+
+        with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 2 is negative FAILED"){
+            assert_nn(locked_and_premia_with_fees);
+        }
 
         return (position_value = locked_and_premia_with_fees);
     }
