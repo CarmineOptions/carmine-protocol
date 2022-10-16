@@ -1,12 +1,19 @@
-# Build and test
 build: contracts/*
 	protostar build
+
 test: contracts/* tests/*.cairo testpy build/ammcontract.cairo
-	~/.protostar/dist/protostar/protostar test ./tests
+	~/.protostar/dist/protostar/protostar test -x ./tests/test_integration.cairo # TODO replace ./tests/test_integration.cairo with ./tests
+
 testpy: tests/*.py
 	#pytest tests/  # TODO FIXME, is broken
-build/ammcontract.cairo: contracts/amm.cairo contracts/liquidity_pool.cairo
+
+
+# Takes basically 0 time compared to protostar, let's steer clear of this potential error src
+.PHONY: build/ammcontract.cairo
+
+build/ammcontract.cairo: contracts/amm.cairo contracts/liquidity_pool.cairo tests/proxy_mock.cairo
 	mkdir -p build
-	cat contracts/amm.cairo contracts/liquidity_pool.cairo contracts/proxy_utils.cairo > build/ammcontract.cairo 
-	sed -i '/%lang starknet/d' build/ammcontract.cairo
-	sed -i '1i %lang starknet' build/ammcontract.cairo
+	cat tests/proxy_mock.cairo contracts/amm.cairo contracts/liquidity_pool.cairo > $@
+	sed -i '/%lang starknet/d' $@
+	sed -i '1i %lang starknet' $@
+#	sed -i '/Proxy./s/^/\/\//g' $@

@@ -5,11 +5,13 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
+from types import Address, OptionType
 
 @contract_interface
 namespace ILiquidityPool {
     // FIXME: we might not need all of the following function...
     // FIXME: and some of them are not external at the moment
+    // There will one day surely be a way to generate contract interfaces
 
     func add_lptoken(
         quote_token_address: felt,
@@ -34,10 +36,22 @@ namespace ILiquidityPool {
     ) {
     }
 
-    func deposit_lp(pooled_token_addr: felt, amt: Uint256) {
+    func deposit_liquidity(
+        pooled_token_addr: Address,
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionType,
+        amount: Uint256
+    ) {
     }
 
-    func withdraw_lp(pooled_token_addr: felt, amt: Uint256) {
+    func withdraw_liquidity(
+        pooled_token_addr: Address,
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionType,
+        lp_token_amount: Uint256
+    ) {
     }
 
     func mint_option_token(
@@ -87,5 +101,8 @@ namespace ILiquidityPool {
     func expire_option_token_for_pool(
         amount: felt, option_type: felt, option_side: felt, strike_price: felt
     ) {
+    }
+
+    func getAdmin(){
     }
 }

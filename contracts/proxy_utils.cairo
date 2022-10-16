@@ -1,6 +1,6 @@
 %lang starknet
 
-from lib.cairo_contracts.src.openzeppelin.upgrades.library import Proxy
+from openzeppelin.upgrades.library import Proxy
 
 // Initializer
 
