@@ -878,7 +878,7 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         contract_address=opt_long_put_addr,
         account=admin_addr
     );
-    assert bal_opt_long_put_tokens_0.low = 1000000;
+    assert bal_opt_long_put_tokens_0.low = 1000000000000000000;
 
     // Test pool_volatility -> 120 put and 100 call
     let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
@@ -1010,25 +1010,25 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     assert put_pool_unlocked_capital_2 = 3659645983229807512265;
 
     // Test balance of option tokens in the account after the option was bought and after withdraw
-    let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
+    let (bal_opt_long_put_tokens_2: Uint256) = ILPToken.balanceOf(
         contract_address=opt_long_put_addr,
         account=admin_addr
     );
-    assert bal_opt_long_put_tokens_0.low = 1000000;
+    assert bal_opt_long_put_tokens_2.low = 1000000000000000000;
 
     // Test pool_volatility -> 142.85714285714286 put and 100 call
-    let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
+    let (call_volatility_2) = ILiquidityPool.get_pool_volatility(
         contract_address=amm_addr,
         lptoken_address=lpt_call_addr,
         maturity=expiry
     );
-    assert call_volatility_1 = 230584300921369395200;
-    let (put_volatility_1) = ILiquidityPool.get_pool_volatility(
+    assert call_volatility_2 = 230584300921369395200;
+    let (put_volatility_2) = ILiquidityPool.get_pool_volatility(
         contract_address=amm_addr,
         lptoken_address=lpt_put_addr,
         maturity=expiry
     );
-    assert put_volatility_1 = 329406144173384850100;
+    assert put_volatility_2 = 329406144173384850100;
 
     // Test option position
     let (opt_long_put_position_2) = ILiquidityPool.get_pools_option_position(
@@ -1076,9 +1076,6 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     );
     assert put_pool_balance_2=7118410497050348440265;
 
-
-
-
     // Test pool_locked_capital
     let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
         contract_address=amm_addr,
@@ -1090,12 +1087,6 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         lptoken_address=lpt_put_addr
     );
     assert put_pool_locked_capital_2=3458764513820540928000;
-
-
-
-
-
-
 
     %{
         # optional, but included for completeness and extensibility
