@@ -1090,7 +1090,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     with_attr error_message("_mint_option_token_long failed") {
         let (current_contract_address) = get_contract_address();
         let (user_address) = get_caller_address();
-        let (currency_address) = underlying_token_address.read(lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
 
         with_attr error_message("_mint_option_token_long option_token_address is zero") {
             assert_not_zero(option_token_address);
@@ -1115,27 +1115,34 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         }
 
         // Mint tokens
-        let option_size_uint256 = toUint256(option_size, lptoken_address);
-        IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+        with_attr error_message("Failed to mint option token in _mint_option_token_long") {
+            let option_size_uint256 = toUint256(option_size, currency_address);
+            IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+        }
 
         // Move premia and fees from user to the pool
-        let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
-        IERC20.transferFrom(
-            contract_address=currency_address,
-            sender=user_address,
-            recipient=current_contract_address,
-            amount=premia_including_fees_uint256,
-        );  // Transaction will fail if there is not enough fund on users account
+        with_attr error_message("Failed to transfer premia and fees _mint_option_token_long") {
+            let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
+            IERC20.transferFrom(
+                contract_address=currency_address,
+                sender=user_address,
+                recipient=current_contract_address,
+                amount=premia_including_fees_uint256,
+            );  // Transaction will fail if there is not enough fund on users account
+        }
 
         // Pool is locking in capital inly if there is no previous position to cover the user's long
         //      -> if pool does not have sufficient long to "pass down to user", it has to lock
         //           capital... option position has to be updated too!!!
 
-        // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
-        // since only locked_capital storage_var exists
-        let (current_balance) = lpool_balance.read(lptoken_address);
-        let new_balance = Math64x61.add(current_balance, premia_including_fees);
-        lpool_balance.write(lptoken_address, new_balance);
+
+        with_attr error_message("Failed to update lpool_balance in _mint_option_token_long") {
+            // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
+            // since only locked_capital storage_var exists
+            let (current_balance) = lpool_balance.read(lptoken_address);
+            let new_balance = Math64x61.add(current_balance, premia_including_fees);
+            lpool_balance.write(lptoken_address, new_balance);
+        }
 
         // Update pool's position, lock capital... lpool_balance was already updated above
         let (current_long_position) = option_position.read(
@@ -1146,15 +1153,19 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         );
         let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
 
-        // Get diffs to update everything
-        let (decrease_long_by) = min(option_size, current_long_position);
-        let increase_short_by = Math64x61.sub(option_size, decrease_long_by);
-        let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
+        with_attr error_message("Failed to convert amount in _mint_option_token_long") {
+            // Get diffs to update everything
+            let (decrease_long_by) = min(option_size, current_long_position);
+            let increase_short_by = Math64x61.sub(option_size, decrease_long_by);
+            let (increase_locked_by) = convert_amount_to_option_currency_from_base(increase_short_by, option_type, strike_price);
+        }
 
-        // New state
-        let new_long_position = Math64x61.sub(current_long_position, decrease_long_by);
-        let new_short_position = Math64x61.add(current_short_position, increase_short_by);
-        let new_locked_capital = Math64x61.add(current_locked_balance, increase_locked_by);
+        with_attr error_message("Failed to calculate new_locked_capital in _mint_option_token_long") {
+            // New state
+            let new_long_position = Math64x61.sub(current_long_position, decrease_long_by);
+            let new_short_position = Math64x61.add(current_short_position, increase_short_by);
+            let new_locked_capital = Math64x61.add(current_locked_balance, increase_locked_by);
+        }
 
         // Check that there is enough capital to be locked.
         with_attr error_message("Not enough unlocked capital in pool") {
@@ -1162,10 +1173,12 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             assert_nn(assert_res);
         }
 
-        // Update the state
-        option_position.write(lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
-        option_position.write(lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
-        pool_locked_capital.write(lptoken_address, new_locked_capital);
+        with_attr error_message("Failed to update pool_locked_capital in _mint_option_token_long") {
+            // Update the state
+            option_position.write(lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
+            option_position.write(lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
+            pool_locked_capital.write(lptoken_address, new_locked_capital);
+        }
     }
 
     return ();
