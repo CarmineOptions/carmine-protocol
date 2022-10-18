@@ -1121,8 +1121,12 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         }
 
         // Move premia and fees from user to the pool
-        with_attr error_message("Failed to transfer premia and fees _mint_option_token_long") {
+        with_attr error_message("Failed to convert premia_including_fees to Uint256 _mint_option_token_long") {
             let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
+        }
+        with_attr error_message(
+            "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}"
+        ) {
             IERC20.transferFrom(
                 contract_address=currency_address,
                 sender=user_address,
@@ -1134,7 +1138,6 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         // Pool is locking in capital inly if there is no previous position to cover the user's long
         //      -> if pool does not have sufficient long to "pass down to user", it has to lock
         //           capital... option position has to be updated too!!!
-
 
         with_attr error_message("Failed to update lpool_balance in _mint_option_token_long") {
             // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
