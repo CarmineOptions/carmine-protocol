@@ -27,13 +27,12 @@ from openzeppelin.access.ownable.library import Ownable
 // Custom conversions from Math64_61 to Uint256 and back
 func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Math64x61_,
-    lptoken_address: Address
+    currency_address: Address
 ) -> Uint256 {
     alloc_locals;
 
-    with_attr error_message("Failed toUint256 with input {x}, {lptoken_address}"){
+    with_attr error_message("Failed toUint256 with input {x}, {currency_address}"){
         // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-        let (currency_address) = get_underlying_token_address(lptoken_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // with_attr error_message("dec to Math64x61 Failed in toUint256"){
@@ -61,15 +60,14 @@ func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
 func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Uint256,
-    lptoken_address: Address
+    currency_address: Address
 ) -> Math64x61_ {
     alloc_locals;
 
     let x_low = x.low;
 
-    with_attr error_message("Failed fromUint256 with input {x_low}, {lptoken_address}"){
+    with_attr error_message("Failed fromUint256 with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-        let (currency_address) = get_underlying_token_address(lptoken_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // let dec = Math64x61.fromFelt(dec_);
@@ -692,12 +690,13 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
     with_attr error_message("Failed to get free_capital in get_lptokens_for_underlying"){
         let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-        let free_capital = toUint256(free_capital_Math64, lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let free_capital = toUint256(free_capital_Math64, currency_address);
     }
 
     with_attr error_message("Failed to value pools position in get_lptokens_for_underlying"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-        let value_of_position = toUint256(value_of_position_Math64, lptoken_address);
+        let value_of_position = toUint256(value_of_position_Math64, currency_address);
     }
 
     with_attr error_message("Failed to get value of pool get_lptokens_for_underlying"){
@@ -755,12 +754,13 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     with_attr error_message(
         "Failed to get free_capital in get_underlying_for_lptokens, {lptoken_address}, {lpt_amt}, {free_capital_Math64}"
     ){
-        let free_capital = toUint256(free_capital_Math64, lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let free_capital = toUint256(free_capital_Math64, currency_address);
     }
 
     with_attr error_message("Failed to get value_of_position in get_underlying_for_lptokens"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-        let value_of_position = toUint256(value_of_position_Math64, lptoken_address);
+        let value_of_position = toUint256(value_of_position_Math64, currency_address);
     }
     
     with_attr error_message("Failed to get total_underlying_amt in get_underlying_for_lptokens"){
@@ -916,8 +916,6 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) {
     alloc_locals;
 
-    // FIXME: validate that the pooled_token_addr is correct (quote, base and option define the pooled)
-
     with_attr error_message("pooled_token_addr address is zero"){
         assert_not_zero(pooled_token_addr);
     }
@@ -972,7 +970,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
     with_attr error_message("Failed to update the lpool_balance"){
-        let amount_math64x61 = fromUint256(amount, lptoken_address);
+        let amount_math64x61 = fromUint256(amount, underlying_token_address);
         let (current_balance) = lpool_balance.read(lptoken_address);
         let new_pb = Math64x61.add(current_balance, amount_math64x61);
         lpool_balance.write(lptoken_address, new_pb);
@@ -1024,11 +1022,12 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         "Failed to calculate underlying, {pooled_token_addr}, {quote_token_address}, {base_token_address}, {option_type}, {lp_token_amount_low}"
     ){
         let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
-        let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, currency_address);
     }
 
     with_attr error_message(
-        "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital"
+        "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital in withdraw_liquidity"
     ){
         let (free_capital) = get_unlocked_capital(lptoken_address);
 
@@ -1167,6 +1166,8 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         let (current_contract_address) = get_contract_address();
         let (user_address) = get_caller_address();
         let (currency_address) = get_underlying_token_address(lptoken_address);
+        let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
+        let base_address = pool_definition.base_token_address;
 
         with_attr error_message("_mint_option_token_long option_token_address is zero") {
             assert_not_zero(option_token_address);
@@ -1186,16 +1187,19 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("_mint_option_token_long currency_address is zero") {
             assert_not_zero(currency_address);
         }
+        with_attr error_message("_mint_option_token_long base_address is zero") {
+            assert_not_zero(base_address);
+        }
 
         // Mint tokens
         with_attr error_message("Failed to mint option token in _mint_option_token_long") {
-            let option_size_uint256 = toUint256(option_size, lptoken_address);
+            let option_size_uint256 = toUint256(option_size, base_address);
             IOptionToken.mint(option_token_address, user_address, option_size_uint256);
         }
 
         // Move premia and fees from user to the pool
         with_attr error_message("Failed to convert premia_including_fees to Uint256 _mint_option_token_long") {
-            let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
+            let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
         }
         with_attr error_message(
             "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}"
@@ -1277,7 +1281,9 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     with_attr error_message("_mint_option_token_short failed") {
         let (current_contract_address) = get_contract_address();
         let (user_address) = get_caller_address();
-        let (currency_address) = underlying_token_address.read(lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
+        let base_address = pool_definition.base_token_address;
 
         with_attr error_message("_mint_option_token_short option_token_address is zero") {
             assert_not_zero(option_token_address);
@@ -1297,15 +1303,18 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         with_attr error_message("_mint_option_token_short currency_address is zero") {
             assert_not_zero(currency_address);
         }
+        with_attr error_message("_mint_option_token_short base_address is zero") {
+            assert_not_zero(base_address);
+        }
 
         // Mint tokens
-        let option_size_uint256 = toUint256(option_size, lptoken_address);
+        let option_size_uint256 = toUint256(option_size, base_address);
         IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
         let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
         // Move (option_size minus (premia minus fees)) from user to the pool
-        let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, lptoken_address);
+        let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, currency_address);
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=user_address,
@@ -1452,13 +1461,15 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_address.read(lptoken_address);
+    let (currency_address) = get_underlying_token_address(lptoken_address);
+    let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let base_address = pool_definition.base_token_address;
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size, lptoken_address);
+    let option_size_uint256 = toUint256(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-    let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
+    let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -1549,15 +1560,17 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
-    let (currency_address) = underlying_token_address.read(lptoken_address);
+    let (currency_address) = get_underlying_token_address(lptoken_address);
+    let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let base_address = pool_definition.base_token_address;
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size, lptoken_address);
+    let option_size_uint256 = toUint256(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
-    let total_user_payment_uint256 = toUint256(total_user_payment, lptoken_address);
+    let total_user_payment_uint256 = toUint256(total_user_payment, currency_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -1727,11 +1740,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (long_value, short_value) = split_option_locked_capital(
         option_type, option_side, option_size, strike_price, terminal_price
     );
-    let long_value_uint256 = toUint256(long_value, lptoken_address);
-    let short_value_uint256 = toUint256(short_value, lptoken_address);
+    let (currency_address) = get_underlying_token_address(lptoken_address);
+    let long_value_uint256 = toUint256(long_value, currency_address);
+    let short_value_uint256 = toUint256(short_value, currency_address);
 
     // Validate that the user is not burning more than he/she has.
-    let option_size_uint256 = toUint256(option_size, lptoken_address);
+    let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let base_address = pool_definition.base_token_address;
+    let option_size_uint256 = toUint256(option_size, base_address);
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         // Match64x61 adn Uint256
