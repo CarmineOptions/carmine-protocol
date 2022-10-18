@@ -1116,13 +1116,13 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
         // Mint tokens
         with_attr error_message("Failed to mint option token in _mint_option_token_long") {
-            let option_size_uint256 = toUint256(option_size, currency_address);
+            let option_size_uint256 = toUint256(option_size, lptoken_address);
             IOptionToken.mint(option_token_address, user_address, option_size_uint256);
         }
 
         // Move premia and fees from user to the pool
         with_attr error_message("Failed to transfer premia and fees _mint_option_token_long") {
-            let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
+            let premia_including_fees_uint256 = toUint256(premia_including_fees, lptoken_address);
             IERC20.transferFrom(
                 contract_address=currency_address,
                 sender=user_address,
