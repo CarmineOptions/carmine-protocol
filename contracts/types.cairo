@@ -16,11 +16,18 @@ using Address = felt;
 
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
+// FIXME: add address of the option here and possibly id of liquidity pool (address of liquidity pool token)
 struct Option {
-    option_side: felt,
-    maturity: felt,
-    strike_price: felt,
-    quote_token_address: felt,
-    base_token_address: felt,
-    option_type: felt,
+    option_side: OptionSide,
+    maturity: Int,
+    strike_price: Math64x61_,
+    quote_token_address: Address,
+    base_token_address: Address,
+    option_type: OptionType,
+}
+
+struct Pool {
+    quote_token_address: Address,
+    base_token_address: Address,
+    option_type: OptionType,
 }

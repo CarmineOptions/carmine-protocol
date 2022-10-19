@@ -122,6 +122,7 @@ func get_decimal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     if (token_address == TOKEN_USD_ADDRESS) {
         return (6,);
     }
+    // FIXME: needs ERC20 intergace
     let (dec) = ILPToken.decimals(token_address);
 
     with_attr error_message("Specified token_address possibly does not exist - decimals=0"){

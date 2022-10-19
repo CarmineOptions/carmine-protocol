@@ -24,19 +24,11 @@ from contracts.constants import (
 )
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
-// from contracts.liquidity_pool import (
-//     get_unlocked_capital,
-//     get_lptoken_addr_for_given_option,
-//     get_option_token_address,
-//     get_option_type,
-//     get_pool_volatility,
-//     mint_option_token,
-//     burn_option_token,
-//     expire_option_token
-// )
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price, get_terminal_price
-from contracts.types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+from contracts.types import (
+    Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option, Pool
+)
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,

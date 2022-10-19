@@ -5,10 +5,6 @@ from constants import get_decimal
 from helpers import max, _get_value_of_position, min
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
-// from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
-
-//  commented out code already imported in amm.cairo
-//  from starkware.cairo.common.cairo_builtins import HashBuiltin
 
 from lib.pow import pow10
 
@@ -26,14 +22,6 @@ from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.access.ownable.library import Ownable
 
-// from contracts.constants import (
-//     OPTION_CALL,
-//     OPTION_PUT,
-//     TRADE_SIDE_LONG,
-//     TRADE_SIDE_SHORT,
-//     get_opposite_side
-// )
-// from contracts.option_pricing_helpers import convert_amount_to_option_currency_from_base
 
 
 // Custom conversions from Math64_61 to Uint256 and back
@@ -107,6 +95,7 @@ func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+// FIXME: rename this to lptoken_address_for_given_pool
 @storage_var
 func lptoken_addr_for_given_pooled_token(
     quote_token_address: Address,
@@ -118,6 +107,12 @@ func lptoken_addr_for_given_pooled_token(
     // Where quote is USDC in case of ETH/USDC, base token is ETH in case of ETH/USDC
     // and option_type is either CALL or PUT (constants.OPTION_CALL or constants.OPTION_PUT).
     // lptoken_address serves throughout the liquidity_pool.cairo as id of the given pool.
+}
+
+
+// This is inverse to lptoken_addr_for_given_pooled_token
+@storage_var
+func pool_definition_from_lptoken_address(lptoken_addres: Address) -> (pool: Pool) {
 }
 
 
@@ -241,7 +236,9 @@ func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, r
 
 
 @view
-func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func get_lptoken_address_for_given_option{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType
@@ -258,6 +255,52 @@ func get_lptoken_address_for_given_option{syscall_ptr: felt*, pedersen_ptr: Hash
     }
 
     return (lptoken_address=lptoken_addres);
+}
+
+
+@view
+func get_pool_definition_from_lptoken_address{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_addres: Address
+) -> (
+    pool: Pool
+) {
+    alloc_locals;
+    let (pool) = pool_definition_from_lptoken_address.read(lptoken_addres);
+
+    with_attr error_message(
+        "Definition of pool (quote address) for lptoken {lptoken_addres} does not exist"
+    ){
+        assert_not_zero(pool.quote_token_address);
+    }
+
+    with_attr error_message(
+        "Definition of pool (base address) for lptoken {lptoken_addres} does not exist"
+    ){
+        assert_not_zero(pool.base_token_address);
+    }
+
+    with_attr error_message(
+        "Definition of pool (option type) for lptoken {lptoken_addres} is not correct"
+    ){
+        assert (pool.option_type - OPTION_CALL) * (pool.option_type - OPTION_PUT) = 0;
+    }
+
+    return (pool=pool);
+}
+
+
+func set_pool_definition_from_lptoken_address{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_addres: Address,
+    pool: Pool,
+) {
+    // will be deleted once we are migrated
+    alloc_locals;
+    pool_definition_from_lptoken_address.write(lptoken_addres, pool);
+    return ();
 }
 
 
@@ -399,6 +442,8 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     //        The option holder (long) would get equivalent to premia and the underwriter (short)
     //        would get the remaining locked capital.
     // Both scaled by the size of position.
+    // option position is measured in base token (ETH in case of ETH/USD) that's why
+    // the fromUint256 uses option.base_token_address
     let (_option_position_dec) = option_position.read(
         lptoken_address,
         option.option_side,
@@ -774,6 +819,14 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     lptoken_addr_for_given_pooled_token.write(
         quote_token_address, base_token_address, option_type, lptoken_address
     );
+
+    let pool = Pool(
+        quote_token_address=quote_token_address,
+        base_token_address=base_token_address,
+        option_type=option_type,
+    );
+    set_pool_definition_from_lptoken_address(lptoken_address, pool);
+
     option_type_.write(lptoken_address, option_type);
     if (option_type == OPTION_CALL) {
         // base tokens (ETH in case of ETH/USDC) for call option
