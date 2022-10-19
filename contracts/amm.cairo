@@ -138,8 +138,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 7) Get premia
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+        let HUNDRED = Math64x61.fromFelt(100);
+        let sigma = Math64x61.div(trade_volatility, HUNDRED);
         let (call_premia, put_premia) = black_scholes(
-            sigma=trade_volatility,
+            sigma=sigma,
             time_till_maturity_annualized=time_till_maturity,
             strike_price=strike_price,
             underlying_price=underlying_price,
@@ -237,8 +239,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 7) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+    let HUNDRED = Math64x61.fromFelt(100);
+    let sigma = Math64x61.div(trade_volatility, HUNDRED);
     let (call_premia, put_premia) = black_scholes(
-        sigma=trade_volatility,
+        sigma=sigma,
         time_till_maturity_annualized=time_till_maturity,
         strike_price=strike_price,
         underlying_price=underlying_price,
