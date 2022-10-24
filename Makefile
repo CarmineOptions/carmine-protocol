@@ -1,14 +1,14 @@
 build: contracts/*
 	protostar build
 
-test: contracts/* tests/*.cairo testpy build/ammcontract.cairo
+test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
 	~/.protostar/dist/protostar/protostar test -x ./tests/test_integration.cairo # TODO replace ./tests/test_integration.cairo with ./tests
 
-testpy: tests/*.py
-	#pytest tests/  # TODO FIXME, is broken
+#testpy: tests/*.py
+#	pytest tests/  # TODO FIXME, is broken
 
 
-# Takes basically 0 time compared to protostar, let's steer clear of this potential error src
+# Takes 0 time relative to protostar, let's steer clear of this potential error src
 .PHONY: build/ammcontract.cairo
 
 build/ammcontract.cairo: contracts/amm.cairo contracts/liquidity_pool.cairo tests/proxy_mock.cairo

@@ -860,6 +860,17 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
+    // Check that the option token being added is the right one
+    // FIXME strike_price, option type, etc from option_token_address
+    // possibly do this when getting rid of Math64x61 in external function inputs
+    let (contract_option_type) = IOptionToken.option_type(option_token_address_);
+    let (contract_strike) = IOptionToken.strike_price(option_token_address_);
+    let (contract_maturity) = IOptionToken.maturity(option_token_address_);
+    let (contract_option_side) = IOptionToken.side(option_token_address_);
+    assert contract_strike = strike_price;
+    assert contract_maturity = maturity;
+    assert contract_option_type = option_type;
+    assert contract_option_side = option_side;
 
     // 2) Update following
     let hundred = Math64x61.fromFelt(100);

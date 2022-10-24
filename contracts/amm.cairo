@@ -111,14 +111,18 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         );
 
         // 2) Get price of underlying asset
-        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-        let (underlying_price) = empiric_median_price(empiric_key);
+        with_attr error_message("do_trade: error while getting current price from Empiric") {
+            let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+            let (underlying_price) = empiric_median_price(empiric_key);
+        }
 
         // 3) Calculate new volatility, calculate trade volatility
+        
         let (current_pool_balance) = get_pool_available_balance(lptoken_address);
         assert_nn_le(1, current_pool_balance);
-        assert_nn_le(option_size_in_pool_currency, current_pool_balance);
-
+        with_attr error_message("not enough assets in pool to fulfill requested trade") {
+            assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+        }
         let (new_volatility, trade_volatility) = get_new_volatility(
             current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
         );
@@ -138,23 +142,25 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 7) Get premia
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-        let HUNDRED = Math64x61.fromFelt(100);
-        let sigma = Math64x61.div(trade_volatility, HUNDRED);
-        let (call_premia, put_premia) = black_scholes(
-            sigma=sigma,
-            time_till_maturity_annualized=time_till_maturity,
-            strike_price=strike_price,
-            underlying_price=underlying_price,
-            risk_free_rate_annualized=risk_free_rate_annualized,
-        );
-        // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
-        // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
-        // and in quote tokens (USDC in case of ETH/USDC) for put option.
-        let (premia) = select_and_adjust_premia(
-            call_premia, put_premia, option_type, underlying_price
-        );
-        // premia adjusted by size (multiplied by size)
-        let total_premia_before_fees = Math64x61.mul(premia, option_size);
+        with_attr error_message("error while calculating premia") {
+            let HUNDRED = Math64x61.fromFelt(100);
+            let sigma = Math64x61.div(trade_volatility, HUNDRED);
+            let (call_premia, put_premia) = black_scholes(
+                sigma=sigma,
+                time_till_maturity_annualized=time_till_maturity,
+                strike_price=strike_price,
+                underlying_price=underlying_price,
+                risk_free_rate_annualized=risk_free_rate_annualized,
+            );
+            // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
+            // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
+            // and in quote tokens (USDC in case of ETH/USDC) for put option.
+            let (premia) = select_and_adjust_premia(
+                call_premia, put_premia, option_type, underlying_price
+            );
+            // premia adjusted by size (multiplied by size)
+            let total_premia_before_fees = Math64x61.mul(premia, option_size);
+        }
 
         // 8) Get fees
         // fees are already in the currency same as premia

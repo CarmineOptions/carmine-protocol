@@ -5,7 +5,7 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
-from types import Address, OptionType
+from types import Address, OptionType, Math64x61_, OptionSide, Int
 
 @contract_interface
 namespace ILiquidityPool {
@@ -19,6 +19,19 @@ namespace ILiquidityPool {
         option_type: felt,
         lptoken_address: felt
     ){
+    }
+
+    func add_option(
+        option_side: OptionSide,
+        maturity: Int,
+        strike_price: Math64x61_,
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionType,
+        lptoken_address: Address,
+        option_token_address_: Address,
+        initial_volatility: Math64x61_
+    ) {
     }
 
     func get_option_token_address(

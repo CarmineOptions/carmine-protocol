@@ -66,6 +66,7 @@ Available options (including expired ones)
 - [Install Protostar](https://docs.swmansion.com/protostar/docs/tutorials/installation)
 - setup a virtualenv, install requirements.txt...
 - `make build`; `make test`
+- nice to have: `echo $'\a'` plays a beep so you know to get back to work
 
 
 ## Alpha version deploy and test on testnet
