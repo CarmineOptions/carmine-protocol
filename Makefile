@@ -2,7 +2,7 @@ build: contracts/*
 	protostar build
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
-	~/.protostar/dist/protostar/protostar test -x ./tests/test_integration.cairo # TODO replace ./tests/test_integration.cairo with ./tests
+	~/.protostar/dist/protostar/protostar test -x ./tests/
 
 #testpy: tests/*.py
 #	pytest tests/  # TODO FIXME, is broken
