@@ -1,7 +1,7 @@
 [submodule "cairo_contracts"]
 	url = https://github.com/OpenZeppelin/cairo-contracts
 	path = lib/cairo_contracts
-	branch = refs/heads/v0.4.0b
+	branch = release-v0.5.0
 [submodule "cairo_math_64x61"]
 	url = https://github.com/influenceth/cairo-math-64x61/
 	path = lib/cairo_math_64x61
