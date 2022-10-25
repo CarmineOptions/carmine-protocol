@@ -195,7 +195,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia = 21775094824837850; // approx 0.009 ETH, approximately 12 USD at fixed prices, checks out, maybe a bit too high?
+    assert premia = 21776155677594244; // approx 0.009 ETH, approximately 12 USD at fixed prices, checks out, maybe a bit too high?
 
     %{
         # optional, but included for completeness and extensibility
