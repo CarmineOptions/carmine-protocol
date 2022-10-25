@@ -148,9 +148,6 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
     let (bal_usd_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_put_addr, account=admin_addr);
     assert bal_usd_lpt.low = 5000000000;
 
-    // Add option
-    // FIXME: add opt_short_call, opt_long_put, opt_short_put
-
     let hundred_m64x61 = Math64x61.fromFelt(100);
     // Add long call option
     ILiquidityPool.add_option(
@@ -873,4 +870,3 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     %}
     return ();
 }
-
