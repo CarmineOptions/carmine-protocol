@@ -444,14 +444,15 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // Both scaled by the size of position.
     // option position is measured in base token (ETH in case of ETH/USD) that's why
     // the fromUint256 uses option.base_token_address
-    let (_option_position_dec) = option_position.read(
+    // let (_option_position_dec) = option_position.read(
+    let (_option_position) = option_position.read(
         lptoken_address,
         option.option_side,
         option.maturity,
         option.strike_price
     );
-    let _option_position_uint256 = Uint256(low=_option_position_dec, high=0);
-    let _option_position = fromUint256(_option_position_uint256, lptoken_address);
+    // let _option_position_uint256 = Uint256(low=_option_position_dec, high=0);
+    // let _option_position = fromUint256(_option_position_uint256, option.base_token_address);
 
     // If option position is 0, the value of given position is zero.
     if (_option_position == 0) {
