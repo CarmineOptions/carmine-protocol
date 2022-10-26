@@ -1,6 +1,6 @@
 %lang starknet
 
-from types import Address, OptionType, Math64x61_, OptionSide, Int
+from types import Address, OptionType, Math64x61_, OptionSide, Int, Option
 from starkware.cairo.common.uint256 import Uint256
 
 @contract_interface
@@ -56,5 +56,28 @@ namespace IAMM {
     func get_unlocked_capital(
         lptoken_address: Address
     ) -> (unlocked_capital: Math64x61_) {
+    }
+
+    func get_pools_option_position(
+        lptoken_address: Address,
+        option_side: OptionSide,
+        maturity: Int,
+        strike_price: Math64x61_
+    ) -> (res: Math64x61_) {
+    }
+
+    func get_pool_volatility(
+        lptoken_address: Address,
+        maturity: Int
+    ) -> (pool_volatility: Math64x61_) {
+    }
+
+    func get_value_of_position(
+        option: Option,
+        position_size: felt,
+        option_type: felt,
+        current_volatility: felt,
+        current_pool_balance: felt
+    ) -> (position_value: felt){
     }
 }
