@@ -285,7 +285,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
     alloc_locals;
 
     // 12 hours after listing, 12 hours before expir
-    %{ warp(1000000000 + 60*60*12) %}
+    %{ warp(1000000000 + 60*60*12, target_contract_address = context.amm_addr) %}
 
     tempvar lpt_call_addr;
     tempvar opt_long_call_addr;
@@ -327,7 +327,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia = 2302181041487099698; // approx 0.0046 ETH, which is cca .2% of the option size
+    assert premia = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD 
 
     %{
         # optional, but included for completeness and extensibility
