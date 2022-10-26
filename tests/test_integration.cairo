@@ -150,7 +150,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
     // Add option
     // FIXME: add opt_short_call, opt_long_put, opt_short_put
 
-    let one_m64x61 = Math64x61.fromFelt(1);
+    let hundred_m64x61 = Math64x61.fromFelt(100);
     // Add long call option
     ILiquidityPool.add_option(
         contract_address=amm_addr,
@@ -162,7 +162,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
         option_type=optype_call,
         lptoken_address=lpt_call_addr,
         option_token_address_=opt_long_call_addr,
-        initial_volatility=one_m64x61
+        initial_volatility=hundred_m64x61
     );
     // Add short call option
     ILiquidityPool.add_option(
@@ -175,7 +175,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
         option_type=optype_call,
         lptoken_address=lpt_call_addr,
         option_token_address_=opt_short_call_addr,
-        initial_volatility=one_m64x61
+        initial_volatility=hundred_m64x61
     );
     // Add long put option
     ILiquidityPool.add_option(
@@ -188,7 +188,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
         option_type=optype_put,
         lptoken_address=lpt_put_addr,
         option_token_address_=opt_long_put_addr,
-        initial_volatility=one_m64x61
+        initial_volatility=hundred_m64x61
     );
     // Add short put option
     ILiquidityPool.add_option(
@@ -201,7 +201,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
         option_type=optype_put,
         lptoken_address=lpt_put_addr,
         option_token_address_=opt_short_put_addr,
-        initial_volatility=one_m64x61
+        initial_volatility=hundred_m64x61
     );
 
     %{
@@ -327,7 +327,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia = 10643675488399466; // approx 0.0046 ETH, which is cca .2% of the option size
+    assert premia = 2302181041487099698; // approx 0.0046 ETH, which is cca .2% of the option size
 
     %{
         # optional, but included for completeness and extensibility
