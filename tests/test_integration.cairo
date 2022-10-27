@@ -317,7 +317,8 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         )
     %}
 
-    let (premia: Math64x61_) = IAMM.trade_open(
+    // First trade, LONG CALL
+    let (premia_long_call: Math64x61_) = IAMM.trade_open(
         contract_address=amm_addr,
         option_type=0,
         strike_price=strike_price,
@@ -328,8 +329,49 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD 
+    assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD 
 
+    // Second trade, LONG SHORT
+    let (premia_short_call: Math64x61_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=0,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=1,
+        option_size=one,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
+                                                 // with previous trade
+    // Second trade, PUT LONG
+    let (premia_long_put: Math64x61_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=0,
+        option_size=one,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    assert premia_long_put = 234358511333947912200;
+    
+    // Second trade, PUT SHORT
+    let (premia_short_put: Math64x61_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=1,
+        option_size=one,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    assert premia_short_put = 234361181603085723100;
     %{
         # optional, but included for completeness and extensibility
         stop_prank_amm()
