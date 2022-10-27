@@ -132,7 +132,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         option_size, option_type, underlying_price
     );
 
-    let relative_option_size = Math64x61.div(option_size, current_pool_balance);
+    let relative_option_size = Math64x61.div(option_size_in_pool_currency, current_pool_balance);
 
     // alpha – rate of change assumed to be 1
     let (denominator) = _get_vol_update_denominator(relative_option_size, side);
