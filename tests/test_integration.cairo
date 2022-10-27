@@ -439,12 +439,8 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 }
 
 
-
 @external
 func test_minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-    // quite a lot of asserts here are done as ranges, because of some numbers being dependent
-    // on the how fast the machine running tests is
-
     // test
     // -> buy call option
     // -> withdraw half of the liquidity that was originally deposited from call pool
@@ -632,8 +628,207 @@ func test_minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     %{
         # optional, but included for completeness and extensibility
         stop_prank_amm()
-        # stop_mock_oracle_2()
+        stop_mock_oracle_2()
         stop_warp_1()
     %}
     return ();
 }
+
+
+@external
+func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    // test
+    // -> buy put option
+    // -> withdraw half of the liquidity that was originally deposited from put pool
+    alloc_locals;
+
+    tempvar lpt_call_addr;
+    tempvar lpt_put_addr;
+    tempvar amm_addr;
+    tempvar myusd_addr;
+    tempvar myeth_addr;
+    tempvar admin_addr;
+    tempvar expiry;
+    tempvar opt_long_put_addr;
+    %{
+        ids.lpt_call_addr = context.lpt_call_addr
+        ids.lpt_put_addr = context.lpt_put_addr
+        ids.amm_addr = context.amm_addr
+        ids.myusd_addr = context.myusd_address
+        ids.myeth_addr = context.myeth_address
+        ids.admin_addr = context.admin_address
+        ids.expiry = context.expiry_0
+        ids.opt_long_put_addr = context.opt_long_put_addr_0
+    %}
+
+    %{
+        stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+        stop_mock_oracle_1 = mock_call(
+            ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+        )
+    %}
+
+    // Test initial balance of lp tokens in the account
+    let (bal_eth_lpt_0: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_call_addr,
+        account=admin_addr
+    );
+    assert bal_eth_lpt_0.low = 5000000000000000000;
+
+    let (bal_usd_lpt_0: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_put_addr,
+        account=admin_addr
+    );
+    assert bal_usd_lpt_0.low = 5000000000;
+
+    // Test unlocked capital in the pools
+    let (call_pool_unlocked_capital_0) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_unlocked_capital_0 = 11529215046068469760;
+
+    let (put_pool_unlocked_capital_0) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_unlocked_capital_0 = 11529215046068469760000;
+
+    // Test initial balance of option tokens in the account
+    let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
+        contract_address=opt_long_put_addr,
+        account=admin_addr
+    );
+    assert bal_opt_long_put_tokens_0.low = 0;
+
+    ///////////////////////////////////////////////////
+    // BUY THE PUT OPTION
+
+    %{ stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr) %}
+
+    let strike_price = Math64x61.fromFelt(1500);
+    let one = Math64x61.fromFelt(1);
+
+    let (premia: Math64x61_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=0,
+        option_size=one,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    assert premia = 234358511333947912200; // approx 101.63680285149401 USD...
+    // notice difference in comparison to CALL premia... this is caused by different trade volatility
+    // which is caused by different relative size of the option size (here 1ETH->1400USD against 5000USD pool)
+
+    // Test balance of lp tokens in the account after the option was bought
+    let (bal_eth_lpt_1: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_call_addr,
+        account=admin_addr
+    );
+    assert bal_eth_lpt_1.low = 5000000000000000000;
+
+    let (bal_usd_lpt_1: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_put_addr,
+        account=admin_addr
+    );
+    assert bal_usd_lpt_1.low = 5000000000;
+
+    // Test unlocked capital in the pools after the option was bought
+    let (call_pool_unlocked_capital_1) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_unlocked_capital_1 = 11529215046068469760;
+
+    let (put_pool_unlocked_capital_1) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    // size of the unlocked pool is 5kUSD (original) - 1ETH(=1500USD -> locked by the trade) + premium + 0.03*premium
+    // 0.03 because of 3% fees calculated from premium
+    assert put_pool_unlocked_capital_1 = 8311839798921895181509;
+
+    // Test balance of option tokens in the account after the option was bought
+    let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
+        contract_address=opt_long_put_addr,
+        account=admin_addr
+    );
+    assert bal_opt_long_put_tokens_0.low = 1000000;
+
+    ///////////////////////////////////////////////////
+    // UPDATE THE ORACLE PRICE
+
+    %{
+        stop_mock_oracle_1()
+        stop_mock_oracle_2 = mock_call(
+            ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
+        )
+    %}
+
+    ///////////////////////////////////////////////////
+    // WITHDRAW CAPITAL - WITHDRAW 40% of lp tokens
+    let two_thousand_usd = Uint256(low = 2000000000, high = 0);
+    IAMM.withdraw_liquidity(
+        contract_address=amm_addr,
+        pooled_token_addr=myusd_addr,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr,
+        option_type=1,
+        lp_token_amount=two_thousand_usd
+    );
+
+    // Test balance of lp tokens in the account after the option was bought and after withdraw
+    let (bal_eth_lpt_2: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_call_addr,
+        account=admin_addr
+    );
+    assert bal_eth_lpt_2.low = 5000000000000000000;
+
+    let (bal_usd_lpt_2: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_put_addr,
+        account=admin_addr
+    );
+    assert bal_usd_lpt_2.low = 3000000000;
+
+    // Test unlocked capital in the pools after the option was bought and after withdraw
+    let (call_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_unlocked_capital_2 = 11529215046068469760;
+
+    // 3658935441669791923833 translates to 1586.8103019370387 (because 3658935441669791923833 / 2**61)
+    // before the withdraw there was 3604.685906937039 of unlocked capital
+    // the withdraw meant that 40% of the value of pool was withdrawn
+    //      which is 3604.685906937039 of unlocked capital plus remaining capital from short option
+    //      where the remaining of short is (locked capital - premia of long option)... adjusted for fees
+    //      the value of long was 40.00310556296108 (NOT CHECKED !!! -> JUST BY EYE)
+    // So the value of pool was 3604.685906937039 + 1400 - 40.00310556296108 = 5044.6890125
+    // Withdrawed 40% -> 2017.875605 from unlocked capital
+    // Remaining unlocked capital is 3604.685906937039 - 2017.875605 = 1586.810301937039
+    let (put_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_unlocked_capital_2 = 3658935441669791923833;
+
+    // Test balance of option tokens in the account after the option was bought and after withdraw
+    let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
+        contract_address=opt_long_put_addr,
+        account=admin_addr
+    );
+    assert bal_opt_long_put_tokens_0.low = 1000000;
+
+    %{
+        # optional, but included for completeness and extensibility
+        stop_prank_amm()
+        stop_mock_oracle_2()
+        stop_warp_1()
+    %}
+    return ();
+}
+
