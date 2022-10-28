@@ -40,6 +40,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
     tempvar side_short;
     tempvar optype_call;
     tempvar optype_put;
+
     let strike_price = Math64x61.fromFelt(1500);
 
     %{
@@ -354,7 +355,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia_long_put = 234358511333947912200;
+    assert premia_long_put = 234655350073966452800;
     
     // Second trade, PUT SHORT
     let (premia_short_put: Math64x61_) = IAMM.trade_open(
@@ -368,7 +369,7 @@ func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
         base_token_address=myeth_addr
     );
 
-    assert premia_short_put = 234361181603085723100;
+    assert premia_short_put = 234722763583872553300;
     %{
         # optional, but included for completeness and extensibility
         stop_prank_amm()
@@ -689,6 +690,12 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     tempvar admin_addr;
     tempvar expiry;
     tempvar opt_long_put_addr;
+    tempvar opt_short_put_addr;
+    tempvar opt_long_call_addr;
+    tempvar opt_short_call_addr;
+
+    let strike_price = Math64x61.fromFelt(1500);
+
     %{
         ids.lpt_call_addr = context.lpt_call_addr
         ids.lpt_put_addr = context.lpt_put_addr
@@ -698,6 +705,9 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         ids.admin_addr = context.admin_address
         ids.expiry = context.expiry_0
         ids.opt_long_put_addr = context.opt_long_put_addr_0
+        ids.opt_short_put_addr = context.opt_short_put_addr_0
+        ids.opt_long_call_addr = context.opt_long_call_addr_0
+        ids.opt_short_call_addr = context.opt_short_call_addr_0
     %}
 
     %{
@@ -740,6 +750,78 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     );
     assert bal_opt_long_put_tokens_0.low = 0;
 
+    // Test pool_volatility -> 100
+    let (call_volatility_0) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        maturity=expiry
+    );
+    assert call_volatility_0 = 230584300921369395200;
+    let (put_volatility_0) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        maturity=expiry
+    );
+    assert put_volatility_0 = 230584300921369395200;
+
+    // Test option position
+    let (opt_long_put_position_0) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_put_position_0 = 0;
+    let (opt_short_put_position_0) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_put_position_0 = 0;
+    let (opt_long_call_position_0) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_call_position_0 = 0;
+    let (opt_short_call_position_0) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_call_position_0 = 0;
+
+    // Test lpool_balance
+    let (call_pool_balance_0) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_balance_0=11529215046068469760;
+    let (put_pool_balance_0) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_balance_0=11529215046068469760000;
+
+    // Test pool_locked_capital
+    let (call_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_locked_capital_0=0;
+    let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_locked_capital_0=0;
+
     ///////////////////////////////////////////////////
     // BUY THE PUT OPTION
 
@@ -759,7 +841,7 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         base_token_address=myeth_addr
     );
 
-    assert premia = 234358511333947912200; // approx 101.63680285149401 USD...
+    assert premia = 234655350073966452800; // approx 101.7655361342164 USD...
     // notice difference in comparison to CALL premia... this is caused by different trade volatility
     // which is caused by different relative size of the option size (here 1ETH->1400USD against 5000USD pool)
 
@@ -789,7 +871,7 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     );
     // size of the unlocked pool is 5kUSD (original) - 1ETH(=1500USD -> locked by the trade) + premium + 0.03*premium
     // 0.03 because of 3% fees calculated from premium
-    assert put_pool_unlocked_capital_1 = 8311839798921895181509;
+    assert put_pool_unlocked_capital_1 = 8312145542824114278327;
 
     // Test balance of option tokens in the account after the option was bought
     let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
@@ -797,6 +879,78 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         account=admin_addr
     );
     assert bal_opt_long_put_tokens_0.low = 1000000;
+
+    // Test pool_volatility -> 120 put and 100 call
+    let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        maturity=expiry
+    );
+    assert call_volatility_1 = 230584300921369395200;
+    let (put_volatility_1) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        maturity=expiry
+    );
+    assert put_volatility_1 = 329406144173384850100;
+
+    // Test option position
+    let (opt_long_put_position_1) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_put_position_1 = 0;
+    let (opt_short_put_position_1) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_put_position_1 = 2305843009213693952;
+    let (opt_long_call_position_1) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_call_position_1 = 0;
+    let (opt_short_call_position_1) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_call_position_1 = 0;
+
+    // Test lpool_balance
+    let (call_pool_balance_1) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_balance_1=11529215046068469760;
+    let (put_pool_balance_1) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_balance_1=11770910056644655206327;
+
+    // Test pool_locked_capital
+    let (call_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_locked_capital_1=0;
+    let (put_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_locked_capital_1=3458764513820540928000;
 
     ///////////////////////////////////////////////////
     // UPDATE THE ORACLE PRICE
@@ -853,7 +1007,7 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         contract_address=amm_addr,
         lptoken_address=lpt_put_addr
     );
-    assert put_pool_unlocked_capital_2 = 3658935441669791923833;
+    assert put_pool_unlocked_capital_2 = 3659645983229807512265;
 
     // Test balance of option tokens in the account after the option was bought and after withdraw
     let (bal_opt_long_put_tokens_0: Uint256) = ILPToken.balanceOf(
@@ -861,6 +1015,87 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         account=admin_addr
     );
     assert bal_opt_long_put_tokens_0.low = 1000000;
+
+    // Test pool_volatility -> 142.85714285714286 put and 100 call
+    let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        maturity=expiry
+    );
+    assert call_volatility_1 = 230584300921369395200;
+    let (put_volatility_1) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        maturity=expiry
+    );
+    assert put_volatility_1 = 329406144173384850100;
+
+    // Test option position
+    let (opt_long_put_position_2) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_put_position_2 = 0;
+    let (opt_short_put_position_2) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_put_position_2 = 2305843009213693952;
+    let (opt_long_call_position_2) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_call_position_2 = 0;
+    let (opt_short_call_position_2) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_call_position_2 = 0;
+
+    // Test lpool_balance
+    let (call_pool_balance_2) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_balance_2=11529215046068469760;
+    let (put_pool_balance_2) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_balance_2=7118410497050348440265;
+
+
+
+
+    // Test pool_locked_capital
+    let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_locked_capital_2=0;
+    let (put_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_locked_capital_2=3458764513820540928000;
+
+
+
+
+
+
 
     %{
         # optional, but included for completeness and extensibility
