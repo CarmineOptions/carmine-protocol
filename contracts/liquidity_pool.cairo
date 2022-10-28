@@ -27,13 +27,13 @@ from openzeppelin.access.ownable.library import Ownable
 // Custom conversions from Math64_61 to Uint256 and back
 func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Math64x61_,
-    lptoken_address: Address
+    currency_address: Address
 ) -> Uint256 {
     alloc_locals;
 
-    with_attr error_message("Failed toUint256 with input {x}, {lptoken_address}"){
+    with_attr error_message("Failed toUint256 with input {x}, {currency_address}"){
         // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let (currency_address) = get_underlying_token_address(currency_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // with_attr error_message("dec to Math64x61 Failed in toUint256"){
@@ -61,15 +61,15 @@ func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
 func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Uint256,
-    lptoken_address: Address
+    currency_address: Address
 ) -> Math64x61_ {
     alloc_locals;
 
     let x_low = x.low;
 
-    with_attr error_message("Failed fromUint256 with input {x_low}, {lptoken_address}"){
+    with_attr error_message("Failed fromUint256 with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-        let (currency_address) = get_underlying_token_address(lptoken_address);
+        let (currency_address) = get_underlying_token_address(currency_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // let dec = Math64x61.fromFelt(dec_);
@@ -952,6 +952,16 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (lptoken_address) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
+
+    // Test the pooled_token_addr corresponds to the underlying token address of the pool,
+    // that is defined by the quote_token_address, base_token_address and option_type
+    with_attr error_message(
+        "pooled_token_addr does not match the selected pool underlying token address deposit_liquidity"
+    ){
+        let (underlying_token_address) = get_underlying_token_address(lptoken_address);
+        assert underlying_token_address = pooled_token_addr;
+    }
+
     with_attr error_message("Failed to transfer token from account to pool"){
         // Transfer tokens to pool.
         // We can do this optimistically;
@@ -996,21 +1006,27 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     alloc_locals;
 
     let (caller_addr_) = get_caller_address();
-    with_attr error_message("caller_addr_ is zero"){
-        assert_not_zero(caller_addr_);
-    }
     local caller_addr = caller_addr_;
-    with_attr error_message("caller_addr is zero"){
+    with_attr error_message("caller_addr is zero in withdraw_liquidity"){
         assert_not_zero(caller_addr);
     }
     let (own_addr) = get_contract_address();
-    with_attr error_message("own_addr is zero"){
+    with_attr error_message("own_addr is zero in withdraw_liquidity"){
         assert_not_zero(own_addr);
     }
 
     let (lptoken_address: felt) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
+
+    // Test the pooled_token_addr corresponds to the underlying token address of the pool,
+    // that is defined by the quote_token_address, base_token_address and option_type
+    with_attr error_message(
+        "pooled_token_addr does not match the selected pool underlying token address withdraw_liquidity"
+    ){
+        let (underlying_token_address) = get_underlying_token_address(lptoken_address);
+        assert underlying_token_address = pooled_token_addr;
+    }
 
     // Get the amount of underlying that corresponds to given amount of lp tokens
 
@@ -1032,24 +1048,30 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         assert_nn(assert_res);
     }
 
-    // Transfer underlying (base or quote depending on call/put)
-    // We can do this transfer optimistically;
-    // any later exceptions revert the transaction anyway. saves some sanity checks
-    IERC20.transfer(
-        contract_address=pooled_token_addr,
-        recipient=caller_addr,
-        amount=underlying_amount_uint256
-    );
+    with_attr error_message("Failed to transfer token from pool to account in withdraw_liquidity"){
+        // Transfer underlying (base or quote depending on call/put)
+        // We can do this transfer optimistically;
+        // any later exceptions revert the transaction anyway. saves some sanity checks
+        IERC20.transfer(
+            contract_address=pooled_token_addr,
+            recipient=caller_addr,
+            amount=underlying_amount_uint256
+        );
+    }
 
-    // Burn LP tokens
-    ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
+    with_attr error_message("Failed to burn lp token in withdraw_liquidity"){
+        // Burn LP tokens
+        ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
+    }
 
-    // Update that the capital in the pool (including the locked capital).
-    let (current_balance: Math64x61_) = lpool_balance.read(lptoken_address);
-    let new_pb = Math64x61.sub(current_balance, underlying_amount_Math64);
+    with_attr error_message("Failed to write new lpool_balance in withdraw_liquidity"){
+        // Update that the capital in the pool (including the locked capital).
+        let (current_balance: Math64x61_) = lpool_balance.read(lptoken_address);
+        let new_pb = Math64x61.sub(current_balance, underlying_amount_Math64);
 
-    // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
-    lpool_balance.write(lptoken_address, new_pb);
+        // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
+        lpool_balance.write(lptoken_address, new_pb);
+    }
 
     return ();
 }
@@ -1175,9 +1197,6 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("_mint_option_token_long currency_address is zero") {
             assert_not_zero(currency_address);
         }
-        with_attr error_message("_mint_option_token_long option_token_address is zero") {
-            assert_not_zero(option_token_address);
-        }
 
         // Mint tokens
         with_attr error_message("Failed to mint option token in _mint_option_token_long") {
@@ -1288,9 +1307,6 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         }
         with_attr error_message("_mint_option_token_short currency_address is zero") {
             assert_not_zero(currency_address);
-        }
-        with_attr error_message("_mint_option_token_short option_token_address is zero") {
-            assert_not_zero(option_token_address);
         }
 
         // Mint tokens
