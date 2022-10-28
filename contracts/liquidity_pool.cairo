@@ -27,13 +27,13 @@ from openzeppelin.access.ownable.library import Ownable
 // Custom conversions from Math64_61 to Uint256 and back
 func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Math64x61_,
-    currency_address: Address
+    lptoken_address: Address
 ) -> Uint256 {
     alloc_locals;
 
-    with_attr error_message("Failed toUint256 with input {x}, {currency_address}"){
+    with_attr error_message("Failed toUint256 with input {x}, {lptoken_address}"){
         // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-        let (currency_address) = get_underlying_token_address(currency_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // with_attr error_message("dec to Math64x61 Failed in toUint256"){
@@ -61,15 +61,15 @@ func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
 func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Uint256,
-    currency_address: Address
+    lptoken_address: Address
 ) -> Math64x61_ {
     alloc_locals;
 
     let x_low = x.low;
 
-    with_attr error_message("Failed fromUint256 with input {x_low}, {currency_address}"){
+    with_attr error_message("Failed fromUint256 with input {x_low}, {lptoken_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-        let (currency_address) = get_underlying_token_address(currency_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
         let (decimal) = get_decimal(currency_address);
         let (dec_) = pow10(decimal);
         // let dec = Math64x61.fromFelt(dec_);
