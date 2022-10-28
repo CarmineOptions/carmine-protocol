@@ -118,4 +118,27 @@ namespace ILiquidityPool {
 
     func getAdmin(){
     }
+
+    func get_lpool_balance(lptoken_address: Address) -> (
+        res: Math64x61_
+    ) {
+    }
+
+    func get_pool_locked_capital(lptoken_address: Address) -> (
+        res: Math64x61_
+    ) {
+    }
+
+    func get_pool_volatility(lptoken_address: Address, maturity: Int) -> (
+        pool_volatility: Math64x61_
+    ) {
+    }
+
+    func get_pools_option_position(
+        lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+    ) -> (
+        res: Math64x61_
+    ) {
+    }
+
 }
