@@ -184,15 +184,6 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 
 
 @view
-func get_pool_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (res: Math64x61_) {
-    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    return (position,);
-}
-
-
-@view
 func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (res: Math64x61_) {
@@ -228,8 +219,6 @@ func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, r
 ) -> (
     res: Math64x61_
 ) {
-    //FIXME duplicate
-    alloc_locals;
     let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
     return (position,);
 }
