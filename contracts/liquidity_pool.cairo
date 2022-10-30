@@ -8,6 +8,7 @@ from interface_option_token import IOptionToken
 
 from lib.pow import pow10
 
+from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import abs_value, assert_not_zero, signed_div_rem
 from starkware.cairo.common.math_cmp import is_nn//, is_le
 from starkware.cairo.common.uint256 import (
@@ -208,6 +209,33 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     alloc_locals;
     let (option) = available_options.read(lptoken_address, order_i);
     return (option,);
+}
+
+@view
+func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (
+    array_len : felt,
+    array : felt*
+) {
+    alloc_locals;
+    let (array : Option*) = alloc();
+    let array_len = save_option_to_array(lptoken_address, 0, array);
+    return (array_len, array);
+}
+
+func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    array_len_so_far : felt,
+    array : Option*
+) -> felt {
+    let (option) = available_options.read(lptoken_address, array_len_so_far);
+    if (option.quote_token_address == 0 and option.base_token_address == 0) {
+        return array_len_so_far;
+    }
+    
+    assert [array] = option;
+    return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
 }
 
 
