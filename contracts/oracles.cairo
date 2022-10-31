@@ -67,13 +67,14 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
 }
 
 
+@view
 func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (
     price: Math64x61_
 ) {
     // FIXME: todo
     alloc_locals;
 
-    let res = Math64x61.fromFelt(1500);
+    let res = Math64x61.fromFelt(1450);
 
     return (res,);
 }

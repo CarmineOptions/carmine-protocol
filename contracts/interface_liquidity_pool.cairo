@@ -9,9 +9,7 @@ from types import Address, OptionType, Math64x61_, OptionSide, Int
 
 @contract_interface
 namespace ILiquidityPool {
-    // FIXME: we might not need all of the following function...
-    // FIXME: and some of them are not external at the moment
-    // There will one day surely be a way to generate contract interfaces
+    // FIXME: validate that the interface is correctly created
 
     func add_lptoken(
         quote_token_address: felt,
@@ -20,6 +18,7 @@ namespace ILiquidityPool {
         lptoken_address: felt
     ){
     }
+
 
     func add_option(
         option_side: OptionSide,
@@ -34,20 +33,24 @@ namespace ILiquidityPool {
     ) {
     }
 
+
     func get_option_token_address(
         option_side: felt, option_type: felt, maturity: felt, strike_price: felt
     ) {
     }
+
 
     func get_lptokens_for_underlying(pooled_token_addr: felt, underlying_amt: Uint256) -> (
         lpt_amt: Uint256
     ) {
     }
 
+
     func get_underlying_for_lptokens(pooled_token_addr: felt, lpt_amt: Uint256) -> (
         underlying_amt: Uint256
     ) {
     }
+
 
     func deposit_liquidity(
         pooled_token_addr: Address,
@@ -58,6 +61,7 @@ namespace ILiquidityPool {
     ) {
     }
 
+
     func withdraw_liquidity(
         pooled_token_addr: Address,
         quote_token_address: Address,
@@ -66,6 +70,11 @@ namespace ILiquidityPool {
         lp_token_amount: Uint256
     ) {
     }
+
+
+    func get_unlocked_capital(lptoken_address: Address) -> (unlocked_capital: Math64x61_) {
+    }
+
 
     func mint_option_token(
         currency_address: felt,
@@ -81,6 +90,7 @@ namespace ILiquidityPool {
     ) {
     }
 
+
     func burn_option_token(
         option_token_address: felt,
         amount: felt,
@@ -94,6 +104,7 @@ namespace ILiquidityPool {
     ) {
     }
 
+
     func expire_option_token(
         currency_address: felt,
         option_token_address: felt,
@@ -106,33 +117,33 @@ namespace ILiquidityPool {
     ) {
     }
 
-    func expire_option_token_for_user(
-        amount: felt, option_type: felt, option_side: felt, strike_price: felt
+
+    func expire_option_token_for_pool(
+        lptoken_address: Address,
+        option_side: OptionSide,
+        strike_price: Math64x61_,
+        maturity: Int,
     ) {
     }
 
-    func expire_option_token_for_pool(
-        amount: felt, option_type: felt, option_side: felt, strike_price: felt
-    ) {
-    }
 
     func getAdmin(){
     }
 
-    func get_lpool_balance(lptoken_address: Address) -> (
-        res: Math64x61_
-    ) {
+
+    func get_lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
     }
 
-    func get_pool_locked_capital(lptoken_address: Address) -> (
-        res: Math64x61_
-    ) {
+
+    func get_pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
     }
+
 
     func get_pool_volatility(lptoken_address: Address, maturity: Int) -> (
         pool_volatility: Math64x61_
     ) {
     }
+
 
     func get_pools_option_position(
         lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -140,5 +151,4 @@ namespace ILiquidityPool {
         res: Math64x61_
     ) {
     }
-
 }

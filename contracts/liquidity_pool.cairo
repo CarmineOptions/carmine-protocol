@@ -1919,7 +1919,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let quote_token_address = option.quote_token_address;
     let base_token_address = option.base_token_address;
 
-    let (option_type) = option_type_.read(lptoken_address);
+    let option_type = option.option_type;
 
     // pool's position... has to be nonnegative since the position is per side (long/short)
     let (option_size) = option_position.read(lptoken_address, option_side, maturity, strike_price);
