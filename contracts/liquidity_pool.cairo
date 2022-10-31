@@ -1476,10 +1476,6 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees_uint256,
     );
 
-    let (current_pool_position) = option_position.read(
-        lptoken_address, option_side, maturity, strike_price
-    );
-
     // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
     // This decrease is happening because burning long is similar to minting short,
     // hence the payment.
@@ -1490,13 +1486,16 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (pool_short_position) = option_position.read(
         lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
     );
+    let (pool_long_position) = option_position.read(
+        lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
+    );
 
     if (pool_short_position == 0){
         // If pool is LONG:
         // Burn long increases pool's long (if pool was already long)
         //      -> The locked capital was locked by users and not pool
         //      -> do not decrease pool_locked_capital by the option_size_in_pool_currency
-        let new_option_position = Math64x61.add(current_pool_position, option_size);
+        let new_option_position = Math64x61.add(pool_long_position, option_size);
         option_position.write(
             lptoken_address,
             option_side,
@@ -1511,9 +1510,8 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         //        min(size of pools short, amount_in_pool_currency)
         //        since the pools' short might not be covering all of the long
 
-        // Update the locked capital
         let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
-        let (size_to_be_unlocked_in_base) = min(current_pool_position, option_size);
+        let (size_to_be_unlocked_in_base) = min(pool_short_position, option_size);
         let (size_to_be_unlocked) = convert_amount_to_option_currency_from_base(
             size_to_be_unlocked_in_base, option_type, strike_price
         );
