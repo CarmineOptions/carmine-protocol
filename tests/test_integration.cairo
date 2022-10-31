@@ -680,6 +680,9 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // test
     // -> buy put option
     // -> withdraw half of the liquidity that was originally deposited from put pool
+    // -> close half of the bought option
+    // -> settle pool
+    // -> settle the option
     alloc_locals;
 
     tempvar lpt_call_addr;
@@ -1088,11 +1091,163 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     );
     assert put_pool_locked_capital_2=3458764513820540928000;
 
+    ///////////////////////////////////////////////////
+    // CLOSE HALF OF THE BOUGHT OPTION
+    let two = Math64x61.fromFelt(2);
+    let half = Math64x61.div(one, two);
+
+    let (premia: Math64x61_) = IAMM.trade_close(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=0,
+        option_size=half,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    assert premia = 134872855467553216750; // approx 58.491777162897854 USD...
+
+    // Test balance of lp tokens in the account after the option was bought and after withdraw
+    let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_call_addr,
+        account=admin_addr
+    );
+    assert bal_eth_lpt_3.low = 5000000000000000000;
+
+    let (bal_usd_lpt_3: Uint256) = ILPToken.balanceOf(
+        contract_address=lpt_put_addr,
+        account=admin_addr
+    );
+    assert bal_usd_lpt_3.low = 3000000000;
+
+    // Test unlocked capital in the pools after the option was bought and after withdraw
+    let (call_pool_unlocked_capital_3) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_unlocked_capital_3 = 11529215046068469760;
+
+    // 5323614905238314666124 translates to 2308.7499382942374 (because 5323614905238314666124 / 2**61)
+    // before the close of half of the option there was 1587.118450218243 of unlocked capital
+    // At the same time the user has been payd option premia for the closing of the option
+    //      (similar to sell since the user was long)
+    // The premia is 58.491777162897854 * 0.5 -> 29.245888581448927
+    // There is also fee on the premia 29.245888581448927 * 0.03
+    // The current unlocked capital is:
+    //      previous state + 750 USD - 29.245888581448927 + 0.8773766574434678 = 2308.749938294238
+    let (put_pool_unlocked_capital_3) = IAMM.get_unlocked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_unlocked_capital_3 = 5323614905238314666124;
+
+    // Test balance of option tokens in the account after the option was bought and after withdraw
+    let (bal_opt_long_put_tokens_3: Uint256) = ILPToken.balanceOf(
+        contract_address=opt_long_put_addr,
+        account=admin_addr
+    );
+    assert bal_opt_long_put_tokens_3.low = 500000000000000000;
+
+    // Test pool_volatility -> 142.85714285714286 put and 100 call
+    let (call_volatility_3) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        maturity=expiry
+    );
+    assert call_volatility_3 = 230584300921369395200;
+    let (put_volatility_3) = ILiquidityPool.get_pool_volatility(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        maturity=expiry
+    );
+    assert put_volatility_3 = 329406144173384850100; // close option has no impact on volatility
+
+    // Test option position
+    let (opt_long_put_position_3) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_put_position_3 = 0;
+    let (opt_short_put_position_3) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_put_position_3 = 1152921504606846976;
+    let (opt_long_call_position_3) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=0,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_long_call_position_3 = 0;
+    let (opt_short_call_position_3) = ILiquidityPool.get_pools_option_position(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr,
+        option_side=1,
+        maturity=expiry,
+        strike_price=strike_price
+    );
+    assert opt_short_call_position_3 = 0;
+
+    // Test lpool_balance
+    let (call_pool_balance_3) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_balance_3=11529215046068469760;
+    let (put_pool_balance_3) = ILiquidityPool.get_lpool_balance(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    // Previous state - premia + fee on premia
+    // 3087.1184502182427 - 29.245888581448927 + 0.8773766574434678 = 3058.7499382942374
+    assert put_pool_balance_3=7052997162148585130124;
+
+    // Test pool_locked_capital
+    let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_call_addr
+    );
+    assert call_pool_locked_capital_3=0;
+    let (put_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
+        contract_address=amm_addr,
+        lptoken_address=lpt_put_addr
+    );
+    assert put_pool_locked_capital_3=1729382256910270464000;
+
+
+
+
+    ///////////////////////////////////////////////////
+    // SETTLE (EXPIRE) POOL
+
     %{
+        stop_warp_1()
+        # Set the time 1 second AFTER expiry
+        stop_warp_2 = warp(1000000000 + 60*60*24 + 1, target_contract_address=ids.amm_addr)
+    %}
+
+    ///////////////////////////////////////////////////
+    // SETTLE BOUGHT OPTION
+
+
+
+    %{
+
         # optional, but included for completeness and extensibility
         stop_prank_amm()
+        stop_warp_2()
         stop_mock_oracle_2()
-        stop_warp_1()
     %}
+
     return ();
 }
