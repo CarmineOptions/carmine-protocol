@@ -881,6 +881,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     return ();
 }
 
+// FIXME: remove this external before going to mainnet
 // Function for removing option 
 // Currently removes only from available_options storage_var
 // Beacuse it storing duplicate options would cause provide 

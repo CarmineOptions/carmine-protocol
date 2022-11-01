@@ -106,4 +106,33 @@ namespace SeriesOfTrades {
         %}
         return ();
     }
+
+    func trade_close{syscall_ptr: felt*, range_check_ptr}() {
+        // FIXME:
+            // possibly split into several functions
+            // scenarios:
+                // can close trade no problem
+                // can close part of the trade - no problem
+                // is closing trade, but has not enough opt tokens for the selected option size
+                // there is not enough unlocked capital to pay off premium - user long
+                    // if there is not locked capital for this option (enough position)
+                    //   -> this works only for user being long - pool should first unlock capital then pay premia
+                    // if there is not enough locked capital -> will most likely fail
+                // user short
+                    // ...
+        return ();
+    }
+
+    func trade_settle{syscall_ptr: felt*, range_check_ptr}() {
+        // FIXME
+        // should work always... except for incorrect input params 
+        // scenarios:
+            // settle only part
+            // settle before pool settles
+            // settle everything
+
+        return ();
+    }
+
+
 }

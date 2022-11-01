@@ -113,7 +113,7 @@ namespace LongPutRoundTrip {
         );
         assert put_volatility_0 = 230584300921369395200;
 
-        // Test option position
+        // Test option position from pool's perspective
         let (opt_long_put_position_0) = ILiquidityPool.get_pools_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
@@ -237,7 +237,7 @@ namespace LongPutRoundTrip {
         );
         assert bal_opt_long_put_tokens_0.low = 1000000000000000000;
 
-        // Test pool_volatility -> 120 put and 100 call
+        // Test pool_volatility -> 142.85714285714286 put and 100 call
         let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,

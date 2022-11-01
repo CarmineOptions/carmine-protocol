@@ -231,7 +231,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     assert_nn_le(option_size_in_pool_currency, current_pool_balance);
 
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, opposite_side, underlying_price, current_pool_balance
+        current_volatility, option_size, option_type, opposite_side, strike_price, current_pool_balance
     );
 
     // 4) Update volatility
