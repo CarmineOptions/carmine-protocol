@@ -23,7 +23,7 @@ services:
     env_file: ./devnet/dev.env
     restart: always
     volumes:
+      - ${PWD}/_current_vars.env:/carmine/_current_vars.env:rw
       - ./abi/:/carmine/abi/
       - ./build/:/carmine/build/
       - ./lib/:/carmine/lib/
-      - ${PWD}/_current_vars.env:/carmine/_current_vars.env
