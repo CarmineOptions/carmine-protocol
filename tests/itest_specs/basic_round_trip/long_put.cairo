@@ -351,7 +351,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_2.low = 6912881550;
+        assert admin_myUSD_balance_2.low = 6912915325;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -360,20 +360,20 @@ namespace LongPutRoundTrip {
         );
         assert call_pool_unlocked_capital_2 = 11529215046068469760;
 
-        // 3658935441669791923833 translates to 1586.8103019370387 (because 3658935441669791923833 / 2**61)
-        // before the withdraw there was 3604.685906937039 of unlocked capital
+        // 3659568103382171319752 translates to 1587.0846752182429 (because 3659568103382171319752 / 2**61)
+        // before the withdraw there was 3604.818502218243 of unlocked capital
         // the withdraw meant that 40% of the value of pool was withdrawn
-        //      which is 3604.685906937039 of unlocked capital plus remaining capital from short option
+        //      which is 3604.818502218243 of unlocked capital plus remaining capital from short option
         //      where the remaining of short is (locked capital - premia of long option)... adjusted for fees
-        //      the value of long was 40.00310556296108 (NOT CHECKED !!! -> JUST BY EYE)
-        // So the value of pool was 3604.685906937039 + 1400 - 40.00310556296108 = 5044.6890125
-        // Withdrawed 40% -> 2017.875605 from unlocked capital
-        // Remaining unlocked capital is 3604.685906937039 - 2017.875605 = 1586.810301937039
+        //      the value of long was 60.48393471824238 (NOT CHECKED !!! -> JUST BY EYE)
+        // So the value of pool was 3604.818502218243 + 1500 - 60.48393471824238 = 5044.3345675
+        // Withdrawed 40% -> 2017.733827 from unlocked capital
+        // Remaining unlocked capital is 3604.818502218243 - 2017.733827 = 1587.0846752182429
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2 = 3659645983229807512265;
+        assert put_pool_unlocked_capital_2 = 3659568103382171319752;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_2: Uint256) = IOptionToken.balanceOf(
@@ -440,7 +440,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_2=7118410497050348440265;
+        assert put_pool_balance_2=7118332617202712247752;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
@@ -471,7 +471,7 @@ namespace LongPutRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia = 134872855467553216750; // approx 58.491777162897854 USD...
+        assert premia = 134675785495508522600; // approx 58.40631168616885 USD...
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -491,7 +491,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_3.low = 6941250061;
+        assert admin_myUSD_balance_3.low = 6941242386;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -500,19 +500,20 @@ namespace LongPutRoundTrip {
         );
         assert call_pool_unlocked_capital_3 = 11529215046068469760;
 
-        // 5323614905238314666124 translates to 2308.7499382942374 (because 5323614905238314666124 / 2**61)
+        // 5323632604327120150274 translates to 2308.757614050451 (because 5323632604327120150274 / 2**61)
         // before the close of half of the option there was 1587.118450218243 of unlocked capital
         // At the same time the user has been payd option premia for the closing of the option
         //      (similar to sell since the user was long)
-        // The premia is 58.491777162897854 * 0.5 -> 29.245888581448927
-        // There is also fee on the premia 29.245888581448927 * 0.03
+        // The premia is 58.40631168616885 * 0.5 -> 29.203155843084424
+        // There is also fee on the premia 29.203155843084424 * 0.03
         // The current unlocked capital is:
-        //      previous state + 750 USD - 29.245888581448927 + 0.8773766574434678 = 2308.749938294238
+        //      previous state + 750 USD - 29.203155843084424 + 0.8760946752925327 = 2308.757614050451
+        //      1587.0846752182429 + 750 - 29.203155843084424 + 0.8760946752925327 = 2308.757614050451
         let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3 = 5323614905238314666124;
+        assert put_pool_unlocked_capital_3 = 5323632604327120150274;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_3: Uint256) = IOptionToken.balanceOf(
@@ -580,8 +581,8 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr
         );
         // Previous state - premia + fee on premia
-        // 3087.1184502182427 - 29.245888581448927 + 0.8773766574434678 = 3058.7499382942374
-        assert put_pool_balance_3=7052997162148585130124;
+        // 3087.084675218243 - 29.203155843084424 + 0.8760946752925327 = 3058.757614050451
+        assert put_pool_balance_3=7053014861237390614274;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
@@ -658,7 +659,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_4.low = 6941250061;
+        assert admin_myUSD_balance_4.low = 6941242386;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_4) = ILiquidityPool.get_unlocked_capital(
@@ -667,17 +668,17 @@ namespace LongPutRoundTrip {
         );
         assert call_pool_unlocked_capital_4 = 11529215046068469760;
 
-        // 6995351086918242781324 translates to 3033.7499382942374
-        // Before the settlement there is 2308.7499382942374 of unlocked capital and 750 of locked one
+        // 6995368786007048265474 translates to 3033.757614050451
+        // Before the settlement there is 2308.757614050451 of unlocked capital and 750 of locked one
         // Calling the expire_option_token_for_pool means that part of the 750 that should stay with the pool
         // is unlocked
         // additional unlocked capital = 750 - profit of the users long * option size = 750 - 50 * 0.5 = 725
-        // newly unlocked capital is 2308.7499382942374 + 725 = 3033.7499382942374
+        // newly unlocked capital is 2308.757614050451 + 725 = 3033.757614050451
         let (put_pool_unlocked_capital_4) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4 = 6995351086918242781324;
+        assert put_pool_unlocked_capital_4 = 6995368786007048265474;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -745,8 +746,8 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr
         );
         // Previous state - what will be payed to the option owner
-        // 3058.7499382942374 - 25
-        assert put_pool_balance_4 = 6995351086918242781324;
+        // 3058.757614050451 - 25
+        assert put_pool_balance_4 = 6995368786007048265474;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
@@ -792,7 +793,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_5.low = 6966250061;
+        assert admin_myUSD_balance_5.low = 6966242386;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = ILiquidityPool.get_unlocked_capital(
@@ -801,17 +802,13 @@ namespace LongPutRoundTrip {
         );
         assert call_pool_unlocked_capital_5 = 11529215046068469760;
 
-        // 6995351086918242781324 translates to 3033.7499382942374
-        // Before the settlement there is 2308.7499382942374 of unlocked capital and 750 of locked one
-        // Calling the expire_option_token_for_pool means that part of the 750 that should stay with the pool
-        // is unlocked
-        // additional unlocked capital = 750 - profit of the users long * option size = 750 - 50 * 0.5 = 725
-        // newly unlocked capital is 2308.7499382942374 + 725 = 3033.7499382942374
+        // At this moment no additional capital is unlocked
+        // (that happened when the option was settled for the pool)
         let (put_pool_unlocked_capital_5) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5 = 6995351086918242781324;
+        assert put_pool_unlocked_capital_5 = 6995368786007048265474;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -878,7 +875,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5 = 6995351086918242781324;
+        assert put_pool_balance_5 = 6995368786007048265474;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
