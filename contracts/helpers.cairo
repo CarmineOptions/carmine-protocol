@@ -79,7 +79,7 @@ func _get_value_of_position{
     // 2) Calculate new volatility, calculate trade volatility
     with_attr error_message("helpers._get_value_of_position getting volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, underlying_price, current_pool_balance
+            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
         );
     }
 

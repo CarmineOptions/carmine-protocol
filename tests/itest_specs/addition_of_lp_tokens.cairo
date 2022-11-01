@@ -26,4 +26,6 @@ namespace AdditionOfLPTokens {
         assert name_put = 112;
         return ();
     }
+
+    // FIXME: try to add incorrect lptokens (incorrect input params)
 }

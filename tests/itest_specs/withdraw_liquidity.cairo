@@ -9,7 +9,12 @@ from starkware.cairo.common.uint256 import Uint256
 
 namespace WithdrawLiquidity {
     func withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
-        // test withdraw half of the liquidity that was originally deposited (from both pools)
+        // test withdraw half of the liquidity that was originally deposited (from both pools)// scenarios
+        // FIXME: add scenarios
+            // deposit to pool with no position
+            // deposit to pool with both long and short positon (different options)
+            // watchout for value of pool and that premia is correctly adjusted for fees (fees in case of deposit increase value of pool)
+
         alloc_locals;
 
         tempvar lpt_call_addr;
