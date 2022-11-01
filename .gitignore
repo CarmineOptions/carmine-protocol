@@ -139,3 +139,6 @@ dmypy.json
 
 # Marek's notes
 marek-notes.md
+
+# Local devnet
+_current_vars.env
