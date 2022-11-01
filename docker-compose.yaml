@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  devnet:
+    # this image tag has static seed,
+    # therefore the accounts stay the same
+    image: shardlabs/starknet-devnet:latest-arm-seed0
+    ports:
+      - 5050:5050
+
+  deploy:
+    build:
+      dockerfile: Dockerfile.local
+    platform: linux/x86_64
+    depends_on:
+      - devnet
+    env_file: ./devnet/dev.env
+    restart: always
+    volumes:
+      - ./abi/:/carmine/abi/
+      - ./build/:/carmine/build/
+      - ./lib/:/carmine/lib/
+      - ./:/carmine/
