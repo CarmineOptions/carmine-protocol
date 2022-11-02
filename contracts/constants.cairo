@@ -77,7 +77,7 @@ const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
 // Contrants for Empiric oracle
 // ############################
 
-const EMPIRIC_ORACLE_ADDRESS = 0x012fadd18ec1a23a160cc46981400160fbf4a7a5eed156c4669e39807265bcd4;
+const EMPIRIC_ORACLE_ADDRESS = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
 const EMPIRIC_AGGREGATION_MODE = 0;  // 0 is default for median
 
 const EMPIRIC_BTC_USD_KEY = 27712517064455012;

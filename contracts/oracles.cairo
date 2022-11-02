@@ -14,13 +14,27 @@ from lib.pow import pow10
 // List of available tickers:
 //  https://docs.empiric.network/using-empiric/supported-assets
 
-// Contract interface copied from docs
+// Contract interface for Empiric Oracle
 @contract_interface
 namespace IEmpiricOracle {
-    func get_value(key: felt, aggregation_mode: felt) -> (
-        value: felt, decimals: felt, last_updated_timestamp: felt, num_sources_aggregated: felt
+    func get_spot_median(key: felt) -> (
+        price: felt, decimals: felt, last_updated_timestamp: felt, num_sources_aggregated: felt
     ) {
     }
+    
+    func get_last_checkpoint_before(key: felt, timestamp: felt) -> (
+        checkpoint: Checkpoint, idx: felt
+    ) {
+    }
+
+}
+
+// Struct for terminal price
+struct Checkpoint {
+    timestamp: felt,
+    value: felt,
+    aggregation_mode: felt,
+    num_sources_aggregated: felt,
 }
 
 // Function to convert base 10**decimals number from oracle to base 2**61
@@ -57,12 +71,16 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt
 func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: Math64x61_) {
     alloc_locals;
 
-    let (
-        value, decimals, last_updated_timestamp, num_sources_aggregated
-    ) = IEmpiricOracle.get_value(EMPIRIC_ORACLE_ADDRESS, key, EMPIRIC_AGGREGATION_MODE);
+    with_attr error_message("Failed when getting median price from Empiric Oracle") {
+        let (
+            value, decimals, last_updated_timestamp, num_sources_aggregated
+        ) = IEmpiricOracle.get_spot_median(EMPIRIC_ORACLE_ADDRESS, key);
+    }
 
-    let (res) = convert_price(value, decimals);
-
+    with_attr error_message("Failed when converting Empiric Oracle median price to Math64x61 format") {
+        let (res) = convert_price(value, decimals);
+    }
+    
     return (res,);
 }
 
@@ -70,11 +88,27 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
 @view
 func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (
     price: Math64x61_
-) {
-    // FIXME: todo
+){
     alloc_locals;
 
-    let res = Math64x61.fromFelt(1450);
+    with_attr error_message("Failed when getting terminal price from Empiric Oracle") {
+        let (last_checkpoint,_) = IEmpiricOracle.get_last_checkpoint_before(
+            EMPIRIC_ORACLE_ADDRESS,
+            key, 
+            maturity
+        );
+    }
+
+    with_attr error_message("Failed when converting Empiric Oracle terminal price to Math64x61 format"){
+        // Taken from the Empiric Docs, since Checkpoint does not
+        // store this information, SHOULD not change in the future
+        let decimals = 8;
+
+        let (res)  = convert_price(
+            last_checkpoint.value,
+            decimals
+        );
+    }
 
     return (res,);
 }
