@@ -221,7 +221,7 @@ func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     alloc_locals;
     let (array : Option*) = alloc();
     let array_len = save_option_to_array(lptoken_address, 0, array);
-    return (array_len, array);
+    return (array_len * Option.SIZE, array);
 }
 
 func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
