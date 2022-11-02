@@ -47,10 +47,14 @@ namespace LongCallRoundTrip {
             ids.opt_long_call_addr = context.opt_long_call_addr_0
         %}
 
+        tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
-            stop_mock_oracle_1 = mock_call(
-                ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+            )
+            stop_mock_terminal_price = mock_call(
+                ids.tmp_address, "get_last_checkpoint_before", [0,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
             )
         %}
 
@@ -149,9 +153,9 @@ namespace LongCallRoundTrip {
         ///////////////////////////////////////////////////
 
         %{
-            stop_mock_oracle_1()
-            stop_mock_oracle_2 = mock_call(
-                ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
+            stop_mock_current_price()
+            stop_mock_current_price_2 = mock_call(
+                ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
             )
         %}
 
@@ -213,7 +217,8 @@ namespace LongCallRoundTrip {
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()
-            stop_mock_oracle_2()
+            stop_mock_current_price_2()
+            stop_mock_terminal_price()
             stop_warp_1()
         %}
         return ();

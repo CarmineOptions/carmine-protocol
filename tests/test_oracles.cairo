@@ -53,10 +53,11 @@ func test_Math64x61_div_imprecise{range_check_ptr}() {
 
 @external
 func test_empiric_median_price{range_check_ptr, syscall_ptr: felt*}() {
+    tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
-            ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1480230000000000000000, 18, 0, 0]
+            ids.tmp_address, "get_spot_median", [1480230000000000000000, 18, 0, 0]
         )
     %}
 
