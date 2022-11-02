@@ -51,11 +51,11 @@ namespace LongPutRoundTrip {
             ids.opt_long_call_addr = context.opt_long_call_addr_0
             ids.opt_short_call_addr = context.opt_short_call_addr_0
         %}
-
+        tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
-            stop_mock_oracle_1 = mock_call(
-                ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
             )
         %}
 
@@ -314,9 +314,9 @@ namespace LongPutRoundTrip {
         ///////////////////////////////////////////////////
 
         %{
-            stop_mock_oracle_1()
-            stop_mock_oracle_2 = mock_call(
-                ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
+            stop_mock_current_price()
+            stop_mock_current_price_2 = mock_call(
+                ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
             )
         %}
 
@@ -603,12 +603,11 @@ namespace LongPutRoundTrip {
             stop_warp_1()
             # Set the time 1 second AFTER expiry
             stop_warp_2 = warp(1000000000 + 60*60*24 + 1, target_contract_address=ids.amm_addr)
+
             # Mock the terminal price
-            # FIXME: correctly mock the get_terminal_price -> it has to be done similarly to empiric_median_price
-            # by mocking the IEmpiricOracle.get_value... do this once the get_terminal_price is finished
-            # stop_mock_terminal = mock_call(
-            #     ids.amm_addr, "get_terminal_price", 1450 * 2**61  # mock current ETH price at 1400
-            # )
+            stop_mock_terminal_price = mock_call(
+                ids.tmp_address, "get_last_checkpoint_before", [0, 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+            )
         %}
 
         ILiquidityPool.expire_option_token_for_pool(
@@ -897,7 +896,8 @@ namespace LongPutRoundTrip {
             # optional, but included for completeness and extensibility
             stop_prank_amm()
             stop_warp_2()
-            stop_mock_oracle_2()
+            stop_mock_current_price_2()
+            stop_mock_terminal_price()
         %}
 
         return ();

@@ -17,10 +17,12 @@ from contracts.types import Option
 @external
 func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) {
+ 
+    tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
-            ids.EMPIRIC_ORACLE_ADDRESS, "get_value", [1450000000000000000000, 18, 0, 0]
+            ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]
         )
     %}
  
