@@ -17,7 +17,7 @@ from lib.pow import pow10
 // Contract interface for Empiric Oracle
 @contract_interface
 namespace IEmpiricOracle {
-    func get_spot_median(key: felt) -> (
+    func get_spot_median(pair_id: felt) -> (
         price: felt, decimals: felt, last_updated_timestamp: felt, num_sources_aggregated: felt
     ) {
     }
@@ -80,7 +80,7 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
     with_attr error_message("Failed when converting Empiric Oracle median price to Math64x61 format") {
         let (res) = convert_price(value, decimals);
     }
-    
+
     return (res,);
 }
 
