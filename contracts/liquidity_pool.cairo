@@ -407,7 +407,7 @@ func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     lptoken_address: Address
 ) -> (
     array_len : felt,
-    array : felt*
+    array : Option*
 ) {
     alloc_locals;
     let (array : Option*) = alloc();
@@ -428,6 +428,47 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
 
     assert [array] = option;
     return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
+}
+
+
+@view
+func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (
+    array_len : felt,
+    array : Option*
+) {
+    // FIXME: add the premia
+    alloc_locals;
+    let (array : Option*) = alloc();
+    let array_len = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, array, 0);
+    return (array_len * Option.SIZE, array);
+}
+
+
+func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    array_len_so_far : felt,
+    array : Option*,
+    option_index: felt
+) -> felt {
+    let (option) = available_options.read(lptoken_address, option_index);
+    if (option.quote_token_address == 0 and option.base_token_address == 0) {
+        return array_len_so_far;
+    }
+
+    // If option is non_expired append it, else keep going
+    let (current_block_time) = get_block_timestamp();
+    if (is_le(current_block_time, option.maturity) == TRUE) {
+        assert [array] = option;
+        return save_all_non_expired_options_with_premia_to_array(
+            lptoken_address, array_len_so_far + 1, array + Option.SIZE, option_index + 1
+        );
+    }
+
+    return save_all_non_expired_options_with_premia_to_array(
+        lptoken_address, array_len_so_far, array, option_index + 1
+    );
 }
 
 
