@@ -63,6 +63,16 @@ namespace ILiquidityPool {
     }
 
 
+    func get_all_options(lptoken_address: Address) -> (array_len : felt, array : felt*) {
+    }
+
+
+    func get_all_non_expired_options_with_premia(lptoken_address: Address) -> (
+        array_len : felt, array : felt*
+    ) {
+    }
+
+
     func get_all_lptoken_addresses() -> (array_len : felt, array : Address*) {
     }
 

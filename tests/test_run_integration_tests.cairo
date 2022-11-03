@@ -101,3 +101,24 @@ func test_get_all_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuilti
     LPBasicViewFunctions.get_all_lptoken_addresses();
     return ();
 }
+
+
+@external
+func test_get_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_available_lptoken_addresses();
+    return ();
+}
+
+
+@external
+func test_get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_all_options();
+    return ();
+}
+
+
+@external
+func test_get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_all_non_expired_options_with_premia();
+    return ();
+}
