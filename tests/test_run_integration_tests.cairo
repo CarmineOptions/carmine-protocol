@@ -14,6 +14,7 @@ from tests.itest_specs.withdraw_liquidity import WithdrawLiquidity
 from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
 from tests.itest_specs.addition_of_lp_tokens import AdditionOfLPTokens
 from tests.itest_specs.addition_of_option_tokens import AdditionOfOptionTokens
+from tests.itest_specs.view_functions.liquidity_pool_basic import LPBasicViewFunctions
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
@@ -91,5 +92,12 @@ func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // -> settle pool
     // -> settle the option
     LongPutRoundTrip.minimal_round_trip_put();
+    return ();
+}
+
+
+@external
+func test_get_all_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_all_lptoken_addresses();
     return ();
 }

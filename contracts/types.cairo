@@ -31,3 +31,16 @@ struct Pool {
     base_token_address: Address,
     option_type: OptionType,
 }
+
+// PoolInfo containes Pool plus some additional information
+//      - lptoken_address
+//      - staked capital (lpool_balance)
+//      - unlocked capital
+//      - value of given pool
+struct PoolInfo {
+    pool: Pool,
+    lptoken_address: Address,
+    staked_capital: Math64x61_,  // lpool_balance
+    unlocked_capital: Math64x61_,
+    value_of_pool: Math64x61_,
+}

@@ -94,6 +94,13 @@ func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+// lptoken_address serves also as an identifier of pool
+@storage_var
+func available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
+}
+
+
+// FIXME: typo in lptoken_addres - missing "s"
 // FIXME: rename this to lptoken_address_for_given_pool
 @storage_var
 func lptoken_addr_for_given_pooled_token(
@@ -183,6 +190,26 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 
 
 @view
+func get_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    order_i: Int
+) -> (lptoken_address: Address) {
+    let (lptoken_address) = available_lptoken_addresses.read(order_i);
+    return (lptoken_address,);
+}
+
+
+// FIXME remove the "@external" once the contract was upgraded and the Proxy.assert_only_admin
+@external
+func set_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    order_i: Int, lptoken_address: Address
+) -> () {
+    Proxy.assert_only_admin();
+    available_lptoken_addresses.write(order_i, lptoken_address);
+    return ();
+}
+
+
+@view
 func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (res: Math64x61_) {
@@ -209,33 +236,6 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     alloc_locals;
     let (option) = available_options.read(lptoken_address, order_i);
     return (option,);
-}
-
-@view
-func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address
-) -> (
-    array_len : felt,
-    array : felt*
-) {
-    alloc_locals;
-    let (array : Option*) = alloc();
-    let array_len = save_option_to_array(lptoken_address, 0, array);
-    return (array_len * Option.SIZE, array);
-}
-
-func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address,
-    array_len_so_far : felt,
-    array : Option*
-) -> felt {
-    let (option) = available_options.read(lptoken_address, array_len_so_far);
-    if (option.quote_token_address == 0 and option.base_token_address == 0) {
-        return array_len_so_far;
-    }
-    
-    assert [array] = option;
-    return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
 }
 
 
@@ -397,6 +397,72 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+// Get options mainly used by FE
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+@view
+func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address
+) -> (
+    array_len : felt,
+    array : felt*
+) {
+    alloc_locals;
+    let (array : Option*) = alloc();
+    let array_len = save_option_to_array(lptoken_address, 0, array);
+    return (array_len * Option.SIZE, array);
+}
+
+
+func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    array_len_so_far : felt,
+    array : Option*
+) -> felt {
+    let (option) = available_options.read(lptoken_address, array_len_so_far);
+    if (option.quote_token_address == 0 and option.base_token_address == 0) {
+        return array_len_so_far;
+    }
+
+    assert [array] = option;
+    return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
+}
+
+
+@view
+func get_all_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+) -> (
+    array_len : felt,
+    array : Address*
+) {
+    alloc_locals;
+    let (array : Address*) = alloc();
+    let array_len = save_lptoken_addresses_to_array(0, array);
+    return (array_len, array);
+}
+
+
+func save_lptoken_addresses_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    array_len_so_far : felt,
+    array : Address*
+) -> felt {
+    let (lptoken_address) = get_available_lptoken_addresses(array_len_so_far);
+    if (lptoken_address == 0) {
+        return array_len_so_far;
+    }
+
+    assert [array] = lptoken_address;
+    return save_lptoken_addresses_to_array(array_len_so_far + 1, array + 1);
+}
+
+
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+// Other get functions
+// # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
 // Returns a total value of pools position (sum of value of all options held by pool).
 // Goes through all options in storage var "available_options"... is able to iterate by i
 // (from 0 to n)
@@ -521,8 +587,30 @@ func get_available_options_usable_index{
     if (option_sum == 0) {
         return (usable_index = starting_index);
     }
-    
+
     let (usable_index) = get_available_options_usable_index(lptoken_address, starting_index + 1);
+
+    return (usable_index = usable_index);
+}
+
+
+@view
+func get_available_lptoken_addresses_usable_index{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    starting_index: Int
+) -> (usable_index: Int) {
+    // Returns lowest index that does not contain any specified lptoken_address.
+
+    alloc_locals;
+
+    let (lptoken_address) = get_available_lptoken_addresses(starting_index);
+
+    if (lptoken_address == 0) {
+        return (usable_index = starting_index);
+    }
+
+    let (usable_index) = get_available_lptoken_addresses_usable_index(starting_index + 1);
 
     return (usable_index = usable_index);
 }
@@ -828,12 +916,18 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 ){
     // This function initializes the pool.
 
+    alloc_locals;
+
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
 
-    // 2) Update following
+    // 2) Add lptoken_address into a storage_var of lptoken_addresses
+    let (lptoken_usable_index) = get_available_lptoken_addresses_usable_index(0);
+    set_available_lptoken_addresses(lptoken_usable_index, lptoken_address);
+
+    // 3) Update following
     lptoken_addr_for_given_pooled_token.write(
         quote_token_address, base_token_address, option_type, lptoken_address
     );
