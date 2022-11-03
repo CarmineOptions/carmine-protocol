@@ -1,10 +1,14 @@
 %lang starknet 
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.alloc import alloc
 
 struct DummyStruct {
     field_one: felt,
     field_two: felt,
+    field_three: felt,
+    field_four: felt,
+    field_five: felt,
 }
 
 // SINGLE DUMMY
@@ -13,19 +17,18 @@ func dummy_storage() -> (res: DummyStruct) {
 }
 
 @external
-func read_dummy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: DummyStruct) {
+func read_dummy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res_len: felt, res: felt*) {
 
-    let res = dummy_storage.read();
+    let (res) = dummy_storage.read();
 
-    return (res);
-}
+    let (arr) = alloc();
+    assert [arr] = res.field_one;
+    assert [arr + 1] = res.field_two;
+    assert [arr + 2] = res.field_three;
+    assert [arr + 3] = res.field_four;
+    assert [arr + 4] = res.field_five;
 
-@external
-func alter_dummy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(val: DummyStruct) {
-
-    dummy_storage.write(val);
-
-    return ();
+    return (5, arr);
 }
 
 //===================================================
@@ -36,19 +39,18 @@ func dummy_storage_input(input: felt) -> (res: DummyStruct) {
 }
 
 @external
-func read_dummy_input{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input: felt) -> (res: DummyStruct) {
+func read_dummy_input{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input: felt) -> (res_len: felt, res: felt*) {
 
-    let res = dummy_storage_input.read(input);
+    let (res) = dummy_storage_input.read(input);
 
-    return (res);
-}
+    let (arr) = alloc();
+    assert [arr] = res.field_one;
+    assert [arr + 1] = res.field_two;
+    assert [arr + 2] = res.field_three;
+    assert [arr + 3] = res.field_four;
+    assert [arr + 4] = res.field_five;
 
-@external
-func alter_dummy_input{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input:felt, val: DummyStruct) {
-
-    dummy_storage_input.write(input, val);
-
-    return ();
+    return (5, arr);
 }
 
 //===================================================
@@ -59,28 +61,22 @@ func dummy_storage_struct(input: DummyStruct) -> (res: felt) {
 }
 
 @external
-func read_dummy_struct{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input: DummyStruct) -> (res: felt) {
+func read_dummy_struct{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input_len: felt, input: felt*) -> (res: felt) {
 
-    let res = dummy_storage_struct.read(input);
+    let dummy_struct = DummyStruct (
+        field_one = input[0],
+        field_two = input[1],
+        field_three = input[2],
+        field_four = input[3],
+        field_five = input[4],
+    );
+
+    let res = dummy_storage_struct.read(dummy_struct);
 
     return (res);
 }
 
-@external
-func alter_dummy_struct{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(input: DummyStruct, val: felt) {
-
-    dummy_storage_struct.write(input, val);
-
-    return ();
-}
-
-
 //===================================================
-
-// @storage_var 
-// func dummy_storage_struct_input(input: DummyStruct) -> (res: DummyStruct) {
-// }
-
 
 // PROXY UTILS
 from openzeppelin.upgrades.library import Proxy
