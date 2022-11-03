@@ -52,6 +52,21 @@ namespace ILiquidityPool {
     }
 
 
+    func get_available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
+    }
+
+
+    // FIXME: drop this function down the line
+    func set_available_lptoken_addresses(order_i: Int, lptoken_address: Address) -> (
+        lptoken_address: Address
+    ) {
+    }
+
+
+    func get_all_lptoken_addresses() -> (array_len : felt, array : Address*) {
+    }
+
+
     func deposit_liquidity(
         pooled_token_addr: Address,
         quote_token_address: Address,
