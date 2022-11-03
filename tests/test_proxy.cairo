@@ -251,7 +251,7 @@ func test_proxy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 
     // Then it continues here????
     let (_, res_input5) = IMockProxy.read_dummy_input(proxy_addr_5, 144);
-    assert res_input4[0] = 33; // Some big shenanigans here
+    assert res_input4[0] = 33; 
     assert res_input4[1] = 44;
     assert res_input4[3] = 0;
     assert res_input4[4] = 0;
