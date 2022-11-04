@@ -431,12 +431,13 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
 }
 
 
+    // array : Option*
 @view
 func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (
     array_len : felt,
-    array : Option*
+    array : OptionWithPremia*
 ) {
     alloc_locals;
     let (array : Option*) = alloc();
@@ -446,10 +447,11 @@ func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: H
 }
 
 
+    // array : Option*,
 func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     array_len_so_far : felt,
-    array : Option*,
+    array : OptionWithPremia*,
     option_index: felt
 ) -> felt {
     alloc_locals;
@@ -462,34 +464,34 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
     // If option is non_expired append it, else keep going
     let (current_block_time) = get_block_timestamp();
     if (is_le(current_block_time, option.maturity) == TRUE) {
-        // let one = Math64x61.fromFelt(1);
-        // let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-        // let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+        let one = Math64x61.fromFelt(1);
+        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+        let (current_pool_balance) = get_unlocked_capital(lptoken_address);
 
-        // with_attr error_message(
-        //     "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
-        // ){
-        //     let (premia) = _get_premia_with_fees(
-        //         option=option,
-        //         position_size=one,
-        //         option_type=option.option_type,
-        //         current_volatility=current_volatility,
-        //         current_pool_balance=current_pool_balance
-        //     );
-        // }
+        with_attr error_message(
+            "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
+        ){
+            let (premia) = _get_premia_with_fees(
+                option=option,
+                position_size=one,
+                option_type=option.option_type,
+                current_volatility=current_volatility,
+                current_pool_balance=current_pool_balance
+            );
+        }
         with_attr error_message(
             "Failed connecting premium and option in save_all_non_expired_options_with_premia_to_array"
         ){
-            // let option_with_premia = OptionWithPremia(option=option, premia=premia);
-            assert [array] = option;
+            let option_with_premia = OptionWithPremia(option=option, premia=premia);
+            // assert [array] = option;
         }
 
         return save_all_non_expired_options_with_premia_to_array(
             lptoken_address,
-            // array_len_so_far + OptionWithPremia.SIZE,
-            // array + OptionWithPremia.SIZE,
-            array_len_so_far + Option.SIZE,
-            array + Option.SIZE,
+            array_len_so_far + OptionWithPremia.SIZE,
+            array + OptionWithPremia.SIZE,
+            // array_len_so_far + Option.SIZE,
+            // array + Option.SIZE,
             option_index + 1
         );
     }
