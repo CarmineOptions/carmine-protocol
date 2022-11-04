@@ -407,7 +407,7 @@ func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     lptoken_address: Address
 ) -> (
     array_len : felt,
-    array : Option*
+    array : felt*
 ) {
     alloc_locals;
     let (array : Option*) = alloc();
@@ -431,23 +431,21 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
 }
 
 
-    // array : Option*
 @view
 func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (
     array_len : felt,
-    array : OptionWithPremia*
+    array : felt*
 ) {
     alloc_locals;
-    let (array : Option*) = alloc();
+    let (array : OptionWithPremia*) = alloc();
     let array_len = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, array, 0);
 
     return (array_len, array);
 }
 
 
-    // array : Option*,
 func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     array_len_so_far : felt,
@@ -483,15 +481,13 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
             "Failed connecting premium and option in save_all_non_expired_options_with_premia_to_array"
         ){
             let option_with_premia = OptionWithPremia(option=option, premia=premia);
-            // assert [array] = option;
+            assert [array] = option_with_premia;
         }
 
         return save_all_non_expired_options_with_premia_to_array(
             lptoken_address,
             array_len_so_far + OptionWithPremia.SIZE,
             array + OptionWithPremia.SIZE,
-            // array_len_so_far + Option.SIZE,
-            // array + Option.SIZE,
             option_index + 1
         );
     }

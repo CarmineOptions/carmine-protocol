@@ -324,7 +324,7 @@ namespace LPBasicViewFunctions {
             lptoken_address=lpt_put_addr
         );
 
-        // *6 because the OptionWithPremia struct has 7 elements
+        // *7 because the OptionWithPremia struct has 7 elements
         assert option_call_len = 2*7;
         assert option_put_len = 2*7;
 
