@@ -49,7 +49,7 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 }
 
 
-func _get_premia{
+func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
@@ -71,20 +71,20 @@ func _get_premia{
     let option_size = position_size;
 
     // 1) Get price of underlying asset
-    with_attr error_message("helpers._get_premia getting undrelying price FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees getting undrelying price FAILED"){
         let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
         let (underlying_price) = empiric_median_price(empiric_key);
     }
 
     // 2) Calculate new volatility, calculate trade volatility
-    with_attr error_message("helpers._get_premia getting volatility FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees getting volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
             current_volatility, option_size, option_type, side, strike_price, current_pool_balance
         );
     }
 
     // 3) Get time till maturity
-    with_attr error_message("helpers._get_premia getting time_till_maturity FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees getting time_till_maturity FAILED"){
         let (time_till_maturity) = get_time_till_maturity(maturity);
     }
 
@@ -92,7 +92,7 @@ func _get_premia{
     let risk_free_rate_annualized = RISK_FREE_RATE;
 
     // 5) Get premia
-    with_attr error_message("helpers._get_premia getting premia FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees getting premia FAILED"){
         let HUNDRED = Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
@@ -104,12 +104,12 @@ func _get_premia{
             risk_free_rate_annualized=risk_free_rate_annualized,
         );
     }
-    with_attr error_message("helpers._get_premia call/put premia is negative FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED"){
         assert_nn(call_premia);
         assert_nn(put_premia);
     }
 
-    with_attr error_message("helpers._get_premia adjusting premia FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees adjusting premia FAILED"){
         // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
         // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
         // and in quote tokens (USDC in case of ETH/USDC) for put option.
@@ -119,10 +119,10 @@ func _get_premia{
         // premia adjusted by size (multiplied by size)
         let total_premia_before_fees = Math64x61.mul(premia, option_size);
     }
-    with_attr error_message("helpers._get_premia premia is negative FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees premia is negative FAILED"){
         assert_nn(premia);
     }
-    with_attr error_message("helpers._get_premia total_premia_before_fees is negative FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees total_premia_before_fees is negative FAILED"){
         assert_nn(total_premia_before_fees);
     }
 
@@ -148,7 +148,7 @@ func _get_value_of_position{
 
     let option_size = position_size;
 
-    let (total_premia_before_fees) = _get_premia(
+    let (total_premia_before_fees) = _get_premia_before_fees(
         option=option,
         position_size=position_size,
         option_type=option_type,
@@ -220,7 +220,7 @@ func _get_premia_with_fees{
 
     let option_size = position_size;
 
-    let (total_premia_before_fees) = _get_premia(
+    let (total_premia_before_fees) = _get_premia_before_fees(
         option=option,
         position_size=position_size,
         option_type=option_type,
