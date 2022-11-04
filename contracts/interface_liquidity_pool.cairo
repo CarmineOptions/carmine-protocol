@@ -5,7 +5,7 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
-from types import Address, OptionType, Math64x61_, OptionSide, Int
+from types import Address, OptionType, Math64x61_, OptionSide, Int, OptionWithPremia, Option
 
 @contract_interface
 namespace ILiquidityPool {
@@ -35,8 +35,8 @@ namespace ILiquidityPool {
 
 
     func get_option_token_address(
-        option_side: felt, option_type: felt, maturity: felt, strike_price: felt
-    ) {
+        lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+    ) -> (option_token_address: Address) {
     }
 
 
@@ -68,7 +68,7 @@ namespace ILiquidityPool {
 
 
     func get_all_non_expired_options_with_premia(lptoken_address: Address) -> (
-        array_len : felt, array : felt*
+        array_len : felt, array : Option*
     ) {
     }
 

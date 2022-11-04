@@ -26,6 +26,11 @@ struct Option {
     option_type: OptionType,
 }
 
+struct OptionWithPremia {
+    option: Option,
+    premia: Math64x61_,
+}
+
 struct Pool {
     quote_token_address: Address,
     base_token_address: Address,

@@ -27,7 +27,8 @@ from contracts.interface_liquidity_pool import ILiquidityPool
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price, get_terminal_price
 from contracts.types import (
-    Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option, Pool, PoolInfo
+    Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option, Pool, PoolInfo,
+    OptionWithPremia
 )
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,

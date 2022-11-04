@@ -82,7 +82,6 @@ func test_minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 }
 
 
-
 @external
 func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     // test
