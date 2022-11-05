@@ -9,7 +9,7 @@ cairo-path = [
     "./lib/cairo_contracts/src",
     "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
     "contracts/",
-    "./lib/cairo_contracts/src"
+    "./lib/cairo_streams/src"
 ]
 
 ["protostar.contracts"]

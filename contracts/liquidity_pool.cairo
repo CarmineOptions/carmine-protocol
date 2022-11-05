@@ -2,7 +2,7 @@
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from constants import get_decimal
-from helpers import max, _get_value_of_position, min, _get_premia_with_fees
+from helpers import max, _get_value_of_position, min, _get_premia_with_fees, sum
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 
@@ -659,6 +659,32 @@ func save_lptoken_addresses_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+// @view
+// func get_value_of_users_capital_in_lpools{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+// ) -> felt {
+//     alloc_locals;
+//     let (lptokens_total, lptoken_addrs) = get_all_lptoken_addresses();
+//     // filter to only ones in which the user has a stake
+//     let (values_of_capital) = stream.map(get_value_of_capital_in_lpool, lptokens_total, lptoken_addrs);
+
+//     let (value_of_capital) = stream.reduce(sum, 4, array);
+
+// }
+
+// // Returns total value of capital in lpool, so sum of value of all options held by pool + 
+// // + value of unlocked (free) capital
+// @view
+// func get_value_of_capital_in_lpool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+//     lptoken_address: Address
+// ) -> (res: Math64x61_) {
+//     lpool_balance // get amount of given underlying
+//     get_value_of_pool_position // get value of pool's options
+
+//     let (current_locked_capital) = pool_locked_capital.read(lptoken_address);
+//     let (current_total_capital) = lpool_balance.read(lptoken_address);
+//     let current_unlocked_capital = Math64x61.sub(current_total_capital, current_locked_capital);
+// }
+
 // Returns a total value of pools position (sum of value of all options held by pool).
 // Goes through all options in storage var "available_options"... is able to iterate by i
 // (from 0 to n)
@@ -761,6 +787,57 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let res = Math64x61.add(value_of_option, value_of_rest_of_the_pool);
 
     return (res = res);
+}
+
+@view
+func get_all_poolinfo{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+} () -> (
+    poolinfo_len: felt,
+    poolinfo: PoolInfo*
+) {
+    alloc_locals;
+    let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
+    // map address->poolinfo via get_poolinfo
+    let (res: PoolInfo*) = alloc();
+    map_address_to_poolinfo(lptoken_addrs, res, lptoken_addrs_len, 0);
+    //let (array : PoolInfo*) = alloc();
+    //let pool = Pool(0, 0, 0);
+    //let poolinfo = PoolInfo(pool, 0, 0, 0, 0);
+    //assert array[0] = poolinfo;
+    return (lptoken_addrs_len, res);
+    //return (lptoken_addrs_len, array);
+}
+
+func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    lpt_addrs: Address*,
+    poolinfo: PoolInfo*,
+    array_len: felt,
+    curr_index: felt
+) -> () {
+    let val = get_poolinfo(lpt_addrs[curr_index]);
+    assert poolinfo[curr_index] = val;
+    if(array_len == curr_index + 1){
+        return ();
+    }
+    return map_address_to_poolinfo(lpt_addrs, poolinfo, array_len, curr_index + 1);
+}
+
+// ready for use with stream.map_struct // turns out its useless
+func get_poolinfo{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address
+) -> PoolInfo {
+    alloc_locals;
+    with_attr error_message("unable to get prerequisites for poolinfo"){
+        let (pool: Pool) = pool_definition_from_lptoken_address.read(lptoken_address);
+        let (current_balance) = lpool_balance.read(lptoken_address);
+        let (free_capital) = get_unlocked_capital(lptoken_address);
+        let (value_of_position) = get_value_of_pool_position(lptoken_address);
+    }
+    let res = PoolInfo(pool, lptoken_address, current_balance, free_capital, value_of_position);
+    return res;
 }
 
 
