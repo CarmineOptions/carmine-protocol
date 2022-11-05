@@ -18,7 +18,7 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 func upgrade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     new_implementation: felt
 ) {
-    Proxy.assert_only_admin();
+    // Proxy.assert_only_admin();
     Proxy._set_implementation_hash(new_implementation);
     return ();
 }
@@ -35,7 +35,7 @@ func getAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}()
 
 @external
 func setAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(address: felt) {
-    Proxy.assert_only_admin();
+    // Proxy.assert_only_admin();
     Proxy._set_admin(address);
     return ();
 }
