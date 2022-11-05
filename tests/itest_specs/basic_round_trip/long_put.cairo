@@ -55,7 +55,7 @@ namespace LongPutRoundTrip {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
             )
         %}
 
@@ -316,7 +316,7 @@ namespace LongPutRoundTrip {
         %{
             stop_mock_current_price()
             stop_mock_current_price_2 = mock_call(
-                ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
+                ids.tmp_address, "get_spot_median", [145000000000, 8, 0, 0]  # mock current ETH price at 1450
             )
         %}
 

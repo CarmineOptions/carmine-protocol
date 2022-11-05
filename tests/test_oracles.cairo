@@ -12,11 +12,11 @@ from contracts.constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMP
 
 @external
 func test_convert_price{range_check_ptr}() {
-    // Test price is 1480.23 * 10**18
-    let test_price = 1480230000000000000000;
-    let (converted_price) = convert_price(test_price, 18);
+    // Test price is 1480.23 * 10**8
+    let test_price = 148023000000;
+    let (converted_price) = convert_price(test_price, 8);
 
-    // Target price is approx. = test_price / 10**18 * 2**61
+    // Target price is approx. = test_price / 10**8 * 2**61
     let target_price = 3413177997528386198568;
 
     // This was checked manually
@@ -29,22 +29,22 @@ func test_Math64x61_div_imprecise{range_check_ptr}() {
     // both x and y are Math64x61
     // this is needed because of weird error in overflow
     alloc_locals;
-    let decimals = 18;
+    let decimals = 8;
     let (pow10xM) = pow(10, decimals);
     let pow10xM_to_64x61 = Math64x61.fromFelt(pow10xM);
 
-    // test ETH price 1480.23 * 10**18
-    let eth_test = 1480230000000000000000;
+    // test ETH price 1480.23 * 10**8
+    let eth_test = 148023000000;
     let eth_res = Math64x61_div_imprecise(eth_test, pow10xM_to_64x61);
     assert eth_res = 1480;
 
-    // test BTC price 21567.86 * 10**18
-    let btc_test = 21567860000000000000000;
+    // test BTC price 21567.86 * 10**8
+    let btc_test = 2156786000000;
     let btc_res = Math64x61_div_imprecise(btc_test, pow10xM_to_64x61);
     assert btc_res = 21567;
 
     // test some random coin worth 0.58 dollars
-    let rand_test = 580000000000000000;
+    let rand_test = 58000000;
     let rand_res = Math64x61_div_imprecise(rand_test, pow10xM_to_64x61);
     assert rand_res = 0;  // FIXME: this should not be zero
 
@@ -57,7 +57,7 @@ func test_empiric_median_price{range_check_ptr, syscall_ptr: felt*}() {
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
-            ids.tmp_address, "get_spot_median", [1480230000000000000000, 18, 0, 0]
+            ids.tmp_address, "get_spot_median", [148023000000, 8, 0, 0]
         )
     %}
 

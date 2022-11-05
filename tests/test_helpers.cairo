@@ -22,7 +22,7 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
-            ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]
+            ids.tmp_address, "get_spot_median", [145000000000, 8, 0, 0]
         )
     %}
  
