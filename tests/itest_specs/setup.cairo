@@ -108,7 +108,6 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
 
     let max_127bit_number = 0x80000000000000000000000000000000;
     let approve_amt = Uint256(low = max_127bit_number, high = max_127bit_number);
-    let million = Uint256(low = 1000000, high = 0);
     %{
         stop_prank_myeth = start_prank(context.admin_address, context.myeth_address)
     %}
