@@ -15,6 +15,7 @@ from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
 from tests.itest_specs.addition_of_lp_tokens import AdditionOfLPTokens
 from tests.itest_specs.addition_of_option_tokens import AdditionOfOptionTokens
 from tests.itest_specs.view_functions.liquidity_pool_basic import LPBasicViewFunctions
+from tests.itest_specs.view_functions.liquidity_pool_aggregate import LPAggregateViewFunctions
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
@@ -126,5 +127,12 @@ func test_get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_p
 @external
 func test_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     LPBasicViewFunctions.get_option_with_position_of_user();
+    return ();
+}
+
+
+@external
+func test_get_liquidity_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPAggregateViewFunctions.get_all_poolinfo();
     return ();
 }
