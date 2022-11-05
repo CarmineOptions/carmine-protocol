@@ -505,10 +505,49 @@ func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuil
     array : felt*
 ) {
     alloc_locals;
-    let (array : OptionWithUsersPosition*) = alloc();
+    let array: OptionWithUsersPosition* = alloc();
     let array_len = save_option_with_position_of_user_to_array(0, array, 0, 0);
 
     return (array_len, array);
+}
+
+
+func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    option: Option,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_,
+    position_size: Math64x61_
+) -> (res: Math64x61_) {
+    alloc_locals;
+
+    let (current_block_time) = get_block_timestamp();
+    let is_ripe = is_le(option.maturity, current_block_time);
+
+    // If option has expired
+    if (is_ripe == TRUE) {
+        let quote_token_address = option.quote_token_address;
+        let base_token_address = option.base_token_address;
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+
+        let (long_value, short_value) = split_option_locked_capital(
+            option.option_type, option.option_side, position_size, option.strike_price, terminal_price
+        );
+        if (option.option_side == TRADE_SIDE_LONG) {
+            return (long_value,);
+        }
+        return (short_value,);
+    }
+
+    // If option has not expired yet
+    let (premia_with_fees_x_position) = _get_premia_with_fees(
+        option=option,
+        position_size=position_size,
+        option_type=option.option_type,
+        current_volatility=current_volatility,
+        current_pool_balance=current_pool_balance
+    );
+    return (premia_with_fees_x_position, );
 }
 
 
@@ -521,7 +560,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     alloc_locals;
 
     // Stop when all the liquidity pools were iterated.
-    let (lptoken_address) = get_available_lptoken_addresses(option_index);
+    let (lptoken_address) = get_available_lptoken_addresses(pool_index);
     if (lptoken_address == 0) {
         return array_len_so_far;
     }
@@ -536,6 +575,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
             option_index=0
         );
     }
+
     let (option_token_address) = get_option_token_address(
         lptoken_address=lptoken_address,
         option_side=option.option_side,
@@ -560,21 +600,16 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         );
     }
 
-    // Get value of users positio
+    // Get value of users position
     let one = Math64x61.fromFelt(1);
     let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
     let (current_pool_balance) = get_unlocked_capital(lptoken_address);
     with_attr error_message(
         "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
     ){
-        let (premia_with_fees) = _get_premia_with_fees(
-            option=option,
-            position_size=one,
-            option_type=option.option_type,
-            current_volatility=current_volatility,
-            current_pool_balance=current_pool_balance
+        let (premia_with_fees_x_position) = _get_premia_for_get_option_with_position_of_user(
+            option, current_volatility, current_pool_balance, position_size
         );
-        let premia_with_fees_x_position = Math64x61.mul(premia_with_fees, position_size);
     }
 
     // Create OptionWithUsersPosition and append to array
@@ -583,11 +618,12 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         position_size=position_size,
         value_of_position=premia_with_fees_x_position,
     );
+
     assert [array] = option_with_users_position;
 
     return save_option_with_position_of_user_to_array(
         array_len_so_far=array_len_so_far + OptionWithUsersPosition.SIZE,
-        array=array,
+        array=array + OptionWithUsersPosition.SIZE,
         pool_index=pool_index,
         option_index=option_index + 1
     );
