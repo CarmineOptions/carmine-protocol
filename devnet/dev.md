@@ -16,9 +16,9 @@ docker compose up
 
 Wait until the deploy is done, it will let you know via terminal output.
 
-All the necessary env variables are now stored in `_current_vars.env`, you can copy and export them in your working environment.
+All the necessary env variables are now stored in `/devnet/deployed_vars.env`, you can copy and export them in your working environment.
 
-The current dev net can be accessed at `localhost:80`. To check that the proxy is working, you can run
+The current dev net can be accessed at `localhost:5050`. To check that the proxy is working, you can run
 
 ```
 curl localhost/liveness
@@ -34,14 +34,10 @@ If both services are up, you can start using local devnet.
 
 ## Devnet Commands
 
-All `starknet` commands must be run with additional options to communicate with the local devnet:
+Make sure that local variable from `/devnet/deployed_vars.env` are exported inside your working environment. Variables starting with `STARKNET_...` tell the starknet to use your running devnet.
+
+To send funds to your FE wallet run this command:
 
 ```
-starknet --chain_id 0x534e5f474f45524c49 --network_id devnet --gateway_url http://localhost --feeder_gateway_url http://localhost/ [the actual command]
-```
-
-If you have exported outputted env variables, you can use:
-
-```
-starknet --chain_id $CHAIN_ID --network_id $NETWORK_ID --gateway_url $GATEWAY --feeder_gateway_url $GATEWAY [the actual command]
+starknet invoke --address $ETH_ADDRESS --abi ./build/lptoken_abi.json --function transfer --inputs [wallet address] 99999999999999999999 0
 ```
