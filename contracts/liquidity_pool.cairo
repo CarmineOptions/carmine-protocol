@@ -10,7 +10,7 @@ from lib.pow import pow10
 
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import abs_value, assert_not_zero, signed_div_rem
-from starkware.cairo.common.math_cmp import is_nn//, is_le
+from starkware.cairo.common.math_cmp import is_nn, is_not_zero//, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
     uint256_mul,
@@ -66,6 +66,7 @@ func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     alloc_locals;
 
     let x_low = x.low;
+    assert x.high = 0;
 
     with_attr error_message("Failed fromUint256 with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
@@ -421,7 +422,7 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     array_len_so_far : felt,
     array : Option*
 ) -> felt {
-    let (option) = available_options.read(lptoken_address, array_len_so_far);
+    let (option) = get_available_options(lptoken_address, array_len_so_far);
     if (option.quote_token_address == 0 and option.base_token_address == 0) {
         return array_len_so_far;
     }
@@ -454,7 +455,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
 ) -> felt {
     alloc_locals;
 
-    let (option) = available_options.read(lptoken_address, option_index);
+    let (option) = get_available_options(lptoken_address, option_index);
     if (option.quote_token_address == 0 and option.base_token_address == 0) {
         return array_len_so_far;
     }
@@ -494,6 +495,101 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
 
     return save_all_non_expired_options_with_premia_to_array(
         lptoken_address, array_len_so_far, array, option_index + 1
+    );
+}
+
+
+@view
+func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+    array_len : felt,
+    array : felt*
+) {
+    alloc_locals;
+    let (array : OptionWithUsersPosition*) = alloc();
+    let array_len = save_option_with_position_of_user_to_array(0, array, 0, 0);
+
+    return (array_len, array);
+}
+
+
+func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    array_len_so_far : felt,
+    array : OptionWithUsersPosition*,
+    pool_index: felt,
+    option_index: felt
+) -> felt {
+    alloc_locals;
+
+    // Stop when all the liquidity pools were iterated.
+    let (lptoken_address) = get_available_lptoken_addresses(option_index);
+    if (lptoken_address == 0) {
+        return array_len_so_far;
+    }
+
+    // Jump to next pool when current pool's options were iterated.
+    let (option) = get_available_options(lptoken_address, option_index);
+    if (option.quote_token_address == 0 and option.base_token_address == 0) {
+        return save_option_with_position_of_user_to_array(
+            array_len_so_far=array_len_so_far,
+            array=array,
+            pool_index=pool_index + 1,
+            option_index=0
+        );
+    }
+    let (option_token_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
+        option_side=option.option_side,
+        maturity=option.maturity,
+        strike_price=option.strike_price
+    );
+
+    // Get users position size
+    let (caller_addr) = get_caller_address();
+    let (position_size_uint256) = IOptionToken.balanceOf(
+        contract_address=option_token_address,
+        account=caller_addr
+    );
+    let position_size = fromUint256(position_size_uint256, option_token_address);
+
+    if (position_size == 0) {
+        return save_option_with_position_of_user_to_array(
+            array_len_so_far=array_len_so_far,
+            array=array,
+            pool_index=pool_index,
+            option_index=option_index + 1
+        );
+    }
+
+    // Get value of users positio
+    let one = Math64x61.fromFelt(1);
+    let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+    let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+    with_attr error_message(
+        "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
+    ){
+        let (premia_with_fees) = _get_premia_with_fees(
+            option=option,
+            position_size=one,
+            option_type=option.option_type,
+            current_volatility=current_volatility,
+            current_pool_balance=current_pool_balance
+        );
+        let premia_with_fees_x_position = Math64x61.mul(premia_with_fees, position_size);
+    }
+
+    // Create OptionWithUsersPosition and append to array
+    let option_with_users_position = OptionWithUsersPosition(
+        option=option,
+        position_size=position_size,
+        value_of_position=premia_with_fees_x_position,
+    );
+    assert [array] = option_with_users_position;
+
+    return save_option_with_position_of_user_to_array(
+        array_len_so_far=array_len_so_far + OptionWithUsersPosition.SIZE,
+        array=array,
+        pool_index=pool_index,
+        option_index=option_index + 1
     );
 }
 

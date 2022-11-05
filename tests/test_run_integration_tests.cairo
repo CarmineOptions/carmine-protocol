@@ -121,3 +121,10 @@ func test_get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_p
     LPBasicViewFunctions.get_all_non_expired_options_with_premia();
     return ();
 }
+
+
+@external
+func test_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_option_with_position_of_user();
+    return ();
+}

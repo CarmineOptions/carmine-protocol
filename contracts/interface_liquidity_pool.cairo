@@ -72,6 +72,9 @@ namespace ILiquidityPool {
     ) {
     }
 
+    func get_option_with_position_of_user() -> (array_len : felt, array : felt*) {
+    }
+
 
     func get_all_lptoken_addresses() -> (array_len : felt, array : Address*) {
     }

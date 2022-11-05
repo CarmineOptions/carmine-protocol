@@ -31,6 +31,12 @@ struct OptionWithPremia {
     premia: Math64x61_,
 }
 
+struct OptionWithUsersPosition {
+    option: Option,
+    position_size: Math64x61_,
+    value_of_position: Math64x61_,
+}
+
 struct Pool {
     quote_token_address: Address,
     base_token_address: Address,
