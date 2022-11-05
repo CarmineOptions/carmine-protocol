@@ -5,9 +5,7 @@ WORKDIR /carmine/
 COPY requirements.txt ./
 
 RUN pip install -r requirements.txt
-COPY devnet/init.sh ./
 COPY devnet/starknet_open_zeppelin_accounts.json /root/.starknet_accounts/starknet_open_zeppelin_accounts.json
-RUN chmod +x ./init.sh
 
-ENTRYPOINT ["./init.sh"]
+ENTRYPOINT ["python", "/carmine/devnet/init.py"]
 CMD ["tail", "-f", "/dev/null"]
