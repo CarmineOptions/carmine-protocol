@@ -28,7 +28,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
 
         # Deploy Proxy contract and set proxy_mock_hash_1 as initial hash
         context.proxy_addr = deploy_contract(
-            "proxy_contract/proxy.cairo",
+            "contracts/proxy_contract/proxy.cairo",
             [context.proxy_mock_hash_1, 0, 0]
         ).contract_address
     %}
