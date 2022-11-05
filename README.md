@@ -311,19 +311,7 @@ Components:
     - Contains function that delegates the calls to the Implementation contract
 
 How to build:
-- Implementation contract
-    - Just run `protostar build` command
-
-- Proxy contract 
-    - Needs to be built separately (with `starknet-compile`, for example)
-    - Navigate to proxy_contract folder
-    - Run: 
-    ``` 
-            starknet-compile proxy.cairo    \ 
-                --output ../build/proxy.json    \
-                --abi ../build/proxy_abi.json   \
-                --cairo_path ../lib/cairo_contracts/src 
-    ```
+ - Run `protostar build` command
 
 How to deploy:
 

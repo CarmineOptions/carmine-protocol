@@ -24,3 +24,6 @@ lptoken = [
 option_token = [
     "./contracts/option_token.cairo"
 ]
+proxy = [
+    "./contracts/proxy_contract/proxy.cairo"
+]
