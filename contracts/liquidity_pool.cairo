@@ -2,7 +2,7 @@
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from constants import get_decimal
-from helpers import max, _get_value_of_position, min, _get_premia_with_fees, sum
+from helpers import max, _get_value_of_position, min, _get_premia_with_fees
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 
@@ -789,6 +789,49 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (res = res);
 }
 
+struct UserPoolInfo {
+    value: Math64x61_,
+    poolinfo: PoolInfo,
+}
+
+@view
+func get_user_poolinfo{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+} (user: Address) -> (
+    upoolinfo_len: felt,
+    upoolinfo: UserPoolInfo*
+) {
+    alloc_locals;
+    let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
+    let (res: UserPoolInfo*) = alloc();
+    let (upoolinfo_len: felt) = map_and_filter_address_to_userpoolinfo(lptoken_addrs, lptoken_addrs_len, res);
+    return (upoolinfo_len, res);
+}
+
+func map_and_filter_address_to_userpoolinfo{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+} (lptoken_addrs: Address*, lptoken_addrs_len: felt, upoolinfo: UserPoolInfo*)
+    -> (upoolinfo_len: felt){
+    if (lptoken_addrs_len == 0){
+        return (0,);
+    }
+    let val = get_userpoolinfo(lptoken_addrs[0]);
+    if (val.value == 0){
+        return map_and_filter_address_to_userpoolinfo(lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo);
+    }
+    assert [upoolinfo] = val;
+    let (retval: felt) = map_and_filter_address_to_userpoolinfo(lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo + UserPoolInfo.SIZE);
+    let retval_adj = retval + 1;
+    return (retval_adj,);
+}
+
+// func get_value_of_capital_in_lpool{
+//     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+// } () -> (
+// ) {
+
+// }
+
 @view
 func get_all_poolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -821,6 +864,16 @@ func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         return ();
     }
     return map_address_to_poolinfo(lpt_addrs, poolinfo, array_len, curr_index + 1);
+}
+
+func get_userpoolinfo{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address
+) -> UserPoolInfo {
+    let poolinfo = get_poolinfo(lptoken_address);
+    let res = UserPoolInfo(1, poolinfo); // TODO
+    return res;
 }
 
 // ready for use with stream.map_struct // turns out its useless
