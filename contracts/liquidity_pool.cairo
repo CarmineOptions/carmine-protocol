@@ -789,10 +789,6 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (res = res);
 }
 
-struct UserPoolInfo {
-    value: Math64x61_,
-    poolinfo: PoolInfo,
-}
 
 @view
 func get_user_poolinfo{
@@ -804,23 +800,23 @@ func get_user_poolinfo{
     alloc_locals;
     let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
     let (res: UserPoolInfo*) = alloc();
-    let (upoolinfo_len: felt) = map_and_filter_address_to_userpoolinfo(lptoken_addrs, lptoken_addrs_len, res);
+    let (upoolinfo_len: felt) = map_and_filter_address_to_userpoolinfo(user, lptoken_addrs, lptoken_addrs_len, res);
     return (upoolinfo_len, res);
 }
 
 func map_and_filter_address_to_userpoolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-} (lptoken_addrs: Address*, lptoken_addrs_len: felt, upoolinfo: UserPoolInfo*)
+} (user_addr: Address, lptoken_addrs: Address*, lptoken_addrs_len: felt, upoolinfo: UserPoolInfo*)
     -> (upoolinfo_len: felt){
     if (lptoken_addrs_len == 0){
         return (0,);
     }
-    let val = get_userpoolinfo(lptoken_addrs[0]);
-    if (val.value == 0){
-        return map_and_filter_address_to_userpoolinfo(lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo);
+    let val = get_userpoolinfo(user_addr, lptoken_addrs[0]);
+    if (val.value.low == 0){
+        return map_and_filter_address_to_userpoolinfo(user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo);
     }
     assert [upoolinfo] = val;
-    let (retval: felt) = map_and_filter_address_to_userpoolinfo(lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo + UserPoolInfo.SIZE);
+    let (retval: felt) = map_and_filter_address_to_userpoolinfo(user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo + UserPoolInfo.SIZE);
     let retval_adj = retval + 1;
     return (retval_adj,);
 }
@@ -866,13 +862,31 @@ func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return map_address_to_poolinfo(lpt_addrs, poolinfo, array_len, curr_index + 1);
 }
 
+// Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
 func get_userpoolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
+    user_address: Address,
     lptoken_address: Address
 ) -> UserPoolInfo {
+    alloc_locals;
     let poolinfo = get_poolinfo(lptoken_address);
-    let res = UserPoolInfo(1, poolinfo); // TODO
+    let (balance: Uint256) = ILPToken.balanceOf(contract_address=lptoken_address, account=user_address);
+    if (balance.low == 0 and balance.high == 0){
+        let nonzero_val = Uint256(1, 0);
+        let res = UserPoolInfo(nonzero_val, poolinfo);
+        return res;
+    }
+
+    let (currency_address) = get_underlying_token_address(lptoken_address); // This is unnecessarry, right?
+    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
+    let total_value_of_pool_m64x61: Math64x61_ = Math64x61.add(poolinfo.unlocked_capital, poolinfo.value_of_pool);
+    let total_value_of_pool: Uint256 = toUint256(total_value_of_pool_m64x61, currency_address);
+    // User_value = (lpt_balance/total_lpt) * pool_balance = lpt_balance * pool_balance / total_lpt
+    let (a_low, a_high) = uint256_mul(balance, total_value_of_pool);  //uint256_unsigned_div_rem(balance, total_lpt);
+    let (b_div, b_rem) = uint256_unsigned_div_rem(a_low, total_lpt);
+    // returns less than it should in edge cases, but by the time we need this, Cairo 1.0 overhauls this and we are rewriting all the view functions anyway
+    let res = UserPoolInfo(b_div, poolinfo);
     return res;
 }
 
@@ -1208,7 +1222,7 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     with_attr error_message("Failed to get total_underlying_amt in get_underlying_for_lptokens"){
         let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
     }
-
+//
     with_attr error_message("Failed to get to_burn_additional_quot in get_underlying_for_lptokens"){
         let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt);
         let (b_low, b_high) = uint256_mul(a_quot, lpt_amt);
