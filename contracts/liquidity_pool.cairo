@@ -199,12 +199,9 @@ func get_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 }
 
 
-// FIXME remove the "@external" once the contract was upgraded and the Proxy.assert_only_admin
-@external
 func set_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     order_i: Int, lptoken_address: Address
 ) -> () {
-    Proxy.assert_only_admin();
     available_lptoken_addresses.write(order_i, lptoken_address);
     return ();
 }
