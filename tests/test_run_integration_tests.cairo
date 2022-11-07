@@ -70,7 +70,7 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 
 
 @external
-func test_minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+func test_minimal_round_trip_long_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     // test
     // -> buy call option
     // -> withdraw half of the liquidity that was originally deposited from call pool
@@ -83,7 +83,7 @@ func test_minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
 
 @external
-func test_minimal_round_trip_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+func test_minimal_round_trip_long_put{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     // test
     // -> buy put option
     // -> withdraw half of the liquidity that was originally deposited from put pool
