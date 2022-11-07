@@ -2,6 +2,8 @@
 
 %lang starknet
 
+from starkware.cairo.common.uint256 import Uint256
+
 using Bool = felt; // boolean
 using Wad = felt; // 18 decimal floating point
 using Math64x61_ = felt; // 64x61 floating point based on Math64x61 library
@@ -53,5 +55,10 @@ struct PoolInfo {
     lptoken_address: Address,
     staked_capital: Math64x61_,  // lpool_balance
     unlocked_capital: Math64x61_,
-    value_of_pool: Math64x61_,
+    value_of_pool: Math64x61_, // value_of_pool_position
+}
+
+struct UserPoolInfo {
+    value: Uint256,
+    poolinfo: PoolInfo,
 }
