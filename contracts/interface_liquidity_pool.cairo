@@ -5,7 +5,10 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
-from types import Address, OptionType, Math64x61_, OptionSide, Int, OptionWithPremia, Option, PoolInfo
+from types import (
+    Address, OptionType, Math64x61_, OptionSide, Int, OptionWithPremia, Option, PoolInfo,
+    UserPoolInfo
+)
 
 @contract_interface
 namespace ILiquidityPool {
@@ -86,6 +89,13 @@ namespace ILiquidityPool {
 
 
     func get_all_poolinfo() -> (pool_info_len: felt, pool_info: PoolInfo*) {
+    }
+
+
+    func get_user_pool_infos(user: Address) -> (
+        user_pool_info_len: felt,
+        user_pool_info: UserPoolInfo*
+    ) {
     }
 
 
