@@ -238,28 +238,6 @@ func _get_premia_with_fees{
         with_attr error_message("helpers._get_premia_with_fees premia_with_fees is negative FAILED"){
             assert_nn(premia_with_fees);
         }
-        if (side == TRADE_SIDE_LONG) {
-            return (position_value=premia_with_fees);
-        }
     }
-
-    if (option_type == OPTION_CALL) {
-        let locked_capital = option_size;
-        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
-
-        with_attr error_message("helpers._get_premia_with_fees locked_and_premia_with_fees 1 is negative FAILED"){
-            assert_nn(locked_and_premia_with_fees);
-        }
-        return (position_value = locked_and_premia_with_fees);
-    } else {
-
-        let locked_capital = Math64x61.mul(option_size, strike_price);
-        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
-
-        with_attr error_message("helpers._get_premia_with_fees locked_and_premia_with_fees 2 is negative FAILED"){
-            assert_nn(locked_and_premia_with_fees);
-        }
-
-        return (position_value = locked_and_premia_with_fees);
-    }
+    return (position_value=premia_with_fees);
 }
