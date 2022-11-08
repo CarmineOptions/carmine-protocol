@@ -7,6 +7,8 @@ import time
 options = []
 main_contract_address = None
 lptoken_contract_address = None
+lptoken_contract_address_put = None
+initial_liquidity = "0x8ac7230489e80000"
 
 
 def wait_until(somepredicate, timeout, period=0.25, *args, **kwargs):
@@ -34,12 +36,13 @@ def run_command(command):
     return hashes
 
 
-def add_option(inputs):
+def add_option(type, inputs):
+    pool = lptoken_contract_address if type == "call" else lptoken_contract_address_put
     contract = run_command(['starknet', 'deploy', '--contract', '/carmine/build/option_token.json', '--no_wallet', '--salt',
                             os.environ["SALT"], '--inputs', inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12]])
 
-    add = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function', 'add_option',
-                       '--inputs', inputs[12], inputs[11], inputs[10], inputs[7], inputs[8], inputs[9], lptoken_contract_address, contract[0], os.environ["INITIAL_VOLATILITY"]])
+    run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function', 'add_option',
+                 '--inputs', inputs[12], inputs[11], inputs[10], inputs[7], inputs[8], inputs[9], pool, contract[0], os.environ["INITIAL_VOLATILITY"]])
     options.append(contract[0])
     return contract
 
@@ -56,9 +59,10 @@ def write_env_vars():
                  main_contract_address + "\n")
     lines.append("export LPTOKEN_CONTRACT_ADDRESS=" +
                  lptoken_contract_address + "\n")
+    lines.append("export LPTOKEN_CONTRACT_ADDRESS_PUT=" +
+                 lptoken_contract_address_put + "\n")
     lines.append("export ETH_ADDRESS=" + os.environ["ETH_ADDRESS"] + "\n")
     lines.append("export USD_ADDRESS=" + os.environ["USD_ADDRESS"] + "\n")
-    lines.append("export OPTION_TYPE=" + os.environ["OPTION_TYPE"] + "\n")
     lines.append("export ACCOUNT_0_ADDRESS=" +
                  os.environ["ACCOUNT_0_ADDRESS"] + "\n")
     lines.append("export ACCOUNT_0_PUBLIC=" +
@@ -69,7 +73,10 @@ def write_env_vars():
                  os.environ["STARKNET_WALLET"] + "\n")
     lines.append("export STRIKE_PRICE=" + os.environ["STRIKE_PRICE"] + "\n")
     lines.append("export MATURITY_1=" + os.environ["MATURITY_1"] + "\n")
-    lines.append("export OPTION_TYPE=" + os.environ["OPTION_TYPE"] + "\n")
+    lines.append("export OPTION_TYPE_CALL=" +
+                 os.environ["OPTION_TYPE_CALL"] + "\n")
+    lines.append("export OPTION_TYPE_PUT=" +
+                 os.environ["OPTION_TYPE_PUT"] + "\n")
     lines.append("export OPTION_SIDE_LONG=" +
                  os.environ["OPTION_SIDE_LONG"] + "\n")
     lines.append("export OPTION_SIDE_SHORT=" +
@@ -92,39 +99,111 @@ def write_env_vars():
     f.writelines(lines)
 
 
-print('Starting')
+start_time = time.time()
+print('Starting', flush=True)
 temp = run_command(['starknet', 'deploy', '--contract', '/carmine/build/amm.json',
                     '--no_wallet', '--salt', os.environ['SALT']])
 main_contract_address = temp[0]
 
+# USD_ADDRESS
+# DEPLOY
+# temp = run_command(['starknet', 'deploy', '--contract', '/carmine/build/lptoken.json', '--no_wallet', '--salt',
+#                     os.environ['SALT'], '--inputs', '111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address])
+# print("USD_ADDRESS:", temp[0])
+
+# LPTOKEN_CONTRACT_ADDRESS <- CALL
+# DEPLOY
 temp = run_command(["starknet", "deploy", "--contract", "/carmine/build/lptoken.json", "--no_wallet", "--salt", os.environ['SALT'], "--inputs",
-                   "111", "11", "18", "0", "0", os.environ["ACCOUNT_0_ADDRESS"], main_contract_address])
+                    "111", "11", "18", "0", "0", os.environ["ACCOUNT_0_ADDRESS"], main_contract_address])
 lptoken_contract_address = temp[0]
 
+# ADD_LPTOKEN
 temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
-                    'add_lptoken', '--inputs', os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE"], lptoken_contract_address])
+                    'add_lptoken', '--inputs', os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_CALL"], lptoken_contract_address])
 
+# APPROVE
 temp = run_command(['starknet', 'invoke', '--address', os.environ["ETH_ADDRESS"], '--abi', '/carmine/build/lptoken_abi.json', '--function',
-                   'approve', '--inputs', main_contract_address, "0x1bc16d674ec80000", "0"])
+                    'approve', '--inputs', main_contract_address, initial_liquidity, "0"])
 
+# DEPOSIT_LIQUIDITY
 temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
-                   'deposit_liquidity', '--inputs', os.environ["ETH_ADDRESS"], os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE"], "0x1bc16d674ec80000", "0"])
-
-temp = add_option(['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
-                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE'], os.environ['STRIKE_PRICE'], os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+                    'deposit_liquidity', '--inputs', os.environ["ETH_ADDRESS"], os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_CALL"], initial_liquidity, "0"])
 
 
-temp = add_option(['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
-                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE'], '3248180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+# LPTOKEN_CONTRACT_ADDRESS_PUT
+# DEPLOY
+temp = run_command(["starknet", "deploy", "--contract", "/carmine/build/lptoken.json", "--no_wallet", "--salt", "0x69", "--inputs",
+                   "111", "11", "18", "0", "0", os.environ["ACCOUNT_0_ADDRESS"], main_contract_address])
+lptoken_contract_address_put = temp[0]
 
-temp = add_option(['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
-                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE'], '3228180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+# ADD_LPTOKEN
+temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
+                    'add_lptoken', '--inputs', os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_PUT"], lptoken_contract_address_put])
 
-temp = add_option(['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
-                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE'], '3689348814741910323200', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+# APPROVE
+temp = run_command(['starknet', 'invoke', '--address', os.environ["ETH_ADDRESS"], '--abi', '/carmine/build/lptoken_abi.json', '--function',
+                   'approve', '--inputs', main_contract_address, initial_liquidity, "0"])
 
-temp = add_option(['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
-                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+# DEPOSIT_LIQUIDITY
+temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
+                   'deposit_liquidity', '--inputs', os.environ["USD_ADDRESS"], os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_PUT"], initial_liquidity, "0"])
+
+
+# LONG CALL options
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], os.environ['STRIKE_PRICE'], os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3248180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3228180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3689348814741910323200', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+
+# SHORT CALL options
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], os.environ['STRIKE_PRICE'], os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3248180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3228180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3689348814741910323200', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                           os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+
+# LONG PUT options
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3228180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3689348814741910323200', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
+
+
+# SHORT PUT options
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3228180212899171532800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3689348814741910323200', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
+temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
+                  os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
+
 
 print('main contract address is:', main_contract_address)
 print('lptoken contract address is:', lptoken_contract_address)
@@ -132,3 +211,8 @@ print('lptoken contract address is:', lptoken_contract_address)
 write_env_vars()
 
 print('Done')
+print("Finished in %s seconds" % (time.time() - start_time), flush=True)
+
+while True:
+    time.sleep(300)
+    print("I've been up for another 5 minutes!", flush=True)

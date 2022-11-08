@@ -71,20 +71,22 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt
 func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: Math64x61_) {
     alloc_locals;
 
-    with_attr error_message("Failed when getting median price from Empiric Oracle") {
-        let (
-            value, decimals, last_updated_timestamp, num_sources_aggregated
-        ) = IEmpiricOracle.get_spot_median(EMPIRIC_ORACLE_ADDRESS, key);
-    }
+    // with_attr error_message("Failed when getting median price from Empiric Oracle") {
+    //     let (
+    //         value, decimals, last_updated_timestamp, num_sources_aggregated
+    //     ) = IEmpiricOracle.get_spot_median(EMPIRIC_ORACLE_ADDRESS, key);
+    // }
 
-    with_attr error_message("Received zero median price from Empiric Oracle") {
-        assert_not_zero(value);
-    }
+    // with_attr error_message("Received zero median price from Empiric Oracle") {
+    //     assert_not_zero(value);
+    // }
 
-    with_attr error_message("Failed when converting Empiric Oracle median price to Math64x61 format") {
-        let (res) = convert_price(value, decimals);
-        assert_not_zero(res);
-    }
+    // with_attr error_message("Failed when converting Empiric Oracle median price to Math64x61 format") {
+    //     let (res) = convert_price(value, decimals);
+    //     assert_not_zero(res);
+    // }
+
+    let res = Math64x61.fromFelt(1450);
 
     return (res,);
 }
