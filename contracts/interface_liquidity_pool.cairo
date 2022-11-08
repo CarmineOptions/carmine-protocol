@@ -72,6 +72,7 @@ namespace ILiquidityPool {
     ) {
     }
 
+
     func get_option_with_position_of_user() -> (array_len : felt, array : felt*) {
     }
 
@@ -81,6 +82,10 @@ namespace ILiquidityPool {
 
 
     func get_value_of_pool_position(lptoken_address: Address) -> (res: Math64x61_) {
+    }
+
+
+    func get_all_poolinfo() -> (pool_info_len: felt, pool_info: PoolInfo*) {
     }
 
 
@@ -160,13 +165,6 @@ namespace ILiquidityPool {
 
 
     func getAdmin(){
-    }
-
-
-    func get_all_poolinfo() -> (
-        poolinfo_len: felt,
-        poolinfo: PoolInfo*
-    ) {
     }
 
 
