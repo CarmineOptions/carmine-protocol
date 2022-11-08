@@ -835,39 +835,35 @@ func get_one_user_pool_info{
 
 @view
 func get_all_poolinfo{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-} () -> (
-    poolinfo_len: felt,
-    poolinfo: PoolInfo*
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+) -> (
+    pool_info_len: felt,
+    pool_info: PoolInfo*
 ) {
     alloc_locals;
     let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
-    // map address->poolinfo via get_poolinfo
     let (res: PoolInfo*) = alloc();
     map_address_to_poolinfo(lptoken_addrs, res, lptoken_addrs_len, 0);
-    //let (array : PoolInfo*) = alloc();
-    //let pool = Pool(0, 0, 0);
-    //let poolinfo = PoolInfo(pool, 0, 0, 0, 0);
-    //assert array[0] = poolinfo;
+
+    // return (lptoken_addrs_len * PoolInfo.SIZE, res);
     return (lptoken_addrs_len, res);
-    //return (lptoken_addrs_len, array);
 }
 
 func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     lpt_addrs: Address*,
     poolinfo: PoolInfo*,
-    array_len: felt,
+    lpt_addrs_len: felt,
     curr_index: felt
 ) -> () {
     let val = get_poolinfo(lpt_addrs[curr_index]);
     assert poolinfo[curr_index] = val;
-    if(array_len == curr_index + 1){
+    if(lpt_addrs_len == curr_index + 1){
         return ();
     }
-    return map_address_to_poolinfo(lpt_addrs, poolinfo, array_len, curr_index + 1);
+    return map_address_to_poolinfo(lpt_addrs, poolinfo, lpt_addrs_len, curr_index + 1);
 }
 
-// ready for use with stream.map_struct // turns out its useless
+
 func get_poolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
