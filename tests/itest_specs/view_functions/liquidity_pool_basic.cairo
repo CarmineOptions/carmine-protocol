@@ -506,6 +506,7 @@ namespace LPBasicViewFunctions {
         local lpt_call_addr;
         local lpt_put_addr;
         local amm_addr;
+        local admin_address;
         %{
             ids.opt_long_call_addr_1 = context.opt_long_call_addr_1
             ids.opt_long_put_addr = context.opt_long_put_addr_0
@@ -513,6 +514,7 @@ namespace LPBasicViewFunctions {
             ids.lpt_call_addr = context.lpt_call_addr
             ids.lpt_put_addr = context.lpt_put_addr
             ids.amm_addr = context.amm_addr
+            ids.admin_address = context.admin_address
 
             stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
 
@@ -523,12 +525,13 @@ namespace LPBasicViewFunctions {
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
 
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+                ids.tmp_address, "get_last_checkpoint_before", [0, 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
             )
         %}
 
         let (options_with_position_len, options_with_position) = ILiquidityPool.get_option_with_position_of_user(
             contract_address=amm_addr,
+            user_address=admin_address
         );
 
         // *8 because the OptionWithUsersPosition struct has 8 elements

@@ -497,13 +497,15 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
 
 
 @view
-func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
+    user_address : Address
+) -> (
     array_len : felt,
-    array : felt*
+    array : felt*,
 ) {
     alloc_locals;
     let array: OptionWithUsersPosition* = alloc();
-    let array_len = save_option_with_position_of_user_to_array(0, array, 0, 0);
+    let array_len = save_option_with_position_of_user_to_array(0, array, 0, 0, user_address);
 
     return (array_len, array);
 }
@@ -552,7 +554,8 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     array_len_so_far : felt,
     array : OptionWithUsersPosition*,
     pool_index: felt,
-    option_index: felt
+    option_index: felt,
+    user_address: Address
 ) -> felt {
     alloc_locals;
 
@@ -569,7 +572,8 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
             array_len_so_far=array_len_so_far,
             array=array,
             pool_index=pool_index + 1,
-            option_index=0
+            option_index=0,
+            user_address=user_address
         );
     }
 
@@ -581,10 +585,9 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     );
 
     // Get users position size
-    let (caller_addr) = get_caller_address();
     let (position_size_uint256) = IOptionToken.balanceOf(
         contract_address=option_token_address,
-        account=caller_addr
+        account=user_address
     );
     let position_size = fromUint256(position_size_uint256, option_token_address);
 
@@ -593,7 +596,8 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
             array_len_so_far=array_len_so_far,
             array=array,
             pool_index=pool_index,
-            option_index=option_index + 1
+            option_index=option_index + 1,
+            user_address=user_address
         );
     }
 
@@ -622,7 +626,8 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         array_len_so_far=array_len_so_far + OptionWithUsersPosition.SIZE,
         array=array + OptionWithUsersPosition.SIZE,
         pool_index=pool_index,
-        option_index=option_index + 1
+        option_index=option_index + 1,
+        user_address=user_address
     );
 }
 

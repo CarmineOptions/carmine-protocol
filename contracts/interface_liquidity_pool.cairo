@@ -76,7 +76,9 @@ namespace ILiquidityPool {
     }
 
 
-    func get_option_with_position_of_user() -> (array_len : felt, array : felt*) {
+    func get_option_with_position_of_user(user_address : Address) -> (
+        array_len : felt, array : felt*
+    ) {
     }
 
 
