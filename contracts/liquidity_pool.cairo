@@ -805,31 +805,33 @@ func map_and_filter_address_to_userpoolinfo{
 }
 
 // Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
-func get_one_user_pool_info{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(
+func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     user_address: Address,
     lptoken_address: Address
 ) -> UserPoolInfo {
     alloc_locals;
-    let poolinfo = get_poolinfo(lptoken_address);
-    let (balance: Uint256) = ILPToken.balanceOf(contract_address=lptoken_address, account=user_address);
-    if (balance.low == 0 and balance.high == 0){
+
+    let pool_info = get_poolinfo(lptoken_address);
+    let (lptoken_balance: Uint256) = ILPToken.balanceOf(
+        contract_address=lptoken_address,
+        account=user_address
+    );
+    if (lptoken_balance.low == 0 and lptoken_balance.high == 0){
         let nonzero_val = Uint256(1, 0);
-        let res = UserPoolInfo(nonzero_val, poolinfo);
+        let res = UserPoolInfo(nonzero_val, pool_info);
         return res;
     }
 
-    let (currency_address) = get_underlying_token_address(lptoken_address);
-    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
-    let total_value_of_pool_m64x61: Math64x61_ = Math64x61.add(poolinfo.unlocked_capital, poolinfo.value_of_pool_position);
-    let total_value_of_pool: Uint256 = toUint256(total_value_of_pool_m64x61, currency_address);
-    // User_value = (lpt_balance/total_lpt) * pool_balance = lpt_balance * pool_balance / total_lpt
-    let (a_low, a_high) = uint256_mul(balance, total_value_of_pool);  //uint256_unsigned_div_rem(balance, total_lpt);
-    let (b_div, b_rem) = uint256_unsigned_div_rem(a_low, total_lpt);
-    // returns less than it should in edge cases, but by the time we need this, Cairo 1.0 overhauls this and we are rewriting all the view functions anyway
-    let res = UserPoolInfo(b_div, poolinfo);
-    return res;
+    let (value_of_user_stake: Uint256) = get_underlying_for_lptokens(
+        lptoken_address, lptoken_balance
+    );
+
+    let user_pool_info = UserPoolInfo(
+        value_of_user_stake=value_of_user_stake,
+        pool_info=pool_info
+    );
+
+    return user_pool_info;
 }
 
 
