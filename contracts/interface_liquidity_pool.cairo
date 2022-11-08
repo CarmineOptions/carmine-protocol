@@ -93,8 +93,8 @@ namespace ILiquidityPool {
 
 
     func get_user_pool_infos(user: Address) -> (
-        user_pool_info_len: felt,
-        user_pool_info: UserPoolInfo*
+        user_pool_infos_len: felt,
+        user_pool_infos: UserPoolInfo*
     ) {
     }
 
