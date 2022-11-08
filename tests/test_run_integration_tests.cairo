@@ -132,7 +132,14 @@ func test_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: Has
 
 
 @external
-func test_get_liquidity_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+func test_get_all_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     LPAggregateViewFunctions.get_all_poolinfo();
+    return ();
+}
+
+
+@external
+func test_get_user_pool_infos{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPAggregateViewFunctions.get_user_pool_infos();
     return ();
 }
