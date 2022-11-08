@@ -55,10 +55,10 @@ struct PoolInfo {
     lptoken_address: Address,
     staked_capital: Math64x61_,  // lpool_balance
     unlocked_capital: Math64x61_,
-    value_of_pool: Math64x61_, // value_of_pool_position
+    value_of_pool_position: Math64x61_,
 }
 
 struct UserPoolInfo {
-    value: Uint256,
-    poolinfo: PoolInfo,
+    value_of_user_stake: Uint256,
+    pool_info: PoolInfo,
 }

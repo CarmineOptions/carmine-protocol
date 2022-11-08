@@ -659,32 +659,6 @@ func save_lptoken_addresses_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-// @view
-// func get_value_of_users_capital_in_lpools{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-// ) -> felt {
-//     alloc_locals;
-//     let (lptokens_total, lptoken_addrs) = get_all_lptoken_addresses();
-//     // filter to only ones in which the user has a stake
-//     let (values_of_capital) = stream.map(get_value_of_capital_in_lpool, lptokens_total, lptoken_addrs);
-
-//     let (value_of_capital) = stream.reduce(sum, 4, array);
-
-// }
-
-// // Returns total value of capital in lpool, so sum of value of all options held by pool + 
-// // + value of unlocked (free) capital
-// @view
-// func get_value_of_capital_in_lpool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-//     lptoken_address: Address
-// ) -> (res: Math64x61_) {
-//     lpool_balance // get amount of given underlying
-//     get_value_of_pool_position // get value of pool's options
-
-//     let (current_locked_capital) = pool_locked_capital.read(lptoken_address);
-//     let (current_total_capital) = lpool_balance.read(lptoken_address);
-//     let current_unlocked_capital = Math64x61.sub(current_total_capital, current_locked_capital);
-// }
-
 // Returns a total value of pools position (sum of value of all options held by pool).
 // Goes through all options in storage var "available_options"... is able to iterate by i
 // (from 0 to n)
@@ -791,42 +765,73 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
 
 @view
-func get_user_poolinfo{
+func get_user_pool_infos{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 } (user: Address) -> (
-    upoolinfo_len: felt,
-    upoolinfo: UserPoolInfo*
+    user_pool_info_len: felt,
+    user_pool_info: UserPoolInfo*
 ) {
     alloc_locals;
     let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
     let (res: UserPoolInfo*) = alloc();
-    let (upoolinfo_len: felt) = map_and_filter_address_to_userpoolinfo(user, lptoken_addrs, lptoken_addrs_len, res);
-    return (upoolinfo_len, res);
+    let (user_pool_info_len: felt) = map_and_filter_address_to_userpoolinfo(
+        user, lptoken_addrs, lptoken_addrs_len, res
+    );
+    return (user_pool_info_len, res);
 }
 
 func map_and_filter_address_to_userpoolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-} (user_addr: Address, lptoken_addrs: Address*, lptoken_addrs_len: felt, upoolinfo: UserPoolInfo*)
-    -> (upoolinfo_len: felt){
+} (
+    user_addr: Address,
+    lptoken_addrs: Address*,
+    lptoken_addrs_len: felt,
+    user_pool_infos: UserPoolInfo*
+)-> (user_pool_info_len: felt){
     if (lptoken_addrs_len == 0){
         return (0,);
     }
-    let val = get_userpoolinfo(user_addr, lptoken_addrs[0]);
-    if (val.value.low == 0){
-        return map_and_filter_address_to_userpoolinfo(user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo);
+    let user_pool_info = get_one_user_pool_info(user_addr, lptoken_addrs[0]);
+    if (user_pool_info.value_of_user_stake.low == 0){
+        return map_and_filter_address_to_userpoolinfo(
+            user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, user_pool_infos
+        );
     }
-    assert [upoolinfo] = val;
-    let (retval: felt) = map_and_filter_address_to_userpoolinfo(user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, upoolinfo + UserPoolInfo.SIZE);
-    let retval_adj = retval + 1;
-    return (retval_adj,);
+    assert [user_pool_infos] = user_pool_info;
+    let (user_pool_infos_len: felt) = map_and_filter_address_to_userpoolinfo(
+        user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, user_pool_infos + UserPoolInfo.SIZE
+    );
+    return (user_pool_infos_len + UserPoolInfo.SIZE,);
 }
 
-// func get_value_of_capital_in_lpool{
-//     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-// } () -> (
-// ) {
+// Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
+func get_one_user_pool_info{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    user_address: Address,
+    lptoken_address: Address
+) -> UserPoolInfo {
+    alloc_locals;
+    let poolinfo = get_poolinfo(lptoken_address);
+    let (balance: Uint256) = ILPToken.balanceOf(contract_address=lptoken_address, account=user_address);
+    if (balance.low == 0 and balance.high == 0){
+        let nonzero_val = Uint256(1, 0);
+        let res = UserPoolInfo(nonzero_val, poolinfo);
+        return res;
+    }
 
-// }
+    let (currency_address) = get_underlying_token_address(lptoken_address);
+    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
+    let total_value_of_pool_m64x61: Math64x61_ = Math64x61.add(poolinfo.unlocked_capital, poolinfo.value_of_pool_position);
+    let total_value_of_pool: Uint256 = toUint256(total_value_of_pool_m64x61, currency_address);
+    // User_value = (lpt_balance/total_lpt) * pool_balance = lpt_balance * pool_balance / total_lpt
+    let (a_low, a_high) = uint256_mul(balance, total_value_of_pool);  //uint256_unsigned_div_rem(balance, total_lpt);
+    let (b_div, b_rem) = uint256_unsigned_div_rem(a_low, total_lpt);
+    // returns less than it should in edge cases, but by the time we need this, Cairo 1.0 overhauls this and we are rewriting all the view functions anyway
+    let res = UserPoolInfo(b_div, poolinfo);
+    return res;
+}
+
 
 @view
 func get_all_poolinfo{
@@ -860,34 +865,6 @@ func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         return ();
     }
     return map_address_to_poolinfo(lpt_addrs, poolinfo, array_len, curr_index + 1);
-}
-
-// Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
-func get_userpoolinfo{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(
-    user_address: Address,
-    lptoken_address: Address
-) -> UserPoolInfo {
-    alloc_locals;
-    let poolinfo = get_poolinfo(lptoken_address);
-    let (balance: Uint256) = ILPToken.balanceOf(contract_address=lptoken_address, account=user_address);
-    if (balance.low == 0 and balance.high == 0){
-        let nonzero_val = Uint256(1, 0);
-        let res = UserPoolInfo(nonzero_val, poolinfo);
-        return res;
-    }
-
-    let (currency_address) = get_underlying_token_address(lptoken_address); // This is unnecessarry, right?
-    let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
-    let total_value_of_pool_m64x61: Math64x61_ = Math64x61.add(poolinfo.unlocked_capital, poolinfo.value_of_pool);
-    let total_value_of_pool: Uint256 = toUint256(total_value_of_pool_m64x61, currency_address);
-    // User_value = (lpt_balance/total_lpt) * pool_balance = lpt_balance * pool_balance / total_lpt
-    let (a_low, a_high) = uint256_mul(balance, total_value_of_pool);  //uint256_unsigned_div_rem(balance, total_lpt);
-    let (b_div, b_rem) = uint256_unsigned_div_rem(a_low, total_lpt);
-    // returns less than it should in edge cases, but by the time we need this, Cairo 1.0 overhauls this and we are rewriting all the view functions anyway
-    let res = UserPoolInfo(b_div, poolinfo);
-    return res;
 }
 
 // ready for use with stream.map_struct // turns out its useless
@@ -1222,7 +1199,7 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     with_attr error_message("Failed to get total_underlying_amt in get_underlying_for_lptokens"){
         let (total_underlying_amt, _) = uint256_add(free_capital, value_of_position);
     }
-//
+
     with_attr error_message("Failed to get to_burn_additional_quot in get_underlying_for_lptokens"){
         let (a_quot, a_rem) = uint256_unsigned_div_rem(total_underlying_amt, total_lpt);
         let (b_low, b_high) = uint256_mul(a_quot, lpt_amt);
