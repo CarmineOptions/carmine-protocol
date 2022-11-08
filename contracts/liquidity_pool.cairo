@@ -768,16 +768,18 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 func get_user_pool_infos{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 } (user: Address) -> (
-    user_pool_info_len: felt,
-    user_pool_info: UserPoolInfo*
+    user_pool_infos_len: felt,
+    user_pool_infos: UserPoolInfo*
 ) {
     alloc_locals;
     let (lptoken_addrs_len: felt, lptoken_addrs: Address*) = get_all_lptoken_addresses();
-    let (res: UserPoolInfo*) = alloc();
-    let (user_pool_info_len: felt) = map_and_filter_address_to_userpoolinfo(
-        user, lptoken_addrs, lptoken_addrs_len, res
+    let (user_pool_infos: UserPoolInfo*) = alloc();
+
+    let (user_pool_infos_len: felt) = map_and_filter_address_to_userpoolinfo(
+        user, lptoken_addrs, lptoken_addrs_len, user_pool_infos
     );
-    return (user_pool_info_len, res);
+
+    return (user_pool_infos_len, user_pool_infos);
 }
 
 func map_and_filter_address_to_userpoolinfo{
@@ -788,20 +790,30 @@ func map_and_filter_address_to_userpoolinfo{
     lptoken_addrs_len: felt,
     user_pool_infos: UserPoolInfo*
 )-> (user_pool_info_len: felt){
+
     if (lptoken_addrs_len == 0){
         return (0,);
     }
-    let user_pool_info = get_one_user_pool_info(user_addr, lptoken_addrs[0]);
-    if (user_pool_info.value_of_user_stake.low == 0){
+
+    with_attr error_message(
+        "Failed getting user_pool_info in map_and_filter_address_to_userpoolinfo"
+    ){
+        let user_pool_info = get_one_user_pool_info(user_addr, lptoken_addrs[0]);
+    }
+
+    if (user_pool_info.value_of_user_stake.low == 0 and user_pool_info.value_of_user_stake.high == 0){
         return map_and_filter_address_to_userpoolinfo(
             user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, user_pool_infos
         );
     }
+
     assert [user_pool_infos] = user_pool_info;
+
     let (user_pool_infos_len: felt) = map_and_filter_address_to_userpoolinfo(
         user_addr, lptoken_addrs + 1, lptoken_addrs_len - 1, user_pool_infos + UserPoolInfo.SIZE
     );
-    return (user_pool_infos_len + UserPoolInfo.SIZE,);
+
+    return (user_pool_infos_len + 1,);
 }
 
 // Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
@@ -817,8 +829,8 @@ func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
         account=user_address
     );
     if (lptoken_balance.low == 0 and lptoken_balance.high == 0){
-        let nonzero_val = Uint256(1, 0);
-        let res = UserPoolInfo(nonzero_val, pool_info);
+        let zero_val = Uint256(0, 0);
+        let res = UserPoolInfo(value_of_user_stake=zero_val, pool_info=pool_info);
         return res;
     }
 
