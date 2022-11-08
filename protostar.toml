@@ -8,8 +8,7 @@ libs_path = "lib"
 cairo-path = [
     "./lib/cairo_contracts/src",
     "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
-    "contracts/",
-    "./lib/cairo_streams/src"
+    "contracts/"
 ]
 
 ["protostar.contracts"]
