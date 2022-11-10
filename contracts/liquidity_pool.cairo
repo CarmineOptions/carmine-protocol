@@ -1668,8 +1668,10 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("Failed to convert premia_including_fees to Uint256 _mint_option_token_long") {
             let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
         }
+
+        let premia_including_fees_uint256_low = premia_including_fees_uint256.low;
         with_attr error_message(
-            "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}"
+            "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}, {premia_including_fees_uint256} {option_size}, {option_size_in_pool_currency}"
         ) {
             IERC20.transferFrom(
                 contract_address=currency_address,
