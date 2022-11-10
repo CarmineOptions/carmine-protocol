@@ -444,18 +444,6 @@ func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: H
 }
 
 
-func _fake_position_size{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option: Option
-) -> Math64x61_ {
-    alloc_locals;
-    if (option.option_type == OPTION_CALL) {
-        let one = Math64x61.fromFelt(1);
-        return one;
-    }
-    return option.strike_price;
-}
-
-
 func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     array_len_so_far : felt,
@@ -472,7 +460,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
     // If option is non_expired append it, else keep going
     let (current_block_time) = get_block_timestamp();
     if (is_le(current_block_time, option.maturity) == TRUE) {
-        let position_size = _fake_position_size(option);
+        let one = Math64x61.fromFelt(1);
         let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
         let (current_pool_balance) = get_unlocked_capital(lptoken_address);
 
@@ -481,7 +469,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
         ){
             let (premia) = _get_premia_with_fees(
                 option=option,
-                position_size=position_size,
+                position_size=one,
                 option_type=option.option_type,
                 current_volatility=current_volatility,
                 current_pool_balance=current_pool_balance
