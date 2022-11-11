@@ -62,7 +62,7 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
 @view
 func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
-) -> (option_availability: felt) {
+) -> (option_availability: Bool) {
     let (option_address) = get_option_token_address(
         lptoken_address=lptoken_address,
         option_side=option_side,
@@ -197,7 +197,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
-) -> (premia : felt) {
+) -> (premia : Math64x61_) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
     // "user does not have opinion on the market state" - this may change down the line

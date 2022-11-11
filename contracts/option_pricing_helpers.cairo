@@ -119,7 +119,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     option_type: OptionType,
     side: OptionSide,
     strike_price: Math64x61_,
-    current_pool_balance: felt,
+    current_pool_balance: Math64x61_,
 ) -> (new_volatility: Math64x61_, trade_volatility: Math64x61_) {
     // Calculates two volatilities, one for trade that is happening
     // and the other to update the volatility param (storage_var).

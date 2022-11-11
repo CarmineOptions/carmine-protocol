@@ -50,11 +50,11 @@ func get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt,
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (position_value: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
     let (res) = _get_value_of_position(
         option,
         position_size,

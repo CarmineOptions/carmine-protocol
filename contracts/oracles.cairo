@@ -39,7 +39,7 @@ struct Checkpoint {
 
 // Function to convert base 10**decimals number from oracle to base 2**61
 // which is used throughout the AMM
-func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: felt) {
+func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: Math64x61_) {
     alloc_locals;
 
     let is_convertable = is_le(price, Math64x61.INT_PART);

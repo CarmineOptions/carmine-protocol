@@ -425,9 +425,8 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // inefficiency and wastefulness of this functions doesn't matter, since it will be axed before going to mainnet.
 // used only in removal of an option, which is something that will never happen
 func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: felt,
+    lptoken_address: Address,
     index: felt
-
 ) {
 
     // Write zero option in provided index
@@ -439,7 +438,7 @@ func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBu
 }
 
 func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: felt,
+    lptoken_address: Address,
     index: felt
 ) {
     alloc_locals;
