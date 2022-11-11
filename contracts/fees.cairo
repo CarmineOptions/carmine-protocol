@@ -7,11 +7,12 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from math64x61 import Math64x61
 
 from constants import FEE_PROPORTION_PERCENT
+from types import Math64x61_
 
 // Fees might be in the future dependent on many different variables and on current state.
 func get_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    value: felt
-) -> (fees: felt) {
+    value: Math64x61_
+) -> (fees: Math64x61_) {
     let three = Math64x61.fromFelt(3);
     let hundred = Math64x61.fromFelt(100);
     let fee_proportion = Math64x61.div(three, hundred);
