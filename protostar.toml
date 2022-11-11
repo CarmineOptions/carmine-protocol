@@ -15,6 +15,7 @@ cairo-path = [
 amm = [
     "./contracts/amm.cairo",
     "./contracts/liquidity_pool.cairo",
+    "./contracts/view.cairo",
     "./contracts/proxy_utils.cairo"
 ]
 lptoken = [
