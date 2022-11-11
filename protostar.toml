@@ -1,17 +1,13 @@
-["protostar.config"]
-protostar_version = "0.6.0"
-
-["protostar.project"]
-libs_path = "lib"
-
-["protostar.shared_command_configs"]
+[project]
+protostar-version = "0.7.0"
+lib-path = "lib"
 cairo-path = [
     "./lib/cairo_contracts/src",
     "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
     "contracts/"
 ]
 
-["protostar.contracts"]
+[contracts]
 amm = [
     "./contracts/amm.cairo",
     "./contracts/liquidity_pool.cairo",
@@ -20,12 +16,6 @@ amm = [
     "./contracts/view.cairo",
     "./contracts/proxy_utils.cairo"
 ]
-lptoken = [
-    "./contracts/lptoken.cairo"
-]
-option_token = [
-    "./contracts/option_token.cairo"
-]
-proxy = [
-    "./contracts/proxy_contract/proxy.cairo"
-]
+lptoken = ["contracts/lptoken.cairo"]
+option_token = ["contracts/option_token.cairo"]
+proxy = ["contracts/proxy_contract/proxy.cairo"]
