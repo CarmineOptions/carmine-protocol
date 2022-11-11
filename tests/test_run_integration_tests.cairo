@@ -6,7 +6,6 @@ from interface_option_token import IOptionToken
 from interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
-from build.ammcontract import fromUint256, toUint256
 from tests.itest_specs.setup import deploy_setup
 from tests.itest_specs.basic_round_trip.long_put import LongPutRoundTrip
 from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip

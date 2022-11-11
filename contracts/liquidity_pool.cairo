@@ -1,15 +1,12 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from constants import get_decimal
-from helpers import max, _get_value_of_position, min, _get_premia_with_fees
+from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toUint256_balance
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 
-from lib.pow import pow10
-
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import abs_value, assert_not_zero, signed_div_rem
+from starkware.cairo.common.math import abs_value, assert_not_zero
 from starkware.cairo.common.math_cmp import is_nn, is_not_zero//, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
@@ -22,71 +19,6 @@ from starkware.cairo.common.uint256 import (
 from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.access.ownable.library import Ownable
-
-
-// Custom conversions from Math64_61 to Uint256 and back
-func toUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    x: Math64x61_,
-    currency_address: Address
-) -> Uint256 {
-    alloc_locals;
-
-    with_attr error_message("Failed toUint256 with input {x}, {currency_address}"){
-        // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
-        let (decimal) = get_decimal(currency_address);
-        let (dec_) = pow10(decimal);
-        // with_attr error_message("dec to Math64x61 Failed in toUint256"){
-        //     let dec = Math64x61.fromFelt(dec_);
-        // }
-
-        // let x_ = Math64x61.mul(x, dec);
-        // equivalent opperation as Math64x61.mul, but avoid the scale by 2**61
-        // Math64x61.mul takes two Math64x61 and multiplies them and divides them by 2**61
-        // (x*2**61) * (y*2**61) / 2**61
-        // Instead we skip the "*2**61" near "y" and the "/ 2**61"
-        let x_ = x * dec_;
-
-        with_attr error_message("x_ out of bounds in toUint256"){
-            assert_le(x, Math64x61.BOUND);
-            assert_le(-Math64x61.BOUND, x);
-        }
-
-        let amount_felt = Math64x61.toFelt(x_);
-        let res = Uint256(low = amount_felt, high = 0);
-    }
-    return res;
-}
-
-
-func fromUint256{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    x: Uint256,
-    currency_address: Address
-) -> Math64x61_ {
-    alloc_locals;
-
-    let x_low = x.low;
-    assert x.high = 0;
-
-    with_attr error_message("Failed fromUint256 with input {x_low}, {currency_address}"){
-        // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
-        let (decimal) = get_decimal(currency_address);
-        let (dec_) = pow10(decimal);
-        // let dec = Math64x61.fromFelt(dec_);
-
-        let x_ = Math64x61.fromUint256(x);
-        // let x__ = Math64x61.div(x_, dec);
-        // Equivalent to Math64x61.div
-
-        // let div = abs_value(dec_);
-        // let div_sign = sign(dec_);
-        // no need to get sign of y, sin dec_ is positiove
-        // tempvar product = x * FRACT_PART;
-        // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
-        let (x__, _) = signed_div_rem(x_, dec_, Math64x61.BOUND);
-        Math64x61.assert64x61(x__);
-    }
-    return x__;
-}
 
 
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -156,7 +88,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     //        would get the remaining locked capital.
     // Both scaled by the size of position.
     // option position is measured in base token (ETH in case of ETH/USD) that's why
-    // the fromUint256 uses option.base_token_address
+    // the fromUint256_balance uses option.base_token_address
     // let (_option_position_dec) = option_position.read(
     let (_option_position) = option_position.read(
         lptoken_address,
@@ -165,7 +97,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         option.strike_price
     );
     // let _option_position_uint256 = Uint256(low=_option_position_dec, high=0);
-    // let _option_position = fromUint256(_option_position_uint256, option.base_token_address);
+    // let _option_position = fromUint256_balance(_option_position_uint256, option.base_token_address);
 
     // If option position is 0, the value of given position is zero.
     if (_option_position == 0) {
@@ -217,12 +149,12 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     with_attr error_message("Failed to get free_capital in get_lptokens_for_underlying"){
         let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
         let (currency_address) = get_underlying_token_address(lptoken_address);
-        let free_capital = toUint256(free_capital_Math64, currency_address);
+        let free_capital = toUint256_balance(free_capital_Math64, currency_address);
     }
 
     with_attr error_message("Failed to value pools position in get_lptokens_for_underlying"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-        let value_of_position = toUint256(value_of_position_Math64, currency_address);
+        let value_of_position = toUint256_balance(value_of_position_Math64, currency_address);
     }
 
     with_attr error_message("Failed to get value of pool get_lptokens_for_underlying"){
@@ -281,12 +213,12 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         "Failed to get free_capital in get_underlying_for_lptokens, {lptoken_address}, {lpt_amt}, {free_capital_Math64}"
     ){
         let (currency_address) = get_underlying_token_address(lptoken_address);
-        let free_capital = toUint256(free_capital_Math64, currency_address);
+        let free_capital = toUint256_balance(free_capital_Math64, currency_address);
     }
 
     with_attr error_message("Failed to get value_of_position in get_underlying_for_lptokens"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
-        let value_of_position = toUint256(value_of_position_Math64, currency_address);
+        let value_of_position = toUint256_balance(value_of_position_Math64, currency_address);
     }
     
     with_attr error_message("Failed to get total_underlying_amt in get_underlying_for_lptokens"){
@@ -429,7 +361,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
     with_attr error_message("Failed to update the lpool_balance"){
-        let amount_math64x61 = fromUint256(amount, underlying_token_address);
+        let amount_math64x61 = fromUint256_balance(amount, underlying_token_address);
         let (current_balance) = lpool_balance.read(lptoken_address);
         let new_pb = Math64x61.add(current_balance, amount_math64x61);
         lpool_balance.write(lptoken_address, new_pb);
@@ -482,7 +414,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     ){
         let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
         let (currency_address) = get_underlying_token_address(lptoken_address);
-        let underlying_amount_Math64 = fromUint256(underlying_amount_uint256, currency_address);
+        let underlying_amount_Math64 = fromUint256_balance(underlying_amount_uint256, currency_address);
     }
 
     with_attr error_message(

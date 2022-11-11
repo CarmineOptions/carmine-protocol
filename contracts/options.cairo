@@ -197,13 +197,13 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
         // Mint tokens
         with_attr error_message("Failed to mint option token in _mint_option_token_long") {
-            let option_size_uint256 = toUint256(option_size, base_address);
+            let option_size_uint256 = toUint256_balance(option_size, base_address);
             IOptionToken.mint(option_token_address, user_address, option_size_uint256);
         }
 
         // Move premia and fees from user to the pool
         with_attr error_message("Failed to convert premia_including_fees to Uint256 _mint_option_token_long") {
-            let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
+            let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
         }
 
         let premia_including_fees_uint256_low = premia_including_fees_uint256.low;
@@ -314,13 +314,13 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         }
 
         // Mint tokens
-        let option_size_uint256 = toUint256(option_size, base_address);
+        let option_size_uint256 = toUint256_balance(option_size, base_address);
         IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
         let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
 
         // Move (option_size minus (premia minus fees)) from user to the pool
-        let to_be_paid_by_user_uint256 = toUint256(to_be_paid_by_user, currency_address);
+        let to_be_paid_by_user_uint256 = toUint256_balance(to_be_paid_by_user, currency_address);
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=user_address,
@@ -472,10 +472,10 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let base_address = pool_definition.base_token_address;
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size, base_address);
+    let option_size_uint256 = toUint256_balance(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-    let premia_including_fees_uint256 = toUint256(premia_including_fees, currency_address);
+    let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -569,12 +569,12 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let base_address = pool_definition.base_token_address;
 
     // Burn the tokens
-    let option_size_uint256 = toUint256(option_size, base_address);
+    let option_size_uint256 = toUint256_balance(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
     let total_user_payment = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
-    let total_user_payment_uint256 = toUint256(total_user_payment, currency_address);
+    let total_user_payment_uint256 = toUint256_balance(total_user_payment, currency_address);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
@@ -745,13 +745,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         option_type, option_side, option_size, strike_price, terminal_price
     );
     let (currency_address) = get_underlying_token_address(lptoken_address);
-    let long_value_uint256 = toUint256(long_value, currency_address);
-    let short_value_uint256 = toUint256(short_value, currency_address);
+    let long_value_uint256 = toUint256_balance(long_value, currency_address);
+    let short_value_uint256 = toUint256_balance(short_value, currency_address);
 
     // Validate that the user is not burning more than he/she has.
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
     let base_address = pool_definition.base_token_address;
-    let option_size_uint256 = toUint256(option_size, base_address);
+    let option_size_uint256 = toUint256_balance(option_size, base_address);
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         // Match64x61 adn Uint256

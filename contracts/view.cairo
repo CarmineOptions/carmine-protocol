@@ -191,7 +191,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         contract_address=option_token_address,
         account=user_address
     );
-    let position_size = fromUint256(position_size_uint256, option_token_address);
+    let position_size = fromUint256_balance(position_size_uint256, option_token_address);
 
     if (position_size == 0) {
         return save_option_with_position_of_user_to_array(
