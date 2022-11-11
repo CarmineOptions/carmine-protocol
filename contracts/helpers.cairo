@@ -19,7 +19,7 @@ from contracts.option_pricing_helpers import (
     add_premia_fees,
     get_new_volatility
 )
-from contracts.types import Option, Math64x61_, Address
+from contracts.types import Option, Math64x61_, Address, OptionType
 
 from starkware.cairo.common.bool import TRUE
 from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem
@@ -60,11 +60,11 @@ func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt,
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (total_premia_before_fees: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (total_premia_before_fees: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -141,11 +141,11 @@ func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt,
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (position_value: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -211,11 +211,11 @@ func _get_premia_with_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt,
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (position_value: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
     // Gets premia ADJUSTED for fees!!!
     // FIXME: this is basically the same as _get_value_of_position... only one is from perspective
     // of liquidating position and the other from perspective of entering position

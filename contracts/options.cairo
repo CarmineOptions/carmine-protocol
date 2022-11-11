@@ -9,7 +9,7 @@
 // wrong result when calculating value of pool's position
 @external
 func remove_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: felt,
+    lptoken_address: Address,
     index: felt
 ) {
     alloc_locals;
