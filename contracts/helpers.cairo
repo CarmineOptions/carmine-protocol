@@ -67,11 +67,25 @@ func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
+<<<<<<< HEAD
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
     current_pool_balance: Math64x61_,
 ) -> (total_premia_before_fees: Math64x61_){
+||||||| parent of 689e4cc (Polish replace felt with specific types)
+    position_size: felt,
+    option_type: felt,
+    current_volatility: felt,
+    current_pool_balance: felt
+) -> (total_premia_before_fees: felt){
+=======
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (total_premia_before_fees: Math64x61_){
+>>>>>>> 689e4cc (Polish replace felt with specific types)
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -190,11 +204,25 @@ func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
+<<<<<<< HEAD
     position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
     current_pool_balance: Math64x61_
 ) -> (position_value: Math64x61_){
+||||||| parent of 689e4cc (Polish replace felt with specific types)
+    position_size: felt,
+    option_type: felt,
+    current_volatility: felt,
+    current_pool_balance: felt
+) -> (position_value: felt){
+=======
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
+>>>>>>> 689e4cc (Polish replace felt with specific types)
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
