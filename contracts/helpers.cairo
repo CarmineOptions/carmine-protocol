@@ -7,7 +7,8 @@ from contracts.constants import (
     TRADE_SIDE_LONG,
     RISK_FREE_RATE,
     get_empiric_key,
-    get_opposite_side
+    get_opposite_side,
+    get_decimal
 )
 from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
@@ -18,13 +19,19 @@ from contracts.option_pricing_helpers import (
     add_premia_fees,
     get_new_volatility
 )
-from contracts.types import Option
+from contracts.types import Option, Math64x61_, Address
 
 from starkware.cairo.common.bool import TRUE
-from starkware.cairo.common.math import assert_nn
+from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    assert_le
+)
+
 from math64x61 import Math64x61
+from lib.pow import pow10
 
 func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     value_a: felt, value_b: felt
@@ -240,4 +247,70 @@ func _get_premia_with_fees{
         }
     }
     return (position_value=premia_with_fees);
+}
+
+
+// Conversions from Math64_61 to Uint256 and back
+// Only for balances/token amounts. Takes care of getting decimals etc
+func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Math64x61_,
+    currency_address: Address
+) -> Uint256 {
+    alloc_locals;
+
+    with_attr error_message("Failed toUint256_balance with input {x}, {currency_address}"){
+        // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
+        let (decimal) = get_decimal(currency_address);
+        let (dec_) = pow10(decimal);
+        // with_attr error_message("dec to Math64x61 Failed in toUint256_balance"){
+        //     let dec = Math64x61.fromFelt(dec_);
+        // }
+
+        // let x_ = Math64x61.mul(x, dec);
+        // equivalent opperation as Math64x61.mul, but avoid the scale by 2**61
+        // Math64x61.mul takes two Math64x61 and multiplies them and divides them by 2**61
+        // (x*2**61) * (y*2**61) / 2**61
+        // Instead we skip the "*2**61" near "y" and the "/ 2**61"
+        let x_ = x * dec_;
+
+        with_attr error_message("x_ out of bounds in toUint256_balance"){
+            assert_le(x, Math64x61.BOUND);
+            assert_le(-Math64x61.BOUND, x);
+        }
+
+        let amount_felt = Math64x61.toFelt(x_);
+        let res = Uint256(low = amount_felt, high = 0);
+    }
+    return res;
+}
+
+
+func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Uint256,
+    currency_address: Address
+) -> Math64x61_ {
+    alloc_locals;
+
+    let x_low = x.low;
+    assert x.high = 0;
+
+    with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
+        // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
+        let (decimal) = get_decimal(currency_address);
+        let (dec_) = pow10(decimal);
+        // let dec = Math64x61.fromFelt(dec_);
+
+        let x_ = Math64x61.fromUint256(x);
+        // let x__ = Math64x61.div(x_, dec);
+        // Equivalent to Math64x61.div
+
+        // let div = abs_value(dec_);
+        // let div_sign = sign(dec_);
+        // no need to get sign of y, sin dec_ is positiove
+        // tempvar product = x * FRACT_PART;
+        // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
+        let (x__, _) = signed_div_rem(x_, dec_, Math64x61.BOUND);
+        Math64x61.assert64x61(x__);
+    }
+    return x__;
 }
