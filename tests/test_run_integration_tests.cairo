@@ -10,6 +10,7 @@ from tests.itest_specs.setup import deploy_setup
 from tests.itest_specs.basic_round_trip.long_put import LongPutRoundTrip
 from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip
 from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
+from tests.itest_specs.basic_round_trip.short_call import ShortCallRoundTrip
 from tests.itest_specs.withdraw_liquidity import WithdrawLiquidity
 from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
 from tests.itest_specs.addition_of_lp_tokens import AdditionOfLPTokens
@@ -79,6 +80,19 @@ func test_minimal_round_trip_long_call{syscall_ptr: felt*, pedersen_ptr: HashBui
     // -> settle pool
     // -> settle the option
     LongCallRoundTrip.minimal_round_trip_call();
+    return ();
+}
+
+
+@external
+func test_minimal_round_trip_short_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    // test
+    // -> sell call option
+    // -> withdraw half of the liquidity that was originally deposited from call pool
+    // FIXME: TBD -> close half of the bought option
+    // FIXME: TBD -> settle pool
+    // FIXME: TBD -> settle the option
+    ShortCallRoundTrip.minimal_round_trip_call();
     return ();
 }
 
