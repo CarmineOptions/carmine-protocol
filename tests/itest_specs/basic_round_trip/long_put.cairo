@@ -244,11 +244,11 @@ namespace LongPutRoundTrip {
         assert put_pool_unlocked_capital_1 = 8312145542824114278327;
 
         // Test balance of option tokens in the account after the option was bought
-        let (bal_opt_long_put_tokens_0: Uint256) = IOptionToken.balanceOf(
+        let (bal_opt_long_put_tokens_1: Uint256) = IOptionToken.balanceOf(
             contract_address=opt_long_put_addr,
             account=admin_addr
         );
-        assert bal_opt_long_put_tokens_0.low = 1000000000000000000;
+        assert bal_opt_long_put_tokens_1.low = 1000000000000000000;
 
         // Test pool_volatility -> 142.85714285714286 put and 100 call
         let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
