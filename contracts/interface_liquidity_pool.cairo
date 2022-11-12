@@ -153,11 +153,6 @@ namespace ILiquidityPool {
     ) {
     }
 
-    func get_value_of_pool_position(
-        lptoken_address: Address
-    ) -> (res: Math64x61_) {
-    }
-
     func expire_option_token(
         currency_address: felt,
         option_token_address: felt,
