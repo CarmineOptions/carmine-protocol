@@ -13,19 +13,14 @@ from math64x61 import Math64x61
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 
-
-// FIXME: add the rest of the round trip
-// FIXME: add missing checks similar to the long put round trip
-
-
 namespace LongCallRoundTrip {
     func minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
         // test
         // -> buy call option
         // -> withdraw half of the liquidity that was originally deposited from call pool
-        // FIXME: TBD -> close half of the bought option
-        // FIXME: TBD -> settle pool
-        // FIXME: TBD -> settle the option
+        // -> close half of the bought option
+        // -> settle pool
+        // -> settle the option
         alloc_locals;
 
         tempvar lpt_call_addr;
@@ -164,6 +159,18 @@ namespace LongCallRoundTrip {
         );
         assert put_pool_locked_capital_0=0;
 
+        // test value of pools position
+        let (pools_pos_val_call) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call = 0;
+        
+        let (pools_pos_val_put) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put = 0;
 
         ///////////////////////////////////////////////////
         // BUY THE CALL OPTION
@@ -318,6 +325,20 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_put_addr
         );
         assert put_pool_locked_capital_1=0;
+        
+        // test value of pools position
+        let (pools_pos_val_call_2) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call_2 = 2303761625947164530;
+        
+        let (pools_pos_val_put_2) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put_2 = 0;
+
         ///////////////////////////////////////////////////
         // UPDATE THE ORACLE PRICE
         ///////////////////////////////////////////////////
@@ -491,6 +512,19 @@ namespace LongCallRoundTrip {
         assert put_pool_unlocked_capital_3 = 11529215046068469760000; // 5000
 
       
+        // test value of pools position
+        let (pools_pos_val_call_3) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call_3 = 2296093292106925939;
+        
+        let (pools_pos_val_put_3) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put_3 = 0;
+
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
         ///////////////////////////////////////////////////
@@ -649,6 +683,18 @@ namespace LongCallRoundTrip {
         );
         assert put_pool_locked_capital_3=0;
 
+        // test value of pools position
+        let (pools_pos_val_call_4) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call_4 = 1146740266760908653;
+        
+        let (pools_pos_val_put_4) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put_4 = 0;
         // ///////////////////////////////////////////////////
         // // SETTLE (EXPIRE) POOL
         // ///////////////////////////////////////////////////
@@ -823,6 +869,18 @@ namespace LongCallRoundTrip {
         );
         assert put_pool_locked_capital_4 = 0;
 
+        // test value of pools position
+        let (pools_pos_val_call_5) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call_5 = 0;
+        
+        let (pools_pos_val_put_5) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put_5 = 0;
 
         ///////////////////////////////////////////////////
         // SETTLE BOUGHT OPTION
@@ -965,6 +1023,19 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_put_addr
         );
         assert put_pool_locked_capital_5 = 0;
+
+        // test value of pools position
+        let (pools_pos_val_call_6) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_call_addr
+        );
+        assert pools_pos_val_call_6 = 0;
+        
+        let (pools_pos_val_put_6) = ILiquidityPool.get_value_of_pool_position(
+            contract_address = amm_addr,
+            lptoken_address = lpt_put_addr
+        );
+        assert pools_pos_val_put_6 = 0;
 
         %{
             # optional, but included for completeness and extensibility
