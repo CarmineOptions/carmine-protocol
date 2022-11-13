@@ -285,7 +285,7 @@ namespace LPBasicViewFunctions {
         // There are 3 call options
         //      two with maturity 1000000000 + 60*60*24
         //      one with maturity 1000000000 - 60*60*24
-        // There are 2 pyt options both with maturity 1000000000 + 60*60*24
+        // There are 2 put options both with maturity 1000000000 + 60*60*24
         // Only the options with maturity 1000000000 + 60*60*24 should show -> 2 calls, 2 puts
 
         alloc_locals;
@@ -334,11 +334,14 @@ namespace LPBasicViewFunctions {
         // *7 because the OptionWithPremia struct has 7 elements
         assert option_call_len = 2*7;
         assert option_put_len = 2*7;
-
+        
         // Calls
         let option_call_side_0 = get_array_element(0, option_call_len, option_call_array);
         let option_call_maturity_0 = get_array_element(1, option_call_len, option_call_array);
         let option_call_strike_0 = get_array_element(2, option_call_len, option_call_array);
+        let option_call_premia_0 = get_array_element(6, option_call_len, option_call_array);
+
+        assert option_call_premia_0 = 2081174898976881;
 
         let (call_option_token_address_0) = ILiquidityPool.get_option_token_address(
             contract_address=amm_addr,
@@ -352,6 +355,11 @@ namespace LPBasicViewFunctions {
         let option_call_side_1 = get_array_element(7, option_call_len, option_call_array);
         let option_call_maturity_1 = get_array_element(8, option_call_len, option_call_array);
         let option_call_strike_1 = get_array_element(9, option_call_len, option_call_array);
+        let option_call_premia_1 = get_array_element(13, option_call_len, option_call_array);
+
+        assert option_call_premia_1 = 608622173767232;
+
+        
         let (call_option_token_address_1) = ILiquidityPool.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
@@ -365,6 +373,10 @@ namespace LPBasicViewFunctions {
         let option_put_side_0 = get_array_element(0, option_put_len, option_put_array);
         let option_put_maturity_0 = get_array_element(1, option_put_len, option_put_array);
         let option_put_strike_0 = get_array_element(2, option_put_len, option_put_array);
+        let option_put_premia_0 = get_array_element(6, option_put_len, option_put_array);
+
+        assert option_put_premia_0 = 241695010576185446327;
+        
         let (put_option_token_address_0) = ILiquidityPool.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
@@ -377,6 +389,10 @@ namespace LPBasicViewFunctions {
         let option_put_side_1 = get_array_element(7, option_put_len, option_put_array);
         let option_put_maturity_1 = get_array_element(8, option_put_len, option_put_array);
         let option_put_strike_1 = get_array_element(9, option_put_len, option_put_array);
+        let option_put_premia_1 = get_array_element(13, option_put_len, option_put_array);
+
+        assert option_put_premia_1 = 224338456389442822640;     
+
         let (put_option_token_address_1) = ILiquidityPool.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
