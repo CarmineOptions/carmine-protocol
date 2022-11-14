@@ -10,23 +10,20 @@ from starkware.cairo.common.math_cmp import is_le
 // Third party imports. Was copy pasted to this repo.
 from math64x61 import Math64x61
 
-func _decimal_thousandth{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    x: felt
-) -> (res: felt) {
-    let cons = Math64x61.fromFelt(x);
-    let thousand = Math64x61.fromFelt(1000);
-    let res = Math64x61.div(cons, thousand);
-    return (res,);
-}
 
-func _get_pi{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: felt) {
-    // Can't have it outside, since it requires "range_check_ptr"
-    // 3.14159265358979
-    let PI_a = Math64x61.fromFelt(314159265358979);
-    let PI_b = Math64x61.fromFelt(10 ** 14);
-    let PI = Math64x61.div(PI_a, PI_b);
-    return (PI,);
-}
+
+const HALF = 1152921504606846976;
+const THREE = 6917529027641081856;
+const EIGHT = 18446744073709551616;
+const TEN = 23058430092136939520;
+// const two_pi = 14488038916154230748;
+const inv_root_of_two_pi = 919898267902984507;
+const const_a = 521120520082294833;
+const const_b = 1475739525896764129;
+const const_c = 760928193040519004;
+const inv_exp_ten = 104685105675288;
+
+
 
 func inv_exp_big_x{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> (
     x: felt
@@ -36,24 +33,20 @@ func inv_exp_big_x{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     alloc_locals;
 
-    let ten = Math64x61.fromFelt(10);
-
-    let is_le_ten = is_le(x, ten);
+    let is_le_ten = is_le(x, TEN);
     if (is_le_ten == 1) {
         let exp_x = Math64x61.exp(x);
         let res = Math64x61.div(Math64x61.ONE, exp_x);
         return (x=res);
     } else {
-        let x_minus_ten = Math64x61.sub(x, ten);
+        let x_minus_ten = Math64x61.sub(x, TEN);
         let (inv_exp_x_minus_ten) = inv_exp_big_x(x_minus_ten);
-
-        let exp_ten = Math64x61.exp(ten);
-        let inv_exp_ten = Math64x61.div(Math64x61.ONE, exp_ten);
 
         let res = Math64x61.mul(inv_exp_ten, inv_exp_x_minus_ten);
         return (x=res);
     }
 }
+
 
 // Calculates approximate value of standard normal CDF
 func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> (
@@ -72,32 +65,15 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     }
 
     with_attr error_message("option_pricing.std_normal_cdf received X value higher than 8") {
-        let max_x_val = Math64x61.fromFelt(8);
-        assert_le(x, max_x_val);
+        assert_le(x, EIGHT);
     }
 
-    // Constants required in the "rest of the code".
-    let (PI) = _get_pi();
-
-    // TODO: check following
-    // Math64x61.fromFelt is used to make sure that the multiplications (and etc) below do now overflow.
-    // But I'm far from sure that without it they would overflow and with this they won't.
-    let TWO = Math64x61.fromFelt(2);
-    let THREE = Math64x61.fromFelt(3);
-    let two_pi = Math64x61.mul(TWO, PI);
-    let root_of_two_pi = Math64x61.sqrt(two_pi);
-    let inv_root_of_two_pi = Math64x61.div(Math64x61.ONE, root_of_two_pi);
-    let (const_a) = _decimal_thousandth(226);
-    let (const_b) = _decimal_thousandth(640);
-    let (const_c) = _decimal_thousandth(330);
-
-    let x_squared = Math64x61.mul(x, x);
-    let x_squared_half = Math64x61.div(x_squared, TWO);
+    local x_squared = Math64x61.mul(x, x);
+    let x_squared_half = Math64x61.mul(x_squared, HALF);
     let (numerator) = inv_exp_big_x(x_squared_half);
 
     let denominator_b = Math64x61.mul(const_b, x);
     let denominator_a = Math64x61.add(const_a, denominator_b);
-    let x_squared = Math64x61.mul(x, x);
     let sqrt_den_part = Math64x61.sqrt(x_squared + THREE);
     let denominator_c = Math64x61.mul(const_c, sqrt_den_part);
     let denominator = Math64x61.add(denominator_a, denominator_c);
@@ -166,11 +142,9 @@ func d1_d2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     alloc_locals;
 
-    let TWO = Math64x61.fromFelt(2);
-
     let sqrt_time_till_maturity_annualized = Math64x61.sqrt(time_till_maturity_annualized);
     let sigma_squared = Math64x61.mul(sigma, sigma);
-    let sigma_squared_half = Math64x61.div(sigma_squared, TWO);
+    let sigma_squared_half = Math64x61.mul(sigma_squared, HALF);
     let risk_plus_sigma_squared_half = Math64x61.add(
         risk_free_rate_annualized, sigma_squared_half
     );
