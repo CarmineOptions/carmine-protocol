@@ -328,7 +328,8 @@ namespace ShortPutRoundTrip {
         assert call_pool_value_1 = 0;
         // Paid premia was 231276759164374043900 (100.30030589256846)
         // The value of the pool is in terms of "if the position gets sold off how much gets released to the pool"
-        // in this case it is just premia as if the pool would sell the option.
+        // in this case it is just premia as if the pool would sell the option. Which means
+        // the premium is smaller than the trade_open premium
         let (put_pool_value_1) = ILiquidityPool.get_value_of_pool_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
@@ -386,15 +387,12 @@ namespace ShortPutRoundTrip {
         );
         assert call_pool_unlocked_capital_2 = 11529215046068469760;
 
-        // 3659568103382171319752 translates to 1587.0846752182429 (because 3659568103382171319752 / 2**61)
-        // before the withdraw there was 3604.818502218243 of unlocked capital
+        // before the withdraw there was 4902.708703284208 of unlocked capital
         // the withdraw meant that 40% of the value of pool was withdrawn
-        //      which is 3604.818502218243 of unlocked capital plus remaining capital from short option
-        //      where the remaining of short is (locked capital - premia of long option)... adjusted for fees
-        //      the value of long was 60.48393471824238 (NOT CHECKED !!! -> JUST BY EYE)
-        // So the value of pool was 3604.818502218243 + 1500 - 60.48393471824238 = 5044.3345675
-        // Withdrawed 40% -> 2017.733827 from unlocked capital
-        // Remaining unlocked capital is 3604.818502218243 - 2017.733827 = 1587.0846752182429
+        //      which is 4902.708703284208 of unlocked capital plus value of long position in option
+        // So the value of pool was 4902.708703284208 + 52.85288921579195 = 4955.5615925
+        // Withdrawed 40% -> 1982.224637 from unlocked capital
+        // Remaining unlocked capital is 4902.708703284208 - 1982.224637 = 2920.484066284208
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
