@@ -3,6 +3,7 @@ import subprocess
 import os
 import re
 import time
+from datetime import datetime, timedelta
 
 options = []
 main_contract_address = None
@@ -55,6 +56,8 @@ def print_status(name, tx_list):
 def write_env_vars():
     f = open("/carmine/devnet/deployed_vars.env", "w")
     lines = []
+    lines.append("# Generated on " +
+                 datetime.today().strftime('%H-%M %d-%m-%Y') + "\n")
     lines.append("export MAIN_CONTRACT_ADDRESS=" +
                  main_contract_address + "\n")
     lines.append("export LPTOKEN_CONTRACT_ADDRESS=" +
@@ -105,6 +108,8 @@ temp = run_command(['starknet', 'deploy', '--contract', '/carmine/build/amm.json
                     '--no_wallet', '--salt', os.environ['SALT']])
 main_contract_address = temp[0]
 
+print("Deployed main contract", flush=True)
+
 # USD_ADDRESS
 # DEPLOY
 # temp = run_command(['starknet', 'deploy', '--contract', '/carmine/build/lptoken.json', '--no_wallet', '--salt',
@@ -129,6 +134,7 @@ temp = run_command(['starknet', 'invoke', '--address', os.environ["ETH_ADDRESS"]
 temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
                     'deposit_liquidity', '--inputs', os.environ["ETH_ADDRESS"], os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_CALL"], initial_liquidity, "0"])
 
+print("Deployed CALL liquidity pool", flush=True)
 
 # LPTOKEN_CONTRACT_ADDRESS_PUT
 # DEPLOY
@@ -148,6 +154,7 @@ temp = run_command(['starknet', 'invoke', '--address', os.environ["ETH_ADDRESS"]
 temp = run_command(['starknet', 'invoke', '--address', main_contract_address, '--abi', '/carmine/build/amm_abi.json', '--function',
                    'deposit_liquidity', '--inputs', os.environ["USD_ADDRESS"], os.environ["USD_ADDRESS"], os.environ["ETH_ADDRESS"], os.environ["OPTION_TYPE_PUT"], initial_liquidity, "0"])
 
+print("Deployed PUT liquidity pool", flush=True)
 
 # LONG CALL options
 temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
@@ -165,6 +172,7 @@ temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_AD
 temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
                            os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
 
+print("Deployed LONG CALL options", flush=True)
 
 # SHORT CALL options
 temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
@@ -182,6 +190,7 @@ temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_AD
 temp = add_option("call", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
                            os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_CALL'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
 
+print("Deployed SHORT CALL options", flush=True)
 
 # LONG PUT options
 temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
@@ -193,6 +202,7 @@ temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADD
 temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
                   os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_LONG']])
 
+print("Deployed LONG PUT options", flush=True)
 
 # SHORT PUT options
 temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
@@ -204,14 +214,13 @@ temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADD
 temp = add_option("put", ['111', '11', '18', '0', '0', os.environ['ACCOUNT_0_ADDRESS'], main_contract_address, os.environ['USD_ADDRESS'],
                   os.environ['ETH_ADDRESS'], os.environ['OPTION_TYPE_PUT'], '3804640965202595020800', os.environ['MATURITY_1'], os.environ['OPTION_SIDE_SHORT']])
 
-
-print('main contract address is:', main_contract_address)
-print('lptoken contract address is:', lptoken_contract_address)
+print("Deployed SHORT PUT options", flush=True)
 
 write_env_vars()
 
 print('Done')
-print("Finished in %s seconds" % (time.time() - start_time), flush=True)
+print("Finished in %s seconds" %
+      (timedelta(seconds=time.time() - start_time)), flush=True)
 
 while True:
     time.sleep(300)
