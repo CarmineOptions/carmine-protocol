@@ -71,7 +71,7 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
         return (res=res);
     }
 
-    with_attr error_message("option_pricing.strd_normal_cdf received X value higher than 8") {
+    with_attr error_message("option_pricing.std_normal_cdf received X value higher than 8") {
         let max_x_val = Math64x61.fromFelt(8);
         assert_le(x, max_x_val);
     }
