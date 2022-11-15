@@ -4,7 +4,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import sign, assert_le
+from starkware.cairo.common.math import sign, assert_le, unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
 
 // Third party imports. Was copy pasted to this repo.
@@ -143,7 +143,8 @@ func d1_d2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     let sqrt_time_till_maturity_annualized = Math64x61.sqrt(time_till_maturity_annualized);
     let sigma_squared = Math64x61.mul(sigma, sigma);
-    let sigma_squared_half = Math64x61.mul(sigma_squared, HALF);
+
+    let (sigma_squared_half, _) = unsigned_div_rem(sigma_squared, 2);
     let risk_plus_sigma_squared_half = Math64x61.add(
         risk_free_rate_annualized, sigma_squared_half
     );
