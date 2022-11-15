@@ -16,12 +16,11 @@ const HALF = 1152921504606846976;
 const THREE = 6917529027641081856;
 const EIGHT = 18446744073709551616;
 const TEN = 23058430092136939520;
-// const two_pi = 14488038916154230748;
-const inv_root_of_two_pi = 919898267902984507;
-const const_a = 521120520082294833;
-const const_b = 1475739525896764129;
-const const_c = 760928193040519004;
-const inv_exp_ten = 104685105675288;
+const INV_ROOT_OF_TWO_PI = 919898267902984507;
+const CONST_A = 521120520082294833;
+const CONST_B = 1475739525896764129;
+const CONST_C = 760928193040519004;
+const INV_EXP_TEN = 104685105675288;
 
 
 
@@ -42,7 +41,7 @@ func inv_exp_big_x{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         let x_minus_ten = Math64x61.sub(x, TEN);
         let (inv_exp_x_minus_ten) = inv_exp_big_x(x_minus_ten);
 
-        let res = Math64x61.mul(inv_exp_ten, inv_exp_x_minus_ten);
+        let res = Math64x61.mul(INV_EXP_TEN, inv_exp_x_minus_ten);
         return (x=res);
     }
 }
@@ -72,14 +71,14 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     let x_squared_half = Math64x61.mul(x_squared, HALF);
     let (numerator) = inv_exp_big_x(x_squared_half);
 
-    let denominator_b = Math64x61.mul(const_b, x);
-    let denominator_a = Math64x61.add(const_a, denominator_b);
+    let denominator_b = Math64x61.mul(CONST_B, x);
+    let denominator_a = Math64x61.add(CONST_A, denominator_b);
     let sqrt_den_part = Math64x61.sqrt(x_squared + THREE);
-    let denominator_c = Math64x61.mul(const_c, sqrt_den_part);
+    let denominator_c = Math64x61.mul(CONST_C, sqrt_den_part);
     let denominator = Math64x61.add(denominator_a, denominator_c);
 
     let res_a = Math64x61.div(numerator, denominator);
-    let res_b = Math64x61.mul(inv_root_of_two_pi, res_a);
+    let res_b = Math64x61.mul(INV_ROOT_OF_TWO_PI, res_a);
     let res = Math64x61.sub(Math64x61.ONE, res_b);
     return (res=res);
 }
