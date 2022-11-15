@@ -243,7 +243,7 @@ namespace ShortCallRoundTrip {
 
         
         // Test pool_volatility 
-        // Vol of 100 for call pool
+        // Vol of 83.33 for call pool
         let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
@@ -251,7 +251,7 @@ namespace ShortCallRoundTrip {
         );
         assert call_volatility_1 = 192153584101141162600;
 
-        // Vol of 83.33 for put pool
+        // Vol of 100 for put pool
         let (put_volatility_1) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
@@ -350,7 +350,7 @@ namespace ShortCallRoundTrip {
         %{
             stop_mock_current_price()
             stop_mock_current_price_2 = mock_call(
-                ids.tmp_address, "get_spot_median", [1450000000000000000000, 18, 0, 0]  # mock current ETH price at 1450
+                ids.tmp_address, "get_spot_median",  [145000000000, 8, 0, 0] # mock current ETH price at 1450
             )
         %}
 
@@ -392,6 +392,13 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
+        // 6914405642482689665 -> 2.998645447610305
+        // before the withdraw there was 4.99973 of unlocked capital(  5 - premia + fees)
+        // the withdraw mean that 40% of the value of pool was withdrawn
+        //      which is 4.99973 plus value of long position in option
+        // so the value of pool waas 4.997... + 0.00299 = 5.0028..
+        // Withdrawed 40% -> 2.0010906
+        // Remaining unlocked is -> 4.99973 - 2.0010906 = 2.9986...
         assert call_pool_unlocked_capital_2 = 6914405642482689665;
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -407,8 +414,7 @@ namespace ShortCallRoundTrip {
         );
         assert bal_opt_short_tokens_2.low = 1000000000000000000;
     
-        // Test pool_volatility 
-        // Call vol -> 125
+        // Test pool_volatility -> still the same
         let (call_volatility_2) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
@@ -416,7 +422,6 @@ namespace ShortCallRoundTrip {
         );
         assert call_volatility_2 = 192153584101141162600;
 
-        // Put vol -> 100
         let (put_volatility_2) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
@@ -564,6 +569,7 @@ namespace ShortCallRoundTrip {
             account=admin_addr
         );
         assert admin_myETH_balance_3.low = 6499865815798077144;
+        // Previous + 0.5 - premia - fees
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -626,7 +632,7 @@ namespace ShortCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert opt_long_call_position_3 =1152921504606846976 ;
+        assert opt_long_call_position_3 =1152921504606846976;
 
         let (opt_short_call_position_3) = ILiquidityPool.get_pools_option_position(
             contract_address=amm_addr,
@@ -768,13 +774,13 @@ namespace ShortCallRoundTrip {
         );
         assert bal_opt_short_call_tokens_4.low = 500000000000000000;
 
-        // Test pool_volatility -> 142.85714285714286 put and 100 call
+        // Test pool_volatility 
         let (call_volatility_4) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_4 = 192153584101141162600; // close option has no impact on volatility
+        assert call_volatility_4 = 192153584101141162600; 
 
         let (put_volatility_4) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,

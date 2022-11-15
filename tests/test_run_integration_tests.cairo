@@ -89,9 +89,9 @@ func test_minimal_round_trip_short_call{syscall_ptr: felt*, pedersen_ptr: HashBu
     // test
     // -> sell call option
     // -> withdraw half of the liquidity that was originally deposited from call pool
-    // FIXME: TBD -> close half of the bought option
-    // FIXME: TBD -> settle pool
-    // FIXME: TBD -> settle the option
+    // -> close half of the bought option
+    // -> settle pool
+    // -> settle the option
     ShortCallRoundTrip.minimal_round_trip_call();
     return ();
 }
