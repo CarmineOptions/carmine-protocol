@@ -180,7 +180,7 @@ namespace ILiquidityPool {
     }
 
 
-    func get_lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
+    func get_lpool_balance(lptoken_address: Address) -> (res: Uint256) {
     }
 
 
