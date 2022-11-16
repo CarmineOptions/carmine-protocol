@@ -185,7 +185,7 @@ namespace ShortPutRoundTrip {
         assert put_pool_value_0 = 0;
 
         ///////////////////////////////////////////////////
-        // BUY THE PUT OPTION
+        // SELL THE PUT OPTION
         ///////////////////////////////////////////////////
 
         %{ stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr) %}
