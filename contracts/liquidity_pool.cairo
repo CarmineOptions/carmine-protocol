@@ -17,6 +17,7 @@ from starkware.cairo.common.uint256 import (
     uint256_le,
     uint256_signed_le,
     assert_uint256_lt,
+    assert_uint256_le
 )
 from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -363,10 +364,10 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
     with_attr error_message("Failed to update the lpool_balance"){
-        let (current_balance) = lpool_balance_.read(lptoken_address);
+        let (current_balance) = get_lpool_balance(lptoken_address);
         let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amount);
         assert carry = 0;
-        lpool_balance_.write(lptoken_address, new_pb);
+        set_lpool_balance(lptoken_address, new_pb);
     }
 
     return ();
@@ -447,11 +448,11 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
     with_attr error_message("Failed to write new lpool_balance in withdraw_liquidity"){
         // Update that the capital in the pool (including the locked capital).
-        let (current_balance: Uint256) = lpool_balance_.read(lptoken_address);
+        let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
         let (new_pb: Uint256) = uint256_sub(current_balance, underlying_amount_uint256);
 
         // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
-        lpool_balance_.write(lptoken_address, new_pb);
+        set_lpool_balance(lptoken_address, new_pb);
     }
 
     return ();
@@ -478,7 +479,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     let long_value_uint256: Uint256 = toUint256_balance(long_value, lpool_underlying_token);
     let short_value_uint256: Uint256 = toUint256_balance(short_value, lpool_underlying_token);
 
-    let (current_lpool_balance: Uint256) = lpool_balance_.read(lptoken_address);
+    let (current_lpool_balance: Uint256) = get_lpool_balance(lptoken_address);
     let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
     let (current_pool_position) = option_position.read(
         lptoken_address, option_side, maturity, strike_price
@@ -505,7 +506,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
         let (new_lpool_balance: Uint256, carry: felt) = uint256_add(current_lpool_balance, long_value_uint256);
         assert carry = 0;
-        lpool_balance_.write(lptoken_address, new_lpool_balance);
+        set_lpool_balance(lptoken_address, new_lpool_balance);
     } else {
         // Pool is SHORT
         // Decrease the lpool_balance by the long_value.
@@ -541,7 +542,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
             assert_nn(new_locked_balance);
         }
 
-        lpool_balance_.write(lptoken_address, new_lpool_balance);
+        set_lpool_balance(lptoken_address, new_lpool_balance);
         pool_locked_capital.write(lptoken_address, new_locked_balance);
     }
     return ();
