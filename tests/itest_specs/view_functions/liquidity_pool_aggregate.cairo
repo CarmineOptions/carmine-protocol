@@ -40,7 +40,7 @@ namespace LPAggregateViewFunctions {
         assert poolinfo[0].pool.quote_token_address = myusd_addr;
         assert poolinfo[0].pool.base_token_address = myeth_addr;
         assert poolinfo[0].lptoken_address = lpt_call_addr;
-        assert poolinfo[0].staked_capital = Math64x61.fromFelt(5);
+        //assert poolinfo[0].staked_capital = Math64x61.fromFelt(5);
         assert poolinfo[0].unlocked_capital = Math64x61.fromFelt(5);
         assert poolinfo[0].value_of_pool_position = 0;
 
@@ -48,7 +48,7 @@ namespace LPAggregateViewFunctions {
         assert poolinfo[1].pool.quote_token_address = myusd_addr;
         assert poolinfo[1].pool.base_token_address = myeth_addr;
         assert poolinfo[1].lptoken_address = lpt_put_addr;
-        assert poolinfo[1].staked_capital = Math64x61.fromFelt(5000);
+        //assert poolinfo[1].staked_capital = Math64x61.fromFelt(5000);
         assert poolinfo[1].unlocked_capital = Math64x61.fromFelt(5000);
         assert poolinfo[1].value_of_pool_position = 0;
 
