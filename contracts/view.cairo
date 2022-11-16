@@ -383,7 +383,7 @@ func get_poolinfo{
     alloc_locals;
     with_attr error_message("unable to get prerequisites for poolinfo"){
         let (pool: Pool) = pool_definition_from_lptoken_address.read(lptoken_address);
-        let (current_balance) = lpool_balance.read(lptoken_address);
+        let (current_balance) = get_lpool_balance(lptoken_address);
         let (free_capital) = get_unlocked_capital(lptoken_address);
         let (value_of_position) = get_value_of_pool_position(lptoken_address);
     }
