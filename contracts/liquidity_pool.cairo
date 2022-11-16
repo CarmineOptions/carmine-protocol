@@ -19,6 +19,7 @@ from starkware.cairo.common.uint256 import (
     uint256_signed_le,
     assert_uint256_lt,
     uint256_signed_nn,
+    assert_uint256_le
 )
 from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
