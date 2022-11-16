@@ -225,12 +225,12 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("Failed to update lpool_balance in _mint_option_token_long") {
             // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
             // since only locked_capital storage_var exists
-            let (current_balance) = lpool_balance_.read(lptoken_address);
+            let (current_balance) = get_lpool_balance(lptoken_address);
             let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
             let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
             let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
             assert carry = 0;
-            lpool_balance_.write(lptoken_address, new_balance);
+            set_lpool_balance(lptoken_address, new_balance);
         }
 
         // Update pool's position, lock capital... lpool_balance was already updated above
@@ -334,11 +334,11 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
         // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
         // since only locked_capital storage_var exists
-        let (current_balance) = lpool_balance_.read(lptoken_address);
+        let (current_balance) = get_lpool_balance(lptoken_address);
         let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
         let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
         let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
-        lpool_balance_.write(lptoken_address, new_balance);
+        set_lpool_balance(lptoken_address, new_balance);
 
         // User is going short, hence user is locking in capital...
         //      if pool has short position -> unlock pool's capital
@@ -491,11 +491,11 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
     // This decrease is happening because burning long is similar to minting short,
     // hence the payment.
-    let (current_balance: Uint256) = lpool_balance_.read(lptoken_address);
+    let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
     let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
     let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
-    lpool_balance_.write(lptoken_address, new_balance);
+    set_lpool_balance(lptoken_address, new_balance);
 
     let (pool_short_position) = option_position.read(
         lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
@@ -592,12 +592,12 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
     // This increase is happening because burning short is similar to minting long,
     // hence the payment.
-    let (current_balance: Uint256) = lpool_balance_.read(lptoken_address);
+    let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
     let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
     let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
     assert carry = 0;
-    lpool_balance_.write(lptoken_address, new_balance);
+    set_lpool_balance(lptoken_address, new_balance);
 
     // Find out pools position... if it has short position = 0 -> it is long or at 0
     let (pool_short_position) = option_position.read(
@@ -658,7 +658,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         //      -> there might not be enough unlocked capital to be locked
         let (current_locked_capital) = pool_locked_capital.read(lptoken_address);
 
-        let (current_total_capital_uint256: Uint256) = lpool_balance_.read(lptoken_address);
+        let (current_total_capital_uint256: Uint256) = get_lpool_balance(lptoken_address);
         let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
         let current_total_capital: Math64x61_ = fromUint256_balance(current_total_capital_uint256, lpool_underlying_token);
 

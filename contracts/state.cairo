@@ -80,7 +80,7 @@ func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     let (currval: Math64x61_) = lpool_balance.read(lptoken_address);
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
     let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
-    lpool_balance_.write(lptoken_address, newval);
+    set_lpool_balance(lptoken_address, newval);
     return ();
 }
 
@@ -138,6 +138,15 @@ func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) -> (res: Uint256) {
     let (balance) = lpool_balance_.read(lptoken_address);
     return (balance,);
+}
+
+
+func set_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, balance: Uint256
+) -> () {
+    assert_uint256_le(Uint256(0, 0), balance);
+    lpool_balance_.write(lptoken_address, balance);
+    return ();
 }
 
 
@@ -303,7 +312,7 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     let (locked_capital) = pool_locked_capital.read(lptoken_address);
 
     // Get capital that is sum of unlocked (available) and locked capital.
-    let (contract_balance_uint256: Uint256) = lpool_balance_.read(lptoken_address);
+    let (contract_balance_uint256: Uint256) = get_lpool_balance(lptoken_address);
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
     let contract_balance: Math64x61_ = fromUint256_balance(contract_balance_uint256, lpool_underlying_token);
 

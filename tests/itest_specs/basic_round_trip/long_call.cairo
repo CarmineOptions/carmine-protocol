@@ -11,7 +11,7 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import Uint256, assert_uint256_eq
 
 namespace LongCallRoundTrip {
     func minimal_round_trip_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
@@ -23,14 +23,14 @@ namespace LongCallRoundTrip {
         // -> settle the option
         alloc_locals;
 
-        tempvar lpt_call_addr;
-        tempvar lpt_put_addr;
-        tempvar amm_addr;
-        tempvar myusd_addr;
-        tempvar myeth_addr;
-        tempvar admin_addr;
-        tempvar expiry;
-        tempvar opt_long_call_addr;
+        local lpt_call_addr;
+        local lpt_put_addr;
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        local admin_addr;
+        local expiry;
+        local opt_long_call_addr;
 
         let strike_price = Math64x61.fromFelt(1500);
         %{
@@ -44,7 +44,7 @@ namespace LongCallRoundTrip {
             ids.opt_long_call_addr = context.opt_long_call_addr_0
         %}
 
-        tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
+        local tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
@@ -139,13 +139,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_0=11529215046068469760;
+        assert_uint256_eq(call_pool_balance_0, Uint256(low=5000000000000000000, high=0));
         
         let (put_pool_balance_0) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        ////assert put_pool_balance_0=11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_0, Uint256(low=5000000000, high=0));
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
@@ -302,14 +302,14 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_1=11531296220967446641;
+        assert_uint256_eq(call_pool_balance_1, Uint256(low=5000902565738717213, high=0));
 
         // Put Pool
         let (put_pool_balance_1) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        //assert put_pool_balance_1=11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_1, Uint256(low=5000000000, high=0));
 
         // Test pool_locked_capital
         // Call pool
@@ -388,7 +388,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        // 4617665128964013607 translates to 2.0025930258533364 (because 4617665128964013607 / 2**61)
+        // 4617665128964013604 translates to 2.0025930258533364 (because 4617665128964013604 / 2**61)
         // before the withdraw there was 4.000902565738717 of unlocked capital
         // the withdraw meant that 40% of the value of pool was withdrawn
         //      which is 4.000902565738717 of unlocked capital plus remaining capital from short option
@@ -397,7 +397,7 @@ namespace LongCallRoundTrip {
         // So the value of pool was 4.000902565738717 + 1 - 0.005128716025264879 = 4.995773849713452
         // Withdrawed 40% -> 1.998309539885381 from unlocked capital
         // Remaining unlocked capital is 4.000902565738717 - 1.998309539885381 = 2.0025930258533364
-        assert call_pool_unlocked_capital_2 = 4617665128964013607;
+        assert call_pool_unlocked_capital_2 = 4617665128964013604;
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -476,14 +476,14 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_2=6923508138177707559;
+        assert_uint256_eq(call_pool_balance_2, Uint256(low=3002593025853336222, high=0));
 
         // Put pool
         let (put_pool_balance_2) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        //assert put_pool_balance_2=11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_2, Uint256(low=5000000000, high=0));
         
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
@@ -503,7 +503,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3 = 4617665128964013607;
+        assert call_pool_unlocked_capital_3 = 4617665128964013604;
 
         let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -576,7 +576,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3 = 5765016783309265179;
+        assert call_pool_unlocked_capital_3 = 5765016783309265178;
 
         let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -660,7 +660,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_3=6917938287916112155;
+        assert_uint256_eq(call_pool_balance_3, Uint256(low=3000177488351719946, high=0));
         // Previous state - premia + fee on premia
         // 3.0025930258533364 - 0.00249 + 0.00249*0.03 = 3.000177
         
@@ -668,7 +668,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        //assert put_pool_balance_3=11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_3, Uint256(low=5000000000, high=0));
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
@@ -848,13 +848,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_4 = 6880747271638471930;
+        assert_uint256_eq(call_pool_balance_4, Uint256(low=2984048456093655430, high=0));
 
         let (put_pool_balance_4) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        //assert put_pool_balance_4 = 11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_4, Uint256(low=5000000000, high=0));
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
@@ -1003,13 +1003,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        //assert call_pool_balance_5 = 6880747271638471930;
+        assert_uint256_eq(call_pool_balance_5, Uint256(low=2984048456093655430, high=0));
 
         let (put_pool_balance_5) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        //assert put_pool_balance_5 = 11529215046068469760000;
+        assert_uint256_eq(put_pool_balance_5, Uint256(low=5000000000, high=0));
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
