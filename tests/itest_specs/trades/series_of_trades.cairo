@@ -102,7 +102,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_short_put = 234722763583872553300;
+        assert premia_short_put = 234722763583748232400;
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()

@@ -74,11 +74,27 @@ func option_position(
 }
 
 
+//migration only, to convert m64x61 lpool_balance to Uint256
+@external
+func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    let (currval: Math64x61_) = lpool_balance.read(lptoken_address);
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
+    lpool_balance_.write(lptoken_address, newval);
+    return ();
+}
+
+
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
 @storage_var
 func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
+// we must rename the storage var during the migration, because otherwise Starknet would be angry that we are writing a struct
+@storage_var
+func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
 }
 
 
@@ -119,8 +135,8 @@ func set_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 @view
 func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (res: Math64x61_) {
-    let (balance) = lpool_balance.read(lptoken_address);
+) -> (res: Uint256) {
+    let (balance) = lpool_balance_.read(lptoken_address);
     return (balance,);
 }
 
@@ -279,6 +295,7 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (unlocked_capital: Math64x61_) {
+    alloc_locals;
     // Returns capital that is unlocked for immediate extraction/use.
     // This is for example ETH in case of ETH/USD CALL options.
 
@@ -286,7 +303,9 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     let (locked_capital) = pool_locked_capital.read(lptoken_address);
 
     // Get capital that is sum of unlocked (available) and locked capital.
-    let (contract_balance) = lpool_balance.read(lptoken_address);
+    let (contract_balance_uint256: Uint256) = lpool_balance_.read(lptoken_address);
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let contract_balance: Math64x61_ = fromUint256_balance(contract_balance_uint256, lpool_underlying_token);
 
     let unlocked_capital = Math64x61.sub(contract_balance, locked_capital);
     return (unlocked_capital = unlocked_capital);
