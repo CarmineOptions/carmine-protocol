@@ -177,7 +177,7 @@ namespace ShortCallRoundTrip {
         assert pools_pos_val_put = 0;
 
         ///////////////////////////////////////////////////
-        // BUY THE CALL OPTION
+        // SELL THE CALL OPTION
         ///////////////////////////////////////////////////
 
         %{ stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr) %}
@@ -212,7 +212,7 @@ namespace ShortCallRoundTrip {
         );
         assert bal_usd_lpt_1.low = 5000000000;
 
-        // Test amount of myETH in buyers account
+        // Test amount of myETH in sellers account
         let (admin_myETH_balance_1: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
@@ -241,7 +241,6 @@ namespace ShortCallRoundTrip {
         );
         assert bal_opt_short_call_tokens_1.low = 1000000000000000000;
 
-        
         // Test pool_volatility 
         // Vol of 83.33 for call pool
         let (call_volatility_1) = ILiquidityPool.get_pool_volatility(
@@ -380,7 +379,7 @@ namespace ShortCallRoundTrip {
         );
         assert bal_usd_lpt_2.low = 5000000000;
 
-        // Test amount of myETH on option-buyer's account
+        // Test amount of myETH on option-seller's account
         let (admin_myETH_balance_2: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
@@ -503,26 +502,26 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3 = 6914405642482689665;
+        assert call_pool_unlocked_capital_2 = 6914405642482689665;
 
-        let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3 = 11529215046068469760000; 
+        assert put_pool_unlocked_capital_2 = 11529215046068469760000; 
 
         // test value of pools position
-        let (pools_pos_val_call_3) = ILiquidityPool.get_value_of_pool_position(
+        let (pools_pos_val_call_2) = ILiquidityPool.get_value_of_pool_position(
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_3 = 9180887569361935;
+        assert pools_pos_val_call_2 = 9180887569361935;
         
-        let (pools_pos_val_put_3) = ILiquidityPool.get_value_of_pool_position(
+        let (pools_pos_val_put_2) = ILiquidityPool.get_value_of_pool_position(
             contract_address = amm_addr,
             lptoken_address = lpt_put_addr
         );
-        assert pools_pos_val_put_3 = 0;
+        assert pools_pos_val_put_2 = 0;
 
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
@@ -556,14 +555,14 @@ namespace ShortCallRoundTrip {
         );
         assert bal_usd_lpt_3.low = 5000000000;
 
-        // Test amount of myUSD on option-buyer's account
+        // Test amount of myUSD on option-seller's account
         let (admin_myUSD_balance_3: Uint256) = IERC20.balanceOf(
             contract_address=myusd_addr,
             account=admin_addr
         );
         assert admin_myUSD_balance_3.low = 5000000000;
 
-        // Test amount of myETH on option-buyer's account
+        // Test amount of myETH on option-seller's account
         let (admin_myETH_balance_3: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
@@ -739,14 +738,14 @@ namespace ShortCallRoundTrip {
         );
         assert bal_usd_lpt_4.low = 5000000000;
 
-        // Test amount of myUSD on option-buyer's account
+        // Test amount of myUSD on option-seller's account
         let (admin_myUSD_balance_4: Uint256) = IERC20.balanceOf(
             contract_address=myusd_addr,
             account=admin_addr
         );
         assert admin_myUSD_balance_4.low = 5000000000;
 
-        // Test amount of myETH on option-buyer's account
+        // Test amount of myETH on option-seller's account
         let (admin_myETH_balance_4: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
@@ -892,20 +891,21 @@ namespace ShortCallRoundTrip {
         );
         assert bal_usd_lpt_5.low = 5000000000;
 
-        // Test amount of myUSD on option-buyer's account
+        // Test amount of myUSD on option-seller's account
         let (admin_myUSD_balance_5: Uint256) = IERC20.balanceOf(
             contract_address=myusd_addr,
             account=admin_addr
         );
         assert admin_myUSD_balance_5.low = 5000000000;
 
-        // Test amount of myETH on option-buyer's account
+        // Test amount of myETH on option-seller's account
         let (admin_myETH_balance_5: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
+        // Seller lost approx. $24.1, due to option expiring ITM, 
+        // small diff from 25 is due to recieved premia
         assert admin_myETH_balance_5.low = 6983736783540012627;
-
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = ILiquidityPool.get_unlocked_capital(
