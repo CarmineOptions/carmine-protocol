@@ -17,7 +17,8 @@ from starkware.cairo.common.uint256 import (
     uint256_le,
     uint256_signed_le,
     assert_uint256_lt,
-    assert_uint256_le
+    assert_uint256_le,
+    uint256_signed_nn,
 )
 from starkware.starknet.common.syscalls import get_contract_address
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -480,7 +481,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     let short_value_uint256: Uint256 = toUint256_balance(short_value, lpool_underlying_token);
 
     let (current_lpool_balance: Uint256) = get_lpool_balance(lptoken_address);
-    let (current_locked_balance) = pool_locked_capital.read(lptoken_address);
+    let (current_locked_balance: Uint256) = get_pool_locked_capital(lptoken_address);
     let (current_pool_position) = option_position.read(
         lptoken_address, option_side, maturity, strike_price
     );
@@ -531,19 +532,20 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // The long value is left in the pool for the long owner to collect it.
 
         let (new_lpool_balance: Uint256) = uint256_sub(current_lpool_balance, long_value_uint256);
-        let new_locked_balance_1 = Math64x61.sub(current_locked_balance, short_value);
-        let new_locked_balance = Math64x61.sub(new_locked_balance_1, long_value);
+        let (new_locked_balance_1: Uint256) = uint256_sub(current_locked_balance, short_value_uint256);
+        let (new_locked_balance: Uint256) = uint256_sub(new_locked_balance_1, long_value_uint256);
 
         with_attr error_message("Not enough capital in the pool") {
             // This will never happen since the capital to pay the users is always locked.
             let ZERO: Uint256 = Uint256(0, 0);
             let (res: felt) = uint256_signed_le(ZERO, new_lpool_balance);
             assert res = 1;
-            assert_nn(new_locked_balance);
+            let (res_: felt) = uint256_signed_le(ZERO, new_locked_balance);
+            assert res_ = 1;
         }
 
         set_lpool_balance(lptoken_address, new_lpool_balance);
-        pool_locked_capital.write(lptoken_address, new_locked_balance);
+        set_pool_locked_capital(lptoken_address, new_locked_balance);
     }
     return ();
 }

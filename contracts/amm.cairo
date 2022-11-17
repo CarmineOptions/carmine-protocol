@@ -35,7 +35,8 @@ from contracts.option_pricing_helpers import (
     get_time_till_maturity,
     add_premia_fees,
     get_new_volatility,
-    convert_amount_to_option_currency_from_base
+    convert_amount_to_option_currency_from_base,
+    convert_amount_to_option_currency_from_base_uint256,
 )
 
 
