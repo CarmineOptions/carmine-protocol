@@ -15,6 +15,9 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
 
     return ();
 }
+// How value of pool position works(side of a position is from perspective of the pool):
+//      In case of long position in given option, the value is equal to premia - fees.
+//      In case of short position the value is equal to (locked capital - premia - fees).
 
 @external 
 func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
@@ -95,12 +98,16 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
+    // 1 - premia - fee -> the user is long, pool is short
+    // 1 - 0.0036382362035675903 - 0.0036382362035675903 * 0.03
     assert pools_pos_val_call_2 = 2297202131652353520;
         
     let (pools_pos_val_put_2) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
+    // 1500 - premia - fee -> the user is long, pool is short
+    // 1500 - 106.6060193865178 - 106.6060193865178 * 0.03
     assert pools_pos_val_put_2 = 3205573266941764271305;
 
     // Close both positions
@@ -165,12 +172,16 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
+    // Premia - fees -> User is short, pool is long
+    // 0.004164921240799478 - 0.004164921240799478 * 0.03
     assert pools_pos_val_call_4 = 9315544891212408;
         
     let (pools_pos_val_put_4) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
+    // Premia - fees -> User is short, pool is long
+    // 108.79470021290733 - 108.79470021290733 * 0.03
     assert pools_pos_val_put_4 = 243337593957669002910;
 
     // Close both positions
@@ -261,13 +272,17 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     let (pools_pos_val_call_6) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
-    );
+    ); 
+    // Pool is net short -> locked_capital - premia - fees
+    // 0.5 - 0.0016825104937091434 - 0.0016825104937091434 * 0.03
     assert pools_pos_val_call_6 = 1148925511395203630;
         
     let (pools_pos_val_put_6) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
-    );
+    ); 
+    // Pool is net short -> locked_capital - premia - fees
+    // 0.5*1500 - 53.17407585832186 - 53.17407585832186 * 0.03
     assert pools_pos_val_put_6 = 1603092853688281053408;
 
     // Close all positions
@@ -325,7 +340,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     assert pools_pos_val_put_6 = 0;
 
-    // Buy bugger chunks of pools balances
+    // Buy bigger chunks of pools balances
     let four = Math64x61.fromFelt(4);
     let three = Math64x61.fromFelt(3);
 
@@ -356,12 +371,16 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // 4 - 0.18445432196949377 - 0.18445432196949377 * 0.03
     assert pools_pos_val_call_7 = 8785289646757188469;
         
     let (pools_pos_val_put_7) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // 3 * 1500 - 846.1417797601932 - 846.1417797601932 * 0.03
     assert pools_pos_val_put_7 = 8366691330568037798463;
    
     %{
@@ -379,12 +398,16 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // 4 - 0.276908397855322 - 0.276908397855322 * 0.03
     assert pools_pos_val_call_8 = 8565709524665899508;
         
     let (pools_pos_val_put_8) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // 3 * 1500 - 440.1255978239911 - 440.1255978239911 * 0.03
     assert pools_pos_val_put_8 = 9330987192555621765671;
 
     // Open short positions
@@ -418,12 +441,16 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // (4 - 0.5) - 0.2000023562772017 - 0.2000023562772017 * 0.03
     assert pools_pos_val_call_9 = 7595441276148435175;
         
     let (pools_pos_val_put_9) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
+    // Locked capital - premia - fees -> User is long, pool is short
+    // (3 - 0.5) * 1500 - 241.56835326689273 - 241.56835326689273 * 0.03
     assert pools_pos_val_put_9 = 8073182024964791848746;
 
     %{
@@ -465,7 +492,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         maturity=expiry,
     );
     
-    // Test value of pools position 
+    // Test value of pools position -> should be zero
     let (pools_pos_val_call_10) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
