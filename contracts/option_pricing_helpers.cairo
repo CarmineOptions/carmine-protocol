@@ -5,13 +5,22 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn
 from starkware.starknet.common.syscalls import get_block_timestamp
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_mul,
+    uint256_unsigned_div_rem,
+    assert_uint256_eq,
+)
+
 from math64x61 import Math64x61
+from lib.pow import pow10
 
 from contracts.constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
-    TRADE_SIDE_SHORT
+    TRADE_SIDE_SHORT,
+    get_decimal,
 )
 from contracts.types import (Math64x61_, OptionType, OptionSide, Int, Address)
 
@@ -55,6 +64,38 @@ func convert_amount_to_option_currency_from_base{
     if (option_type == OPTION_PUT) {
         let adjusted_amount = Math64x61.mul(amount, strike_price);
         return (converted_amount=adjusted_amount);
+    }
+    return (converted_amount=amount);
+}
+
+
+func convert_amount_to_option_currency_from_base_uint256{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    amount: Uint256,
+    option_type: OptionType,
+    strike_price: Uint256,
+    base_token_address: Address,
+) -> (converted_amount: Uint256) {
+    // Amount is in base tokens (in ETH in case of ETH/USDC)
+    // This function puts amount into the currency required by given option_type
+    //  - for call into base token (ETH in case of ETH/USDC)
+    //  - for put into quote token (USDC in case of ETH/USDC)
+
+    alloc_locals;
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    if (option_type == OPTION_PUT) {
+        let (base_token_decimals) = get_decimal(base_token_address);
+        let (dec) = pow10(base_token_decimals);
+        let dec_ = Uint256(dec, 0);
+        let ZERO = Uint256(0, 0);
+        let (adjusted_amount_low: Uint256, adjusted_amount_high: Uint256) = uint256_mul(amount, strike_price);
+        assert_uint256_eq(adjusted_amount_high, ZERO); 
+        let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
+        assert_uint256_eq(rem, ZERO); // TODO remove, tests should fail on this.
+        return (converted_amount=adjusted_amount_low);
     }
     return (converted_amount=amount);
 }
