@@ -88,6 +88,7 @@ func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
+// DEPRECATED
 @storage_var
 func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
 }
@@ -105,8 +106,23 @@ func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
     // - start pool with no position
     // - user sells option (user locks capital), pool pays premia and does not lock capital
     // - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unlocked capital"
+// DEPRECATED
 @storage_var
 func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
+@storage_var
+func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
+}
+
+//migration only, to convert m64x61 lpool_balance to Uint256
+@external
+func migrate_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    let (currval: Math64x61_) = pool_locked_capital.read(lptoken_address);
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
+    set_pool_locked_capital(lptoken_address, newval);
+    return ();
 }
 
 
@@ -153,9 +169,17 @@ func set_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 @view
 func get_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (res: Math64x61_) {
-    let (locked_capital) = pool_locked_capital.read(lptoken_address);
+) -> (res: Uint256) {
+    let (locked_capital) = pool_locked_capital_.read(lptoken_address);
     return (locked_capital,);
+}
+
+func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, balance: Uint256
+) -> () {
+    assert_uint256_le(Uint256(0, 0), balance);
+    pool_locked_capital_.write(lptoken_address, balance);
+    return ();
 }
 
 
