@@ -285,14 +285,15 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     // 0.5*1500 - 53.17407585832186 - 53.17407585832186 * 0.03
     assert pools_pos_val_put_6 = 1603092853688281053408;
 
-    // Close all positions
+    // Close half of all the positions
+    let quarter = Math64x61.div(half, two);
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
         option_type=0,
         strike_price=strike_price,
         maturity=expiry,
         option_side=0,
-        option_size=one,
+        option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr
     );
@@ -302,7 +303,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         strike_price=strike_price,
         maturity=expiry,
         option_side=1,
-        option_size=half,
+        option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr
     );
@@ -312,7 +313,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         strike_price=strike_price,
         maturity=expiry,
         option_side=0,
-        option_size=one,
+        option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr
     );
@@ -322,23 +323,81 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         strike_price=strike_price,
         maturity=expiry,
         option_side=1,
-        option_size=half,
+        option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr
     );
 
-    // Test value of pools position -> Should be zero
+    // Test value of pools position 
     let (pools_pos_val_call_6) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
-    assert pools_pos_val_call_6 = 0;
+    // Locked capital - premia - fee -> User is long, pool is short
+    // 0.25 - 0.0009191786794549798 - 0.0009191786794549798 * 0.03 
+    assert pools_pos_val_call_6 = 574277686119216762;
         
     let (pools_pos_val_put_6) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
-    assert pools_pos_val_put_6 = 0;
+    // Locked capital - premia - fee -> User is long, pool is short
+    // 0.25 * 1500 - 26.790869645069446 - 26.790869645069446 * 0.03
+    assert pools_pos_val_put_6 = 801062322788841330820;
+
+    // Close rest of the positions
+    let (_) = IAMM.trade_close(
+        contract_address=amm_addr,
+        option_type=0,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=0,
+        option_size=half,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+    let (_) = IAMM.trade_close(
+        contract_address=amm_addr,
+        option_type=0,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=1,
+        option_size=quarter,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+    let (_) = IAMM.trade_close(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=0,
+        option_size=half,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+    let (_) = IAMM.trade_close(
+        contract_address=amm_addr,
+        option_type=1,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=1,
+        option_size=quarter,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+    // Test value of pools position -> Should be zero
+    let (pools_pos_val_call_7) = ILiquidityPool.get_value_of_pool_position(
+        contract_address = amm_addr,
+        lptoken_address = lpt_call_addr
+    );
+    assert pools_pos_val_call_7 = 0;
+        
+    let (pools_pos_val_put_7) = ILiquidityPool.get_value_of_pool_position(
+        contract_address = amm_addr,
+        lptoken_address = lpt_put_addr
+    );
+    assert pools_pos_val_put_7 = 0;
 
     // Buy bigger chunks of pools balances
     let four = Math64x61.fromFelt(4);
@@ -367,21 +426,21 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
 
     // Test value of pools position 
-    let (pools_pos_val_call_7) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_call_8) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 4 - 0.18445432196949377 - 0.18445432196949377 * 0.03
-    assert pools_pos_val_call_7 = 8785289646757188469;
+    assert pools_pos_val_call_8 = 8785289646757188469;
         
-    let (pools_pos_val_put_7) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_put_8) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 3 * 1500 - 846.1417797601932 - 846.1417797601932 * 0.03
-    assert pools_pos_val_put_7 = 8366691330568037798463;
+    assert pools_pos_val_put_8 = 8366691330568037798463;
    
     %{
         stop_warp_1()
@@ -394,26 +453,23 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     %}
 
     // Test value of pools position 
-    let (pools_pos_val_call_8) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_call_9) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 4 - 0.276908397855322 - 0.276908397855322 * 0.03
-    assert pools_pos_val_call_8 = 8565709524665899508;
+    assert pools_pos_val_call_9 = 8565709524665899508;
         
-    let (pools_pos_val_put_8) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_put_9) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 3 * 1500 - 440.1255978239911 - 440.1255978239911 * 0.03
-    assert pools_pos_val_put_8 = 9330987192555621765671;
+    assert pools_pos_val_put_9 = 9330987192555621765671;
 
     // Open short positions
-    let two = Math64x61.fromFelt(2);
-    let half = Math64x61.div(one, two);
-    
     let (_) = IAMM.trade_open(
         contract_address=amm_addr,
         option_type=0,
@@ -437,21 +493,21 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
 
     // test value of pools position 
-    let (pools_pos_val_call_9) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_call_10) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // (4 - 0.5) - 0.2000023562772017 - 0.2000023562772017 * 0.03
-    assert pools_pos_val_call_9 = 7595441276148435175;
+    assert pools_pos_val_call_10 = 7595441276148435175;
         
-    let (pools_pos_val_put_9) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_put_10) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // (3 - 0.5) * 1500 - 241.56835326689273 - 241.56835326689273 * 0.03
-    assert pools_pos_val_put_9 = 8073182024964791848746;
+    assert pools_pos_val_put_10 = 8073182024964791848746;
 
     %{
         stop_warp_2()
@@ -493,17 +549,17 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     
     // Test value of pools position -> should be zero
-    let (pools_pos_val_call_10) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_call_11) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_call_addr
     );
-    assert pools_pos_val_call_10 = 0;
+    assert pools_pos_val_call_11 = 0;
         
-    let (pools_pos_val_put_10) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val_put_11) = ILiquidityPool.get_value_of_pool_position(
         contract_address = amm_addr,
         lptoken_address = lpt_put_addr
     );
-    assert pools_pos_val_put_10 = 0;
+    assert pools_pos_val_put_11 = 0;
     
     %{
         stop_warp_3()
