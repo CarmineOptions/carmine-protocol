@@ -164,12 +164,13 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_0=0;
+        let ZERO: Uint256 = Uint256(0, 0);
+        assert_uint256_eq(call_pool_locked_capital_0, ZERO);
         let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_0=0;
+        assert_uint256_eq(put_pool_locked_capital_0, ZERO);
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -315,12 +316,12 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_1=0;
+        assert_uint256_eq(call_pool_locked_capital_1, ZERO);
         let (put_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_1=3458764513820540928000;
+        assert_uint256_eq(put_pool_locked_capital_1, Uint256(3458764513820540928000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -480,12 +481,12 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_2=0;
+        assert_uint256_eq(call_pool_locked_capital_2, ZERO);
         let (put_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_2=3458764513820540928000;
+        assert_uint256_eq(put_pool_locked_capital_2, Uint256(3458764513820540928000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -641,12 +642,12 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_3=0;
+        assert_uint256_eq(call_pool_locked_capital_3, ZERO);
         let (put_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_3=1729382256910270464000;
+        assert_uint256_eq(put_pool_locked_capital_3,Uint256(1729382256910270464000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -824,12 +825,12 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_4 = 0;
+        assert_uint256_eq(call_pool_locked_capital_4, ZERO);
         let (put_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_4 = 0;
+        assert_uint256_eq(put_pool_locked_capital_4, ZERO);
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -965,12 +966,12 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_5 = 0;
+        assert_uint256_eq(call_pool_locked_capital_5, ZERO);
         let (put_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_5 = 0;
+        assert_uint256_eq(put_pool_locked_capital_5, ZERO);
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
