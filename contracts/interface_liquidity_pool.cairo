@@ -184,7 +184,7 @@ namespace ILiquidityPool {
     }
 
 
-    func get_pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
+    func get_pool_locked_capital(lptoken_address: Address) -> (res: Uint256) {
     }
 
 

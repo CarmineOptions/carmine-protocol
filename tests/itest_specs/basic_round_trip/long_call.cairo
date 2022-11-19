@@ -152,12 +152,12 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_0=0;
+        assert_uint256_eq(call_pool_locked_capital_0, Uint256(0, 0));
         let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_0=0;
+        assert_uint256_eq(put_pool_locked_capital_0, Uint256(0, 0));
 
         // test value of pools position
         let (pools_pos_val_call) = ILiquidityPool.get_value_of_pool_position(
@@ -317,14 +317,14 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_1=2305843009213693952;
+        assert_uint256_eq(call_pool_locked_capital_1, Uint256(2305843009213693952, 0));
 
         // Put pool
         let (put_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_1=0;
+        assert_uint256_eq(put_pool_locked_capital_1, Uint256(0, 0));
         
         // test value of pools position
         let (pools_pos_val_call_2) = ILiquidityPool.get_value_of_pool_position(
@@ -490,13 +490,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_2=2305843009213693952;
+        assert_uint256_eq(call_pool_locked_capital_2, Uint256(2305843009213693952, 0));
 
         let (put_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_2=0;
+        assert_uint256_eq(put_pool_locked_capital_2, Uint256(0, 0));
 
         // Test unlocked capital
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -675,13 +675,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_3=1152921504606846976;
+        assert_uint256_eq(call_pool_locked_capital_3, Uint256(1152921504606846976, 0));
         
         let (put_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_3=0;
+        assert_uint256_eq(put_pool_locked_capital_3, Uint256(0, 0));
 
         // test value of pools position
         let (pools_pos_val_call_4) = ILiquidityPool.get_value_of_pool_position(
@@ -861,13 +861,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_4 = 0;
+        assert_uint256_eq(call_pool_locked_capital_4, Uint256(0, 0));
 
         let (put_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_4 = 0;
+        assert_uint256_eq(put_pool_locked_capital_4, Uint256(0, 0));
 
         // test value of pools position
         let (pools_pos_val_call_5) = ILiquidityPool.get_value_of_pool_position(
@@ -1016,13 +1016,13 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_5 = 0;
+        assert_uint256_eq(call_pool_locked_capital_5, Uint256(0, 0));
         
         let (put_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_5 = 0;
+        assert_uint256_eq(put_pool_locked_capital_5, Uint256(0, 0));
 
         // test value of pools position
         let (pools_pos_val_call_6) = ILiquidityPool.get_value_of_pool_position(
