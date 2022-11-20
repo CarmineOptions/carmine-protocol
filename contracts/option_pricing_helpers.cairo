@@ -92,10 +92,10 @@ func convert_amount_to_option_currency_from_base_uint256{
         let dec_ = Uint256(dec, 0);
         let ZERO = Uint256(0, 0);
         let (adjusted_amount_low: Uint256, adjusted_amount_high: Uint256) = uint256_mul(amount, strike_price);
-        assert_uint256_eq(adjusted_amount_high, ZERO); 
+        assert_uint256_eq(adjusted_amount_high, ZERO);
         let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
         assert_uint256_eq(rem, ZERO); // TODO remove, tests should fail on this.
-        return (converted_amount=adjusted_amount_low);
+        return (converted_amount=quot);
     }
     return (converted_amount=amount);
 }
