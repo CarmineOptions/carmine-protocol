@@ -174,6 +174,7 @@ func get_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return (locked_capital,);
 }
 
+
 func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, balance: Uint256
 ) -> () {
@@ -327,20 +328,19 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 @view
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (unlocked_capital: Math64x61_) {
+) -> (unlocked_capital: Uint256) {
     alloc_locals;
     // Returns capital that is unlocked for immediate extraction/use.
     // This is for example ETH in case of ETH/USD CALL options.
 
     // Capital locked by the pool
-    let (locked_capital) = get_pool_locked_capital(lptoken_address);
+    let (locked_capital: Uint256) = get_pool_locked_capital(lptoken_address);
 
     // Get capital that is sum of unlocked (available) and locked capital.
-    let (contract_balance_uint256: Uint256) = get_lpool_balance(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
-    let contract_balance: Math64x61_ = fromUint256_balance(contract_balance_uint256, lpool_underlying_token);
+    let (contract_balance: Uint256) = get_lpool_balance(lptoken_address);
 
-    let unlocked_capital = Math64x61.sub(contract_balance, locked_capital);
+    let (unlocked_capital: Uint256) = uint256_sub(contract_balance, locked_capital);
+
     return (unlocked_capital = unlocked_capital);
 }
 
