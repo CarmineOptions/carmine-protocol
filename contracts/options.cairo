@@ -701,7 +701,6 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             strike_price_uint256,
             base_address
         );
-
         let (current_locked_capital) = get_pool_locked_capital(lptoken_address);
         let (new_locked_capital: Uint256, carry_: felt) = uint256_add(current_locked_capital, capital_to_be_locked);
         assert carry_ = 0;

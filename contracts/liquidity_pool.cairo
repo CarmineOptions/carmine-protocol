@@ -517,6 +517,8 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
         let (new_lpool_balance: Uint256, carry: felt) = uint256_add(current_lpool_balance, long_value_uint256);
         assert carry = 0;
+        let new_lpool_balance_low = new_lpool_balance.low;
+        let current_lpool_balance_low = current_lpool_balance.low;
         set_lpool_balance(lptoken_address, new_lpool_balance);
     } else {
         // Pool is SHORT

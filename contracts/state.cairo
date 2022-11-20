@@ -205,6 +205,7 @@ func get_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return (locked_capital,);
 }
 
+
 func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, balance: Uint256
 ) -> () {
