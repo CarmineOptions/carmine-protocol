@@ -93,15 +93,12 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // Both scaled by the size of position.
     // option position is measured in base token (ETH in case of ETH/USD) that's why
     // the fromUint256_balance uses option.base_token_address
-    // let (_option_position_dec) = option_position.read(
     let (_option_position) = option_position.read(
         lptoken_address,
         option.option_side,
         option.maturity,
         option.strike_price
     );
-    // let _option_position_uint256 = Uint256(low=_option_position_dec, high=0);
-    // let _option_position = fromUint256_balance(_option_position_uint256, option.base_token_address);
 
     // If option position is 0, the value of given position is zero.
     if (_option_position == 0) {
@@ -112,7 +109,10 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     }
 
     let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-    let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+
+    let (current_pool_balance_uint256) = get_unlocked_capital(lptoken_address);
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
 
     with_attr error_message("Failed getting value of position in _get_value_of_pool_position"){
         let (value_of_option) = get_value_of_position(
@@ -151,13 +151,12 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     with_attr error_message("Failed to get free_capital in get_lptokens_for_underlying"){
-        let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-        let (currency_address) = get_underlying_token_address(lptoken_address);
-        let free_capital = toUint256_balance(free_capital_Math64, currency_address);
+        let (free_capital) = get_unlocked_capital(lptoken_address);
     }
 
     with_attr error_message("Failed to value pools position in get_lptokens_for_underlying"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
         let value_of_position = toUint256_balance(value_of_position_Math64, currency_address);
     }
 
@@ -211,17 +210,12 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     with_attr error_message(
         "Failed to get free_capital_Math64 in get_underlying_for_lptokens, {lptoken_address}, {lpt_amt}"
     ){
-        let (free_capital_Math64) = get_unlocked_capital(lptoken_address);
-    }
-    with_attr error_message(
-        "Failed to get free_capital in get_underlying_for_lptokens, {lptoken_address}, {lpt_amt}, {free_capital_Math64}"
-    ){
-        let (currency_address) = get_underlying_token_address(lptoken_address);
-        let free_capital = toUint256_balance(free_capital_Math64, currency_address);
+        let (free_capital) = get_unlocked_capital(lptoken_address);
     }
 
     with_attr error_message("Failed to get value_of_position in get_underlying_for_lptokens"){
         let (value_of_position_Math64) = get_value_of_pool_position(lptoken_address);
+        let (currency_address) = get_underlying_token_address(lptoken_address);
         let value_of_position = toUint256_balance(value_of_position_Math64, currency_address);
     }
     
@@ -417,18 +411,16 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         "Failed to calculate underlying, {pooled_token_addr}, {quote_token_address}, {base_token_address}, {option_type}, {lp_token_amount_low}"
     ){
         let (underlying_amount_uint256) = get_underlying_for_lptokens(lptoken_address, lp_token_amount);
-        let (currency_address) = get_underlying_token_address(lptoken_address);
-        let underlying_amount_Math64 = fromUint256_balance(underlying_amount_uint256, currency_address);
     }
 
     with_attr error_message(
         "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital in withdraw_liquidity"
     ){
-        let (free_capital) = get_unlocked_capital(lptoken_address);
+        let (free_capital_uint256: Uint256) = get_unlocked_capital(lptoken_address);
 
-        let assert_res = Math64x61.sub(free_capital, underlying_amount_Math64);
-
-        assert_nn(assert_res);
+        let assert_res: Uint256 = uint256_sub(free_capital_uint256, underlying_amount_uint256);
+        let ZERO = Uint256(0, 0);
+        assert_uint256_le(ZERO, assert_res);
     }
 
     with_attr error_message("Failed to transfer token from pool to account in withdraw_liquidity"){
@@ -507,6 +499,8 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
         let (new_lpool_balance: Uint256, carry: felt) = uint256_add(current_lpool_balance, long_value_uint256);
         assert carry = 0;
+        let new_lpool_balance_low = new_lpool_balance.low;
+        let current_lpool_balance_low = current_lpool_balance.low;
         set_lpool_balance(lptoken_address, new_lpool_balance);
     } else {
         // Pool is SHORT
@@ -532,8 +526,16 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // The long value is left in the pool for the long owner to collect it.
 
         let (new_lpool_balance: Uint256) = uint256_sub(current_lpool_balance, long_value_uint256);
-        let (new_locked_balance_1: Uint256) = uint256_sub(current_locked_balance, short_value_uint256);
-        let (new_locked_balance: Uint256) = uint256_sub(new_locked_balance_1, long_value_uint256);
+
+        // Substracting the combination of long and short rather than separately because of rounding error
+        // More specifically transfering the combo to uint256 rather than separate values because
+        // of the rounding error
+        let long_plus_short_value_math64x61: Math64x61_ = Math64x61.add(long_value, short_value);
+        let long_plus_short_value_uint256: Uint256 = toUint256_balance(
+            long_plus_short_value_math64x61, lpool_underlying_token
+        );
+
+        let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value_uint256);
 
         with_attr error_message("Not enough capital in the pool") {
             // This will never happen since the capital to pay the users is always locked.
