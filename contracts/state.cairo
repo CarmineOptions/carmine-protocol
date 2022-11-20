@@ -333,7 +333,7 @@ func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // This is for example ETH in case of ETH/USD CALL options.
 
     // Capital locked by the pool
-    let (locked_capital) = pool_locked_capital.read(lptoken_address);
+    let (locked_capital) = get_pool_locked_capital(lptoken_address);
 
     // Get capital that is sum of unlocked (available) and locked capital.
     let (contract_balance_uint256: Uint256) = get_lpool_balance(lptoken_address);
