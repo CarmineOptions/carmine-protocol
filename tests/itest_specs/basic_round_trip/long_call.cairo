@@ -317,7 +317,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert_uint256_eq(call_pool_locked_capital_1, Uint256(2305843009213693952, 0));
+        assert_uint256_eq(call_pool_locked_capital_1, Uint256(1000000000000000000, 0));
 
         // Put pool
         let (put_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
@@ -490,7 +490,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert_uint256_eq(call_pool_locked_capital_2, Uint256(2305843009213693952, 0));
+        assert_uint256_eq(call_pool_locked_capital_2, Uint256(1000000000000000000, 0));
 
         let (put_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
@@ -675,7 +675,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert_uint256_eq(call_pool_locked_capital_3, Uint256(1152921504606846976, 0));
+        assert_uint256_eq(call_pool_locked_capital_3, Uint256(500000000000000000, 0));
         
         let (put_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
