@@ -321,7 +321,8 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert_uint256_eq(put_pool_locked_capital_1, Uint256(3458764513820540928000, 0));
+        let bla = put_pool_locked_capital_1.low;
+        assert_uint256_eq(put_pool_locked_capital_1, Uint256(1500000000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -486,7 +487,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert_uint256_eq(put_pool_locked_capital_2, Uint256(3458764513820540928000, 0));
+        assert_uint256_eq(put_pool_locked_capital_2, Uint256(1500000000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
@@ -647,7 +648,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert_uint256_eq(put_pool_locked_capital_3,Uint256(1729382256910270464000, 0));
+        assert_uint256_eq(put_pool_locked_capital_3,Uint256(750000000, 0));
 
         // Test get_value_of_pool_position
         // Should be 0 since, pool does not have any position
