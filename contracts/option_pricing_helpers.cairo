@@ -10,6 +10,7 @@ from starkware.cairo.common.uint256 import (
     uint256_mul,
     uint256_unsigned_div_rem,
     assert_uint256_eq,
+    assert_uint256_lt,
 )
 
 from math64x61 import Math64x61
@@ -86,6 +87,7 @@ func convert_amount_to_option_currency_from_base_uint256{
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
+    with_attr error_message("unable to convert amount {amount.low} to opt curr from base uint256 with strike {strike_price.low}"){
     if (option_type == OPTION_PUT) {
         let (base_token_decimals) = get_decimal(base_token_address);
         let (dec) = pow10(base_token_decimals);
@@ -94,8 +96,10 @@ func convert_amount_to_option_currency_from_base_uint256{
         let (adjusted_amount_low: Uint256, adjusted_amount_high: Uint256) = uint256_mul(amount, strike_price);
         assert_uint256_eq(adjusted_amount_high, ZERO);
         let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
-        assert_uint256_eq(rem, ZERO); // TODO remove, tests should fail on this.
+        let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0);
+        assert_uint256_lt(ACCEPTED_AMT_DISCARDED, rem);
         return (converted_amount=quot);
+    }
     }
     return (converted_amount=amount);
 }

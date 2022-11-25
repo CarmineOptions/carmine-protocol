@@ -4,6 +4,7 @@
 
 from contracts.constants import (
     OPTION_CALL,
+    OPTION_PUT,
     TRADE_SIDE_LONG,
     RISK_FREE_RATE,
     get_empiric_key,
@@ -19,16 +20,19 @@ from contracts.option_pricing_helpers import (
     add_premia_fees,
     get_new_volatility
 )
-from contracts.types import Option, Math64x61_, Address, OptionType
+from contracts.types import Option, Math64x61_, Address, OptionType, Int
 
 from starkware.cairo.common.bool import TRUE
-from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem
+from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem, assert_le_felt
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.math_cmp import is_le, is_nn
 from starkware.cairo.common.uint256 import (
     Uint256,
-    assert_le
+    assert_le,
+    split_64
 )
+from starkware.cairo.common.bitwise import bitwise_and
+from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
 from math64x61 import Math64x61
 from lib.pow import pow10
@@ -63,8 +67,8 @@ func _get_premia_before_fees{
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_
-) -> (total_premia_before_fees: Math64x61_){
+    current_pool_balance: Math64x61_,
+) -> (total_premia_before_fees: Int){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -74,6 +78,7 @@ func _get_premia_before_fees{
     let strike_price = option.strike_price;
     let quote_token_address = option.quote_token_address;
     let base_token_address = option.base_token_address;
+    assert option_type = option.option_type; // TODO remove once tests pass even with this
 
     let option_size = position_size;
 
@@ -86,7 +91,7 @@ func _get_premia_before_fees{
     // 2) Calculate new volatility, calculate trade volatility
     with_attr error_message("helpers._get_premia_before_fees getting volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
+            current_volatility, option_size, option_type, side, option.strike_price, current_pool_balance
         );
     }
 
@@ -103,13 +108,15 @@ func _get_premia_before_fees{
         let HUNDRED = Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-        let (call_premia, put_premia) = black_scholes(
-            sigma=sigma,
-            time_till_maturity_annualized=time_till_maturity,
-            strike_price=strike_price,
-            underlying_price=underlying_price,
-            risk_free_rate_annualized=risk_free_rate_annualized,
-        );
+        with_attr error_message("black scholes {sigma} {time_till_maturity} {strike_price} {underlying_price}"){
+            let (call_premia, put_premia) = black_scholes(
+                sigma=sigma,
+                time_till_maturity_annualized=time_till_maturity,
+                strike_price=strike_price,
+                underlying_price=underlying_price,
+                risk_free_rate_annualized=risk_free_rate_annualized,
+            );
+        }
     }
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED"){
         assert_nn(call_premia);
@@ -141,7 +148,7 @@ func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: Math64x61_,
+    position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
     current_pool_balance: Math64x61_
@@ -313,4 +320,46 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         Math64x61.assert64x61(x__);
     }
     return x__;
+}
+
+
+// equivalent to toUint256_balance, but for option_position, which is stored as a felt (Int),
+// because we don't need the full range of uint256
+func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Math64x61_,
+    currency_address: Address
+) -> Int {
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+    let x_ = x * dec_;
+
+    with_attr error_message("x_ out of bounds in toUint256_balance"){
+        assert_le(x, Math64x61.BOUND);
+        assert_le(-Math64x61.BOUND, x);
+    }
+    let amount_felt = Math64x61.toFelt(x_);
+
+    return amount_felt;
+}
+
+func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Int,
+    currency_address: Address
+) -> Math64x61_ {
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+
+    let x_ = Math64x61.fromFelt(x);
+
+    return x_;
+}
+
+func intToUint256{bitwise_ptr: BitwiseBuiltin*}(
+    x: Int
+) -> Uint256 {
+    const LOW_BITS = 2 ** 128 - 1; //127 ones. Quite possible there's a off-by-one, watch out
+    let (low_part) = bitwise_and(x, LOW_BITS);
+    let high_part = x - low_part;
+    let res = Uint256(low_part, high_part);
+    return res;
 }

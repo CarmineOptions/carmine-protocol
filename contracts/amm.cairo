@@ -3,9 +3,10 @@
 %lang starknet
 
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.cairo_builtins import HashBuiltin, BitwiseBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
 from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.uint256 import assert_uint256_le
 from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
 
@@ -38,33 +39,13 @@ from contracts.option_pricing_helpers import (
     convert_amount_to_option_currency_from_base,
     convert_amount_to_option_currency_from_base_uint256,
 )
+from helpers import intToUint256, toUint256_balance
 
 
 
 // ############################
 // Pool information handlers
 // ############################
-
-
-@view
-func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address,
-) -> (pool_balance: Math64x61_) {
-    alloc_locals;
-
-    // FIXME: return Uint256
-    // FIXME: replace call of this function with calls to get_unlocked_capital
-    // Returns total capital in the pool minus the locked capital
-    // (ie capital available to locking).
-    let (pool_balance_) = get_unlocked_capital(
-        lptoken_address=lptoken_address
-    );
-
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
-    let pool_balance_math64x61: Math64x61_ = fromUint256_balance(pool_balance_, lpool_underlying_token);
-
-    return (pool_balance_math64x61,);
-}
 
 
 @view
@@ -91,12 +72,12 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 // ############################
 
 
-func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     option_type: OptionType,
-    strike_price: Math64x61_,
+    strike_price: Int,
     maturity: Int,
     side: OptionSide,
-    option_size: Math64x61_,
+    option_size: Int,
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
@@ -107,10 +88,15 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     with_attr error_message("do_trade premia calculation and updates failed") {
         // 0) Helper values
-        let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-            option_size,
+        with_attr error_message("conversions failed feiwjao"){
+            let option_size_uint256 = intToUint256(option_size);
+            let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
+        }
+        let (option_size_in_pool_currency: Uint256) = convert_amount_to_option_currency_from_base_uint256(
+            option_size_uint256,
             option_type,
-            strike_price
+            strike_price_uint256,
+            base_token_address
         );
 
         // 1) Get current volatility
@@ -127,13 +113,21 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 3) Calculate new volatility, calculate trade volatility
         
-        let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-        assert_nn_le(1, current_pool_balance);
+        let (current_pool_balance) = get_unlocked_capital(
+            lptoken_address=lptoken_address
+        );
         with_attr error_message("not enough assets in pool to fulfill requested trade") {
-            assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+            assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
         }
+
+        if (option_type == OPTION_CALL) {
+            tempvar underlying = base_token_address;
+        } else {
+            tempvar underlying = quote_token_address;
+        }
+        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
         let (new_volatility, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
+            current_volatility, option_size, option_type, side, strike_price, current_pool_balance_m64x61
         );
 
         // 4) Update volatility
@@ -179,11 +173,13 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
     }
 
+    assert option_size_in_pool_currency.high = 0;
+
     // 9) Make the trade
     mint_option_token(
         lptoken_address=lptoken_address,
         option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency,
+        option_size_in_pool_currency=option_size_in_pool_currency.low,
         option_side=side,
         option_type=option_type,
         maturity=maturity,
@@ -196,12 +192,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 }
 
 
-func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
     side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
@@ -218,11 +214,15 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     let (opposite_side) = get_opposite_side(side);
 
-    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-        option_size,
+    let option_size_uint256 = intToUint256(option_size);
+    let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base_uint256(
+        option_size_uint256,
         option_type,
-        strike_price
+        strike_price_uint256,
+        base_token_address
     );
+    assert option_size_in_pool_currency.high = 0;
 
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(
@@ -235,12 +235,21 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatility
-    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-    assert_nn_le(1, current_pool_balance);
-    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+    let (current_pool_balance) = get_unlocked_capital(
+        lptoken_address=lptoken_address
+    );
+    with_attr error_message("not enough assets in pool to fulfill requested trade") {
+        assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
+    }
 
+    if (option_type == OPTION_CALL) {
+        tempvar underlying = base_token_address;
+    } else {
+        tempvar underlying = quote_token_address;
+    }
+    let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, opposite_side, strike_price, current_pool_balance
+        current_volatility, option_size, option_type, opposite_side, strike_price, current_pool_balance_m64x61
     );
 
     // 4) Update volatility
@@ -283,7 +292,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     burn_option_token(
         lptoken_address=lptoken_address,
         option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency,
+        option_size_in_pool_currency=option_size_in_pool_currency.low,
         option_side=side,
         option_type=option_type,
         maturity=maturity,
@@ -370,7 +379,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 
 
 @external
-func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
@@ -421,7 +430,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 
 
 @external
-func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,

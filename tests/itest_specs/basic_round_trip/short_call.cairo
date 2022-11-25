@@ -74,13 +74,13 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_0 = 11529215046068469760; 
+        assert call_pool_unlocked_capital_0.low = 11529215046068469760; //bagr
 
         let (put_pool_unlocked_capital_0) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_0 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_0.low = 11529215046068469760000; //bagr
 
         // Test initial balance of option tokens in the account
         let (bal_opt_short_call_tokens_0: Uint256) = IOptionToken.balanceOf(
@@ -143,25 +143,25 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_0 = 11529215046068469760;
+        assert call_pool_balance_0.low = 11529215046068469760; //bagr
         
         let (put_pool_balance_0) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_0 = 11529215046068469760000;
+        assert put_pool_balance_0.low = 11529215046068469760000; //bagr
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_0=0;
+        assert call_pool_locked_capital_0.low = 0; //bagr
         let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_0=0;
+        assert put_pool_locked_capital_0.low = 0; //bagr
 
         // test value of pools position
         let (pools_pos_val_call) = ILiquidityPool.get_value_of_pool_position(
@@ -226,13 +226,13 @@ namespace ShortCallRoundTrip {
             lptoken_address=lpt_call_addr
         );
         // size of the unlocked pool is 5ETH (original) - premium + 0.03*premium
-        assert call_pool_unlocked_capital_1 = 11528606423894702528;
+        assert call_pool_unlocked_capital_1.low = 11528606423894702528; //bagr
 
         let (put_pool_unlocked_capital_1) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_1 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_1.low = 11529215046068469760000; //bagr
 
         // Test balance of option tokens in the account after the option was bought
         let (bal_opt_short_call_tokens_1: Uint256) = IOptionToken.balanceOf(
@@ -305,14 +305,14 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_1=11528606423894702528;
+        assert call_pool_balance_1.low = 11528606423894702528; //bagr
 
         // Put Pool
         let (put_pool_balance_1) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_1=11529215046068469760000;
+        assert put_pool_balance_1.low = 11529215046068469760000; //bagr
 
         // Test pool_locked_capital
         // Call pool
@@ -320,14 +320,14 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_1=0;
+        assert call_pool_locked_capital_1.low = 0; //bagr
 
         // Put pool
         let (put_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_1=0;
+        assert put_pool_locked_capital_1.low = 0; //bagr
 
         // test value of pools position
         let (pools_pos_val_call_2) = ILiquidityPool.get_value_of_pool_position(
@@ -398,13 +398,13 @@ namespace ShortCallRoundTrip {
         // so the value of pool waas 4.997... + 0.00299 = 5.0028..
         // Withdrawed 40% -> 2.0010906
         // Remaining unlocked is -> 4.99973 - 2.0010906 = 2.9986...
-        assert call_pool_unlocked_capital_2 = 6914405642482689665;
+        assert call_pool_unlocked_capital_2.low = 6914405642482689665; //bagr
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_2.low = 11529215046068469760000; //bagr
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_tokens_2: Uint256) = IOptionToken.balanceOf(
@@ -475,40 +475,40 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_2=6914405642482689665;
+        assert call_pool_balance_2.low = 6914405642482689665; //bagr
 
         // Put pool
         let (put_pool_balance_2) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_2=11529215046068469760000;
+        assert put_pool_balance_2.low = 11529215046068469760000; //bagr
         
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_2=0;
+        assert call_pool_locked_capital_2.low = 0; //bagr
 
         let (put_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_2=0;
+        assert put_pool_locked_capital_2.low = 0; //bagr
 
         // Test unlocked capital
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_2 = 6914405642482689665;
+        assert call_pool_unlocked_capital_2.low = 6914405642482689665; //bagr
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2 = 11529215046068469760000; 
+        assert put_pool_unlocked_capital_2.low = 11529215046068469760000; //bagr 
 
         // test value of pools position
         let (pools_pos_val_call_2) = ILiquidityPool.get_value_of_pool_position(
@@ -575,13 +575,13 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3 = 6917838435345032594;
+        assert call_pool_unlocked_capital_3.low = 6917838435345032594; //bagr
 
         let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_3.low = 11529215046068469760000; //bagr
 
         // // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_tokens_3: Uint256) = IOptionToken.balanceOf(
@@ -647,26 +647,26 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_3=6917838435345032594;
+        assert call_pool_balance_3.low = 6917838435345032594; //bagr
         
         let (put_pool_balance_3) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_3=11529215046068469760000;
+        assert put_pool_balance_3.low = 11529215046068469760000; //bagr
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_3=0;
+        assert call_pool_locked_capital_3.low = 0; //bagr
         
         let (put_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_3=0;
+        assert put_pool_locked_capital_3.low = 0; //bagr
 
         // test value of pools position
         let (pools_pos_val_call_4) = ILiquidityPool.get_value_of_pool_position(
@@ -758,13 +758,13 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_4 = 6955029451622672819;
+        assert call_pool_unlocked_capital_4.low = 6955029451622672819; //bagr
 
         let (put_pool_unlocked_capital_4) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_4.low = 11529215046068469760000; //bagr
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_call_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -830,26 +830,26 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_4 = 6955029451622672819;
+        assert call_pool_balance_4.low = 6955029451622672819; //bagr
 
         let (put_pool_balance_4) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_4 = 11529215046068469760000;
+        assert put_pool_balance_4.low = 11529215046068469760000; //bagr
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_4 = 0;
+        assert call_pool_locked_capital_4.low = 0; //bagr
 
         let (put_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_4 = 0;
+        assert put_pool_locked_capital_4.low = 0; //bagr
 
         // test value of pools position
         let (pools_pos_val_call_5) = ILiquidityPool.get_value_of_pool_position(
@@ -912,7 +912,7 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_5 = 6955029451622672819;
+        assert call_pool_unlocked_capital_5.low = 6955029451622672819; //bagr
 
         // At this moment no additional capital is unlocked
         // (that happened when the option was settled for the pool)
@@ -920,7 +920,7 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5 = 11529215046068469760000;
+        assert put_pool_unlocked_capital_5.low = 11529215046068469760000; //bagr
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_call_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -986,26 +986,26 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_5 = 6955029451622672819;
+        assert call_pool_balance_5.low = 6955029451622672819; //bagr
 
         let (put_pool_balance_5) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5 = 11529215046068469760000;
+        assert put_pool_balance_5.low = 11529215046068469760000; //bagr
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_5 = 0;
+        assert call_pool_locked_capital_5.low = 0; //bagr
         
         let (put_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_5 = 0;
+        assert put_pool_locked_capital_5.low = 0; //bagr
 
         // Test value of pools position
         let (pools_pos_val_call_6) = ILiquidityPool.get_value_of_pool_position(
