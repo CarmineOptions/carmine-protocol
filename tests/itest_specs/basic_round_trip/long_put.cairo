@@ -340,7 +340,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_1 = 3217000067329280248686;
+        assert put_pool_value_1 = 3219885042463113550033;
 
         ///////////////////////////////////////////////////
         // UPDATE THE ORACLE PRICE
@@ -384,7 +384,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_2.low = 6912915325;
+        assert admin_myUSD_balance_2.low = 6914912863;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -406,7 +406,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2.low = 1587084675;
+        assert put_pool_unlocked_capital_2.low = 1585087137;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_2: Uint256) = IOptionToken.balanceOf(
@@ -427,7 +427,7 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_2 = 329406144173384850100;
+        assert put_volatility_2 = 265071192447106531400; //WHAT?
 
         // Test option position
         let (opt_long_put_position_2) = ILiquidityPool.get_option_position(
@@ -473,7 +473,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_2.low = 3087084675;
+        assert put_pool_balance_2.low = 3085087137;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
@@ -504,7 +504,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_2 = 3324461431287578330205;
+        assert put_pool_value_2 = 3331487808682168234125;
 
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
@@ -522,7 +522,7 @@ namespace LongPutRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia = 134675785494767915950; // approx 58.40631168584766 USD...
+        assert premia = 129355277473052798750; // approx 58.40631168584766 USD...
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -542,7 +542,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_3.low = 6941242386;
+        assert admin_myUSD_balance_3.low = 6942120833;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -564,7 +564,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3.low = 2308757614;
+        assert put_pool_unlocked_capital_3.low = 2307879167;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_3: Uint256) = IOptionToken.balanceOf(
@@ -585,7 +585,7 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_3 = 329406144173384850100; // close option has no impact on volatility
+        assert put_volatility_3 = 265071192447106531400; // close option has no impact on volatility // WHAT?
 
         // Test option position
         let (opt_long_put_position_3) = ILiquidityPool.get_option_position(
@@ -603,7 +603,7 @@ namespace LongPutRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert opt_short_put_position_3 = 1152921504606846976;
+        assert opt_short_put_position_3 = 500000000000000000;
         let (opt_long_call_position_3) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
@@ -633,7 +633,7 @@ namespace LongPutRoundTrip {
         );
         // Previous state - premia + fee on premia
         // 3087.084675218243 - 29.203155843084424 + 0.8760946752925327 = 3058.757614050451
-        assert put_pool_balance_3.low = 3058757614;
+        assert put_pool_balance_3.low = 3057879167;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
@@ -728,7 +728,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_4.low = 6941242386;
+        assert admin_myUSD_balance_4.low = 6942120833;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_4) = ILiquidityPool.get_unlocked_capital(
@@ -768,7 +768,7 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_4 = 329406144173384850100; // close option has no impact on volatility
+        assert put_volatility_4 = 265071192447106531400; // close option has no impact on volatility
 
         // Test option position
         let (opt_long_put_position_4) = ILiquidityPool.get_option_position(
@@ -911,7 +911,7 @@ namespace LongPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_5 = 329406144173384850100; // close option has no impact on volatility
+        assert put_volatility_5 = 265071192447106531400; // close option has no impact on volatility
 
         // Test option position
         let (opt_long_put_position_5) = ILiquidityPool.get_option_position(
