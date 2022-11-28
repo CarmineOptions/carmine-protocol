@@ -19,11 +19,14 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 ) {
  
     tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
+    tempvar myeth_address;
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
             ids.tmp_address, "get_spot_median", [145000000000, 8, 0, 0]
         )
+        admin_address = 123 # doesnt matter in this test
+        ids.myeth_address = deploy_contract("lib/cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20Mintable.cairo", [1, 1, 18, 10 * 10**18, 0, admin_address, admin_address]).contract_address
     %}
  
     let option = Option(
@@ -31,11 +34,10 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
         maturity = 1669849199,
         strike_price = 0xbb8000000000000000,
         quote_token_address = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426,
-        base_token_address = 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7,
+        base_token_address = myeth_address,
         option_type = 0,
     );
-    // let position_size = 100000000000000;  // 0.0001 as 0.0001*10**18
-    let position_size = 230584300921369;
+    let position_size = 100000000000000; // 0.0001*10**18
     let option_type = 0;  // 0 for call option
     let current_volatility = 0x2000000000000000;  // =1... as 0x2000000000000000 / 2**61
     let current_pool_balance = 0x6666920e4559665;  // =0.20000130104... as 0x6666920e4559665 / 2**61
@@ -44,6 +46,7 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
         option, position_size, option_type, current_volatility, current_pool_balance
     );
 
+    assert res = 226921594053289;
     %{ stop_mock() %}
 
     return ();
