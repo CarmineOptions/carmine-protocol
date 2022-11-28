@@ -9,6 +9,7 @@ from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.uint256 import assert_uint256_le
 from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
+from lib.pow import pow10
 
 from contracts.constants import (
     VOLATILITY_LOWER_BOUND,
@@ -74,7 +75,7 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     option_type: OptionType,
-    strike_price: Int,
+    strike_price: Math64x61_,
     maturity: Int,
     side: OptionSide,
     option_size: Int,
@@ -88,7 +89,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: Bitwi
 
     with_attr error_message("do_trade premia calculation and updates failed") {
         // 0) Helper values
-        with_attr error_message("conversions failed feiwjao"){
+        with_attr error_message("conversions failed in do_trade"){
             let option_size_uint256 = intToUint256(option_size);
             let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
         }
@@ -162,7 +163,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: Bitwi
                 call_premia, put_premia, option_type, underlying_price
             );
             // premia adjusted by size (multiplied by size)
-            let total_premia_before_fees = Math64x61.mul(premia, option_size);
+            let option_size_m64x61_ = Math64x61.fromFelt(option_size);
+            let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
+            let (base_div) = pow10(base_decimals);
+            let base_div_m64x61 = Math64x61.fromFelt(base_div);
+            let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+            let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
         }
 
         // 8) Get fees
@@ -179,7 +185,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: Bitwi
     mint_option_token(
         lptoken_address=lptoken_address,
         option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency.low,
+        option_size_in_pool_currency=option_size_in_pool_currency,
         option_side=side,
         option_type=option_type,
         maturity=maturity,
@@ -197,7 +203,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_pt
     strike_price : Math64x61_,
     maturity : Int,
     side : OptionSide,
-    option_size : Int,
+    option_size : Int, // in base token
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
@@ -279,7 +285,12 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_pt
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
-    let total_premia_before_fees = Math64x61.mul(premia, option_size);
+    let option_size_m64x61_ = Math64x61.fromFelt(option_size);
+    let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
+    let (base_div) = pow10(base_decimals);
+    let base_div_m64x61 = Math64x61.fromFelt(base_div);
+    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+    let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
 
     // 8) Get fees
     // fees are already in the currency same as premia
@@ -289,17 +300,19 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_pt
     let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    burn_option_token(
-        lptoken_address=lptoken_address,
-        option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency.low,
-        option_side=side,
-        option_type=option_type,
-        maturity=maturity,
-        strike_price=strike_price,
-        premia_including_fees=total_premia,
-        underlying_price=underlying_price
-    );
+    with_attr error_message("Unable to burn option token in close_position"){
+        burn_option_token(
+            lptoken_address=lptoken_address,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
+            option_side=side,
+            option_type=option_type,
+            maturity=maturity,
+            strike_price=strike_price,
+            premia_including_fees=total_premia,
+            underlying_price=underlying_price
+        );
+    }
 
     return (premia=premia);
 }
@@ -309,7 +322,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address,
@@ -384,7 +397,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: B
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int, // in base token currency
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
@@ -435,7 +448,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: 
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
@@ -476,16 +489,18 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: 
     with_attr error_message("Trading of given maturity has been stopped before expiration") {
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
-    let (premia) = close_position(
-        option_type,
-        strike_price,
-        maturity,
-        option_side,
-        option_size,
-        quote_token_address,
-        base_token_address,
-        lptoken_address
-    );
+    with_attr error_message("unable to close_postiion in trade_close"){
+        let (premia) = close_position(
+            option_type,
+            strike_price,
+            maturity,
+            option_side,
+            option_size,
+            quote_token_address,
+            base_token_address,
+            lptoken_address
+        );
+    }
     return (premia=premia);
 
 }
@@ -497,7 +512,7 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,

@@ -85,7 +85,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_size: Int, // in base tokens (ETH in case of ETH/USDC)
-    option_size_in_pool_currency: Math64x61_,
+    option_size_in_pool_currency: Uint256,
     option_side: OptionSide,
     option_type: OptionType,
     maturity: Int, // in seconds
@@ -154,11 +154,11 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_p
 }
 
 
-func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
     option_size: Int,
-    option_size_in_pool_currency: Math64x61_,
+    option_size_in_pool_currency: Uint256,
     premia_including_fees: Math64x61_,
     option_type: OptionType,
     maturity: Int,
@@ -284,11 +284,11 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bit
 }
 
 
-func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
     option_size: Int,
-    option_size_in_pool_currency: Math64x61_,
+    option_size_in_pool_currency: Uint256,
     premia_including_fees: Math64x61_,
     option_type: OptionType,
     maturity: Int,
@@ -331,22 +331,21 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bi
         let option_size_uint256 = intToUint256(option_size);
         IOptionToken.mint(option_token_address, user_address, option_size_uint256);
 
-        let to_be_paid_by_user = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
+        let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
+        let (to_be_paid_by_user) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
 
         // Move (option_size minus (premia minus fees)) from user to the pool
-        let to_be_paid_by_user_uint256 = toUint256_balance(to_be_paid_by_user, currency_address);
+        
         IERC20.transferFrom(
             contract_address=currency_address,
             sender=user_address,
             recipient=current_contract_address,
-            amount=to_be_paid_by_user_uint256,
+            amount=to_be_paid_by_user,
         );
 
         // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
         // since only locked_capital storage_var exists
         let (current_balance) = get_lpool_balance(lptoken_address);
-        let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
-        let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
         let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
         set_lpool_balance(lptoken_address, new_balance);
 
@@ -405,8 +404,8 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bi
 //   for example how much capital is unlocked, how much is locked,...
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
-    option_size: Math64x61_,
-    option_size_in_pool_currency: Math64x61_,
+    option_size: Int,
+    option_size_in_pool_currency: Uint256,
     option_side: OptionSide,
     option_type: OptionType,
     maturity: Int,
@@ -451,17 +450,21 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             strike_price=strike_price,
         );
     } else {
-        _burn_option_token_short(
-            lptoken_address=lptoken_address,
-            option_token_address=option_token_address,
-            option_size=option_size,
-            option_size_in_pool_currency=option_size_in_pool_currency,
-            premia_including_fees=premia_including_fees,
-            option_side=option_size,
-            option_type=option_type,
-            maturity=maturity,
-            strike_price=strike_price,
-        );
+        local optsize_in_pc = option_size_in_pool_currency.low;
+        local optsize = option_size; // TODO remove
+        with_attr error_message("unable to burn option token short optsize: {optsize}, optsize_in_pc: {optsize_in_pc}, strike: {strike_price}"){
+            _burn_option_token_short(
+                lptoken_address=lptoken_address,
+                option_token_address=option_token_address,
+                option_size=option_size,
+                option_size_in_pool_currency=option_size_in_pool_currency,
+                premia_including_fees=premia_including_fees,
+                option_side=option_size,
+                option_type=option_type,
+                maturity=maturity,
+                strike_price=strike_price,
+            );
+        }
     }
     return ();
 }
@@ -471,7 +474,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     lptoken_address: Address,
     option_token_address: Address,
     option_size: Int,
-    option_size_in_pool_currency: Math64x61_,
+    option_size_in_pool_currency: Uint256,
     premia_including_fees: Math64x61_,
     option_side: OptionSide,
     option_type: OptionType,
@@ -491,11 +494,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let base_address = pool_definition.base_token_address;
     let quote_address = pool_definition.quote_token_address;
     // Burn the tokens
-    with_attr error_message("Unable to work with option_size this big until Cairo 1.0 comes along"){
-        assert_le_felt(option_size, 2**127-1);
-    }
-    //let option_size_uint256 = intToUint256(option_size); // issues with ref to BitwiseBuiltin being revoked
-    let option_size_uint256 = Uint256(option_size, 0);
+    let option_size_uint256 = intToUint256(option_size);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
@@ -543,11 +542,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
         let (current_locked_balance) = get_pool_locked_capital(lptoken_address);
         let (size_to_be_unlocked_in_base) = min(pool_short_position, option_size);
-        with_attr error_message("Unable to work with size_to_be_unlocked_in_base this big until Cairo 1.0 comes along"){
-            assert_le_felt(size_to_be_unlocked_in_base, 2**127-1);
-        }
-        let size_to_be_unlocked_in_base_uint256 = Uint256(size_to_be_unlocked_in_base, 0);
-        //let size_to_be_unlocked_in_base_uint256 = intToUint256(size_to_be_unlocked_in_base);
+        let size_to_be_unlocked_in_base_uint256 = intToUint256(size_to_be_unlocked_in_base);
         let strike_price_uint256 = toUint256_balance(strike_price, quote_address);
         let (size_to_be_unlocked: Uint256) = convert_amount_to_option_currency_from_base_uint256(
             size_to_be_unlocked_in_base_uint256, option_type, strike_price_uint256, base_address
@@ -559,11 +554,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         let (pools_short_position) = get_option_position(
             lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
         );
-        with_attr error_message("Unable to work with pools_short_position this big until Cairo 1.0 comes along"){
-            assert_le_felt(pools_short_position, 2**127-1);
-            //let pools_short_position_uint256 = intToUint256(pools_short_position);
-        }
-        let pools_short_position_uint256 = Uint256(pools_short_position, 0);
+        let pools_short_position_uint256 = intToUint256(pools_short_position);
         let new_pools_short_position = pools_short_position - size_to_be_unlocked_in_base;
         set_option_position(
             lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
@@ -586,8 +577,8 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
-    option_size: Math64x61_,
-    option_size_in_pool_currency: Math64x61_,
+    option_size: Int,
+    option_size_in_pool_currency: Uint256,
     premia_including_fees: Math64x61_,
     option_side: OptionSide,
     option_type: OptionType,
@@ -605,18 +596,19 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let base_address = pool_definition.base_token_address;
     let quote_address = pool_definition.quote_token_address;
 
+    let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
 
     // Burn the tokens
     let option_size_uint256 = toUint256_balance(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
-    let total_user_payment = Math64x61.sub(option_size_in_pool_currency, premia_including_fees);
-    let total_user_payment_uint256 = toUint256_balance(total_user_payment, currency_address);
+    
+    let (total_user_payment) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
     IERC20.transfer(
         contract_address=currency_address,
         recipient=user_address,
-        amount=total_user_payment_uint256,
+        amount=total_user_payment,
     );
 
     // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
@@ -702,17 +694,13 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             current_locked_capital_uint256, current_total_capital_uint256
         );
 
-        let option_size_in_pool_currency_uint256: Uint256 = toUint256_balance(
-            option_size_in_pool_currency, lpool_underlying_token
-        );
-
         with_attr error_message("Not enough unlocked capital."){
-            let assert_diff: Uint256 = uint256_sub(current_unlocked_capital_uint256, option_size_in_pool_currency_uint256);
+            let assert_diff: Uint256 = uint256_sub(current_unlocked_capital_uint256, option_size_in_pool_currency);
             assert_uint256_le(Uint256(0, 0), assert_diff);
         }
 
         // Update locked capital
-        let (new_locked_capital: Uint256, carry: felt) = uint256_add(current_locked_capital_uint256, option_size_in_pool_currency_uint256);
+        let (new_locked_capital: Uint256, carry: felt) = uint256_add(current_locked_capital_uint256, option_size_in_pool_currency);
         assert carry = 0;
         set_pool_locked_capital(lptoken_address, new_locked_capital);
 
@@ -775,6 +763,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (contract_strike) = IOptionToken.strike_price(option_token_address);
     let (contract_maturity) = IOptionToken.maturity(option_token_address);
     let (contract_option_side) = IOptionToken.side(option_token_address);
+    let (base_token_address) = IOptionToken.base_token_address(option_token_address);
     let (current_contract_address) = get_contract_address();
 
     with_attr error_message("Required contract doesn't match the address.") {
@@ -801,7 +790,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     }
 
     // long_value and short_value are both in terms of locked capital
-    let option_size_m64x61 = fromInt_balance(option_size, currency_address);
+    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
     let (long_value, short_value) = split_option_locked_capital(
         option_type, option_side, option_size_m64x61, strike_price, terminal_price
     );
@@ -811,7 +800,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // Validate that the user is not burning more than he/she has.
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
     let base_address = pool_definition.base_token_address;
-    let option_size_uint256 = toUint256_balance(option_size, base_address);
+    let option_size_uint256 = intToUint256(option_size);
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         assert_uint256_le(option_size_uint256, user_tokens_owned);

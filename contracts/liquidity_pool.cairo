@@ -94,12 +94,11 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // option position is measured in base token (ETH in case of ETH/USD) that's why
     // the fromUint256_balance uses option.base_token_address
     let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
-    let strike_price_int = toInt_balance(option.strike_price, pool.quote_token_address);
     let (_option_position) = option_position_.read(
         lptoken_address,
         option.option_side,
         option.maturity,
-        strike_price_int
+        option.strike_price
     );
 
     // If option position is 0, the value of given position is zero.
@@ -525,12 +524,10 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // Substracting the combination of long and short rather than separately because of rounding error
         // More specifically transfering the combo to uint256 rather than separate values because
         // of the rounding error
-        let long_plus_short_value_math64x61: Math64x61_ = Math64x61.add(long_value, short_value);
-        let long_plus_short_value_uint256: Uint256 = toUint256_balance(
-            long_plus_short_value_math64x61, lpool_underlying_token
-        );
+        let (long_plus_short_value, carry) = uint256_add(long_value_uint256, short_value_uint256);
+        assert carry = 0;
 
-        let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value_uint256);
+        let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value);
 
         with_attr error_message("Not enough capital in the pool") {
             // This will never happen since the capital to pay the users is always locked.
@@ -611,14 +608,13 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
     // pool's position... has to be nonnegative since the position is per side (long/short)
     let (option_size) = get_option_position(lptoken_address, option_side, maturity, strike_price);
-    let (underlying_token_address) = get_underlying_token_address(lptoken_address);
-    let option_size_m64x61 = fromInt_balance(option_size, underlying_token_address);
     
     if (option_size == 0){
         // Pool's position is zero, there is nothing to expire.
         // This also checks that the option exists (if it doesn't storage_var returns 0).
         return ();
     }
+
     // From now on we know that pool's position is positive -> option_size > 0.
 
     // Make sure the contract is ready to expire
@@ -632,11 +628,19 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
     let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
 
+    local optsize = option_size;
+    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
+    local optsize64 = option_size_m64x61;
+    local str = strike_price;
+    local term = terminal_price;
+    with_attr error_message("unable to split_option_locked_capital in expire_option_token_for_pool optsize {optsize}, optsize64 {optisize64} strike {str} term {term}"){
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size_m64x61, strike_price, terminal_price
     );
+    }
 
     // Adjusts only the lpool_balance and pool_locked_capital storage_vars
+    with_attr error_message("unable to adjust_lpool_balance_and_pool_locked_capital_expired_options in expire_option_token_for_pool"){
     adjust_lpool_balance_and_pool_locked_capital_expired_options(
         lptoken_address=lptoken_address,
         long_value=long_value,
@@ -646,6 +650,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         maturity=maturity,
         strike_price=strike_price
     );
+    }
 
     // We have to adjust the pools option position too.
     set_option_position(lptoken_address, option_side, maturity, strike_price, 0);

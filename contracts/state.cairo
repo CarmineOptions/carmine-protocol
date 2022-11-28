@@ -72,11 +72,10 @@ func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
 
-    let strike_price_int = toInt_balance(strike_price, pool.quote_token_address);
     let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
     let newval: Int = toInt_balance(currval, lpool_underlying_token);
 
-    set_option_position(lptoken_address, option_side, maturity, strike_price_int, newval);
+    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
     return ();
 }
 
@@ -220,17 +219,6 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 
 
 @view
-func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (
-    res: Math64x61_
-) {
-    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    return (position,);
-}
-
-
-@view
 func get_lptoken_address_for_given_option{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -349,7 +337,7 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 
 func set_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int, position: Int
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_, position: Int
 ) {
     with_attr error_message("Unable to set option position {lptoken_address} {maturity} {strike_price} {position}"){
         assert_nn_le(0, strike_price);
@@ -392,7 +380,7 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
 @view
 func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
 ) -> (option_position: Int) {
     let (opt_pos) = option_position_.read(
         lptoken_address, option_side, maturity, strike_price

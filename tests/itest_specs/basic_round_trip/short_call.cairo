@@ -74,13 +74,13 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_0.low = 11529215046068469760; //bagr
+        assert call_pool_unlocked_capital_0.low = 5000000000000000000; //bagr
 
         let (put_pool_unlocked_capital_0) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_0.low = 11529215046068469760000; //bagr
+        assert put_pool_unlocked_capital_0.low = 5000000000; //bagr
 
         // Test initial balance of option tokens in the account
         let (bal_opt_short_call_tokens_0: Uint256) = IOptionToken.balanceOf(
@@ -105,7 +105,7 @@ namespace ShortCallRoundTrip {
         assert put_volatility_0 = 230584300921369395200;
 
         // Test option position from pool's perspective
-        let (opt_long_put_position_0) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_0) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -113,7 +113,7 @@ namespace ShortCallRoundTrip {
             strike_price=strike_price
         );
         assert opt_long_put_position_0 = 0;
-        let (opt_short_put_position_0) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_0) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -121,7 +121,7 @@ namespace ShortCallRoundTrip {
             strike_price=strike_price
         );
         assert opt_short_put_position_0 = 0;
-        let (opt_long_call_position_0) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_0) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -129,7 +129,7 @@ namespace ShortCallRoundTrip {
             strike_price=strike_price
         );
         assert opt_long_call_position_0 = 0;
-        let (opt_short_call_position_0) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_0) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -143,25 +143,25 @@ namespace ShortCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_0.low = 11529215046068469760; //bagr
+        assert call_pool_balance_0.low = 5000000000000000000;
         
         let (put_pool_balance_0) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_0.low = 11529215046068469760000; //bagr
+        assert put_pool_balance_0.low = 5000000000;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_0.low = 0; //bagr
+        assert call_pool_locked_capital_0.low = 0;
         let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_locked_capital_0.low = 0; //bagr
+        assert put_pool_locked_capital_0.low = 0;
 
         // test value of pools position
         let (pools_pos_val_call) = ILiquidityPool.get_value_of_pool_position(
@@ -182,8 +182,8 @@ namespace ShortCallRoundTrip {
 
         %{ stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr) %}
 
-        let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let decimals_myeth = 18;
+        let one = 1 * 10 ** 18;
 
         let (premia: Math64x61_) = IAMM.trade_open(
             contract_address=amm_addr,
@@ -196,8 +196,7 @@ namespace ShortCallRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia = 627445539966218; // approx 0.0002 ETH which may sound like way too different from the long premia, but the trade_vol here is 91.6 and the premia is correct
-        // according to calculator
+        assert premia = 840674593728785; // approx 0.00036 ETH which may sound like way too different from the long premia, but the trade_vol here is 91.6
 
         // Test balance of lp tokens in the account after the option was bought
         let (bal_eth_lpt_1: Uint256) = ILPToken.balanceOf(
@@ -260,7 +259,7 @@ namespace ShortCallRoundTrip {
 
         // Test option position
         // Long put
-        let (opt_long_put_position_1) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_1) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -270,7 +269,7 @@ namespace ShortCallRoundTrip {
         assert opt_long_put_position_1 = 0;
 
         // Short Put
-        let (opt_short_put_position_1) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_1) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -280,7 +279,7 @@ namespace ShortCallRoundTrip {
         assert opt_short_put_position_1 = 0;
 
         // Long Call
-        let (opt_long_call_position_1) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_1) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -290,7 +289,7 @@ namespace ShortCallRoundTrip {
         assert opt_long_call_position_1 = 2305843009213693952;
 
         // Short Call
-        let (opt_short_call_position_1) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_1) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -430,7 +429,7 @@ namespace ShortCallRoundTrip {
 
         // Test option position
         // Long Call
-        let (opt_long_call_position_2) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_2) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -440,7 +439,7 @@ namespace ShortCallRoundTrip {
         assert opt_long_call_position_2 = 2305843009213693952;
 
         // Short Call
-        let (opt_short_call_position_2) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_2) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -450,7 +449,7 @@ namespace ShortCallRoundTrip {
         assert opt_short_call_position_2 = 0;
 
         // Long Put
-        let (opt_long_put_position_2) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_2) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -460,7 +459,7 @@ namespace ShortCallRoundTrip {
         assert opt_long_put_position_2 = 0;
         
         // Short Put
-        let (opt_short_put_position_2) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_2) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -526,8 +525,7 @@ namespace ShortCallRoundTrip {
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
         ///////////////////////////////////////////////////
-        let two = Math64x61.fromFelt(2);
-        let half = Math64x61.div(one, two);
+        let half = one / 2;
 
         let (premia_2: Math64x61_) = IAMM.trade_close(
             contract_address=amm_addr,
@@ -606,7 +604,7 @@ namespace ShortCallRoundTrip {
         assert put_volatility_3 = 230584300921369395200;  
 
         // Test option position
-        let (opt_long_put_position_3) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_3) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -615,7 +613,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_put_position_3 = 0;
         
-        let (opt_short_put_position_3) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_3) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -624,7 +622,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_short_put_position_3 = 0;
         
-        let (opt_long_call_position_3) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_3) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -633,7 +631,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_call_position_3 =1152921504606846976;
 
-        let (opt_short_call_position_3) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_3) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -789,7 +787,7 @@ namespace ShortCallRoundTrip {
         assert put_volatility_4 = 230584300921369395200; 
 
         // Test option position
-        let (opt_long_put_position_4) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_4) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -798,7 +796,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_put_position_4 = 0;
         
-        let (opt_short_put_position_4) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_4) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -807,7 +805,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_short_put_position_4 = 0;
         
-        let (opt_long_call_position_4) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_4) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -816,7 +814,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_call_position_4 = 0;
 
-        let (opt_short_call_position_4) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_4) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -945,7 +943,7 @@ namespace ShortCallRoundTrip {
         assert put_volatility_5 = 230584300921369395200; 
 
         // Test option position
-        let (opt_long_put_position_5) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_put_position_5) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
@@ -954,7 +952,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_put_position_5 = 0;
         
-        let (opt_short_put_position_5) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_put_position_5) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
@@ -963,7 +961,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_short_put_position_5 = 0;
         
-        let (opt_long_call_position_5) = ILiquidityPool.get_pools_option_position(
+        let (opt_long_call_position_5) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
@@ -972,7 +970,7 @@ namespace ShortCallRoundTrip {
         );
         assert opt_long_call_position_5 = 0;
 
-        let (opt_short_call_position_5) = ILiquidityPool.get_pools_option_position(
+        let (opt_short_call_position_5) = ILiquidityPool.get_option_position(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
