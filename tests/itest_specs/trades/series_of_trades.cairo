@@ -89,7 +89,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_long_put = 234655350073966452800;
+        assert premia_long_put = 232821468023008429500;
         
         // Second trade, PUT SHORT
         let (premia_short_put: Math64x61_) = IAMM.trade_open(
@@ -103,7 +103,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_short_put = 234722763583748232400;
+        assert premia_short_put = 232679931134786449200;
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()
