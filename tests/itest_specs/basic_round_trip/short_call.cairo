@@ -564,7 +564,7 @@ namespace ShortCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_3.low = 6500100985142214814;  // WHAT??
+        assert admin_myETH_balance_3.low = 6500100985142214814;  // WHAT?? - diff here is like third of bps, not worth exploring rn imho
         // Previous + 0.5 - premia - fees
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
