@@ -62,7 +62,7 @@ namespace SeriesOfTrades {
 
         assert premia_long_call = 1391658545716339; // with m64x61 approx 0.00087 ETH, or 1.22 USD , now 0.0006 ETH
 
-        // Second trade, LONG SHORT
+        // Second trade, SHORT CALL
         let (premia_short_call: Math64x61_) = IAMM.trade_open(
             contract_address=amm_addr,
             option_type=0,
