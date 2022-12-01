@@ -77,7 +77,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     let (option) = available_options.read(lptoken_address, index);
-
+    
     // Because of how the defined options are stored we have to verify that we have not run
     // at the end of the stored values. The end is with "empty" Option.
     let option_sum = option.maturity + option.strike_price;
@@ -257,10 +257,12 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     lptoken_address: Address
 ){
     // This function initializes the pool.
-
+    // FIXME: Add more checks for this function
     alloc_locals;
 
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
 
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();

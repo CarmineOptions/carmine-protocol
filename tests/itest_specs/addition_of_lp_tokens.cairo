@@ -54,5 +54,31 @@ namespace AdditionOfLPTokens {
         return ();
     }
 
-    // FIXME: try to add incorrect lptokens (incorrect input params)
+    func add_incorrect_lpt{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
+
+        tempvar amm_addr;
+        tempvar myusd_addr;
+        tempvar myeth_addr;
+        tempvar lpt_call_addr;
+
+        %{
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.lpt_call_addr = context.lpt_call_addr
+        %}
+
+        %{ expect_revert(error_message ="Received unknown option type(=2) in add_lptoken") %}
+
+        ILiquidityPool.add_lptoken(
+            contract_address=amm_addr,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            option_type=2, // option with type '2' does not exist
+            lptoken_address=lpt_call_addr
+        );
+
+        return ();
+    }
 }
