@@ -100,6 +100,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
             base_token_address
         );
 
+        let option_size_m64x61_ = Math64x61.fromFelt(option_size);
+        let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
+        let (base_div) = pow10(base_decimals);
+        let base_div_m64x61 = Math64x61.fromFelt(base_div);
+        let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+
         // 1) Get current volatility
         let (current_volatility) = get_pool_volatility(
             lptoken_address=lptoken_address,
@@ -128,7 +134,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         }
         let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
         let (new_volatility, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance_m64x61
+            current_volatility, option_size_m64x61, option_type, side, strike_price, current_pool_balance_m64x61
         );
 
         // 4) Update volatility
@@ -163,11 +169,6 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
                 call_premia, put_premia, option_type, underlying_price
             );
             // premia adjusted by size (multiplied by size)
-            let option_size_m64x61_ = Math64x61.fromFelt(option_size);
-            let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
-            let (base_div) = pow10(base_decimals);
-            let base_div_m64x61 = Math64x61.fromFelt(base_div);
-            let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
             let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
         }
 
@@ -230,6 +231,12 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
     assert option_size_in_pool_currency.high = 0;
 
+    let option_size_m64x61_ = Math64x61.fromFelt(option_size);
+    let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
+    let (base_div) = pow10(base_decimals);
+    let base_div_m64x61 = Math64x61.fromFelt(base_div);
+    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(
         lptoken_address=lptoken_address,
@@ -255,7 +262,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     }
     let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, opposite_side, strike_price, current_pool_balance_m64x61
+        current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, current_pool_balance_m64x61
     );
 
     // 4) Update volatility
@@ -285,11 +292,6 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
-    let option_size_m64x61_ = Math64x61.fromFelt(option_size);
-    let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
-    let (base_div) = pow10(base_decimals);
-    let base_div_m64x61 = Math64x61.fromFelt(base_div);
-    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
     let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
 
     // 8) Get fees
