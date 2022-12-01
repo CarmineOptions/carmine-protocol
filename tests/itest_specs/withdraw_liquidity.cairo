@@ -114,13 +114,61 @@ namespace WithdrawLiquidity {
     func withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
         // FIXME: TODO
         // scenario what happens when there is not enough unlocked liquidity to be withdrawen
+    func withdraw_liquidity_not_enough_lptokens_call{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
+
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        %{
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+
+            expect_revert(error_message = 'Failed to transfer token from pool to account in withdraw_liquidity')
+        %}
+
+        let six_eth = Uint256(low = 6000000000000000000, high = 0);
+        ILiquidityPool.withdraw_liquidity(
+            contract_address=amm_addr,
+            pooled_token_addr=myeth_addr,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            option_type=0,
+            lp_token_amount=six_eth
+        );
         return ();
     }
 
-    func withdraw_liquidity_not_enough_lptokens{syscall_ptr: felt*, range_check_ptr}() {
-        // FIXME: TODO
-        // scenario when user is trying to withdraw more than he/she has
+    func withdraw_liquidity_not_enough_lptokens_put{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
+
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        %{
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+
+            expect_revert(error_message = 'Failed to transfer token from pool to account in withdraw_liquidity')
+        %}
+
+        let six_thousand_usd = Uint256(low = 6000000000, high = 0);
+        ILiquidityPool.withdraw_liquidity(
+            contract_address=amm_addr,
+            pooled_token_addr=myusd_addr,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            option_type=1,
+            lp_token_amount=six_thousand_usd
+        );
         return ();
+
     }
 
     func withdraw_liquidity_zero_unlocked{syscall_ptr: felt*, range_check_ptr}() {
