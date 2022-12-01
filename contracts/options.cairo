@@ -82,7 +82,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 // This corresponds to something like "mint_option_token", but does more, it also changes internal state of the pool
 //   and realocates locked capital/premia and fees between user and the pool
 //   for example how much capital is unlocked, how much is locked,...
-func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_size: Int, // in base tokens (ETH in case of ETH/USDC)
     option_size_in_pool_currency: Uint256,

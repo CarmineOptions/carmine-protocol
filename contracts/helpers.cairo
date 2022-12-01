@@ -32,7 +32,6 @@ from starkware.cairo.common.uint256 import (
     split_64
 )
 from starkware.cairo.common.bitwise import bitwise_and
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61

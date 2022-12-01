@@ -3,7 +3,7 @@
 %lang starknet
 
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.cairo_builtins import HashBuiltin, BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.uint256 import assert_uint256_le
@@ -73,7 +73,7 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 // ############################
 
 
-func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: OptionType,
     strike_price: Math64x61_,
     maturity: Int,
@@ -198,7 +198,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, bitwise_ptr: Bitwi
 }
 
 
-func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
@@ -392,7 +392,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 
 
 @external
-func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
@@ -443,7 +443,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: B
 
 
 @external
-func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, bitwise_ptr: BitwiseBuiltin*, range_check_ptr}(
+func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
     maturity : Int,
