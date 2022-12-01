@@ -208,7 +208,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
     let (current_pool_balance) = get_unlocked_capital(lptoken_address);
     with_attr error_message(
-        "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
+        "Failed getting premium in save_option_with_position_of_user_to_array"
     ){
         let (premia_with_fees_x_position) = _get_premia_for_get_option_with_position_of_user(
             option, current_volatility, current_pool_balance, position_size
