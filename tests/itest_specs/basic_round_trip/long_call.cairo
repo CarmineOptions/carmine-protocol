@@ -192,6 +192,18 @@ namespace LongCallRoundTrip {
             base_token_address=myeth_addr
         );
 
+        let (volatility: Math64x61_) = ILiquidityPool.get_pool_volatility(
+            contract_address=amm_addr,
+            lptoken_address=lpt_call_addr,
+            maturity=expiry
+        );
+
+        assert volatility = 252483777749650896600;  // 288230376151711743900 with old m64x61 codebase
+
+        let (unlocked_capital: Uint256) = ILiquidityPool.get_unlocked_capital(contract_address=amm_addr, lptoken_address=lpt_call_addr);
+
+        assert unlocked_capital.low = 4000621641758072952; // 9225453211753752689 with old m64x61 codebase which is 4.000902 ETH
+
         assert premia = 1391658545716339; // approx 0.0006 ETH
 
         // Test balance of lp tokens in the account after the option was bought
