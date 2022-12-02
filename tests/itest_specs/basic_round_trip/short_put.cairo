@@ -219,7 +219,7 @@ namespace ShortPutRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia = 231633272615753256900; // approx 100.45491895597071 USD...
+        assert premia = 231276759164374043900; // approx 100.45491895597071 USD...
 
         // Test balance of lp tokens in the account after the option was bought
         let (bal_eth_lpt_1: Uint256) = ILPToken.balanceOf(
@@ -239,7 +239,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_1.low = 3597441271;
+        assert admin_myUSD_balance_1.low = 3597291296;
 
         // Test unlocked capital in the pools after the option was bought
         let (call_pool_unlocked_capital_1) = ILiquidityPool.get_unlocked_capital(
@@ -254,7 +254,7 @@ namespace ShortPutRoundTrip {
         );
         // size of the unlocked pool is 5kUSD (original) - premium + 0.03*premium
         // 0.03 because of 3% fees calculated from premium... and the user is locking capital in
-        assert put_pool_unlocked_capital_1.low = 4902558729;
+        assert put_pool_unlocked_capital_1.low = 4902708704;
 
         // Test balance of option tokens in the account after the option was bought
         let (bal_opt_short_put_tokens_1: Uint256) = IOptionToken.balanceOf(
@@ -274,7 +274,7 @@ namespace ShortPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_1 = 204038077671610280000;
+        assert put_volatility_1 = 177372539170284150100;
 
         // Test option position
         let (opt_long_put_position_1) = ILiquidityPool.get_option_position(
@@ -320,7 +320,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_1.low=4902558729; // 4902 USD
+        assert put_pool_balance_1.low=4902708704; // 4902 USD
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_1) = ILiquidityPool.get_pool_locked_capital(
@@ -349,7 +349,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_1 = 225892071524153671189; // 97.65 USD
+        assert put_pool_value_1 = 224659661559513847575; // 97.65 USD
 
         ///////////////////////////////////////////////////
         // UPDATE THE ORACLE PRICE
@@ -393,7 +393,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_2.low = 5580396127;
+        assert admin_myUSD_balance_2.low = 5579515933;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -412,7 +412,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2.low = 2919603873;
+        assert put_pool_unlocked_capital_2.low = 2920484067;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_2: Uint256) = IOptionToken.balanceOf(
@@ -432,7 +432,7 @@ namespace ShortPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_2 = 204038077671610280000;
+        assert put_volatility_2 = 177372539170284150100;
 
         // Test option position
         let (opt_long_put_position_2) = ILiquidityPool.get_option_position(
@@ -478,7 +478,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_2.low=2919603873;
+        assert put_pool_balance_2.low=2920484067;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = ILiquidityPool.get_pool_locked_capital(
@@ -506,7 +506,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_2 = 136386465043267654015;
+        assert put_pool_value_2 = 129768524643053348904;
 
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
@@ -524,7 +524,7 @@ namespace ShortPutRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia = 125688634601756450450; // approx 53.9998712746395 USD...
+        assert premia = 124515225675871019200; // approx 53.9998712746395 USD...
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -545,7 +545,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_3.low = 6302324118;
+        assert admin_myUSD_balance_3.low = 6301706000;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -560,7 +560,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3.low = 2947675882;
+        assert put_pool_unlocked_capital_3.low = 2948294000;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_3: Uint256) = IOptionToken.balanceOf(
@@ -580,7 +580,7 @@ namespace ShortPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_3 = 204038077671610280000; // close option has no impact on volatility
+        assert put_volatility_3 = 177372539170284150100; // close option has no impact on volatility
 
         // Test option position
         let (opt_long_put_position_3) = ILiquidityPool.get_option_position(
@@ -629,7 +629,7 @@ namespace ShortPutRoundTrip {
         // Previous state - premia + fee on premia
         // 2920.4840662842084 + 27.809933706439345 = 2948.293999990648
         // 26.99993563731975
-        assert put_pool_balance_3.low = 2947675882;
+        assert put_pool_balance_3.low = 2948294000;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = ILiquidityPool.get_pool_locked_capital(
@@ -657,7 +657,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_3 = 62474578452808109378;
+        assert put_pool_value_3 = 60365382251290395849;
 
         ///////////////////////////////////////////////////
         // SETTLE (EXPIRE) POOL
@@ -721,7 +721,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_4.low = 6302324118;
+        assert admin_myUSD_balance_4.low = 6301706000;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_4) = ILiquidityPool.get_unlocked_capital(
@@ -736,7 +736,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4.low = 2972675882;
+        assert put_pool_unlocked_capital_4.low = 2973294000;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -756,7 +756,7 @@ namespace ShortPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_4 = 204038077671610280000;
+        assert put_volatility_4 = 177372539170284150100;
 
         // Test option position
         let (opt_long_put_position_4) = ILiquidityPool.get_option_position(
@@ -802,7 +802,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_4.low = 2972675882;
+        assert put_pool_balance_4.low = 2973294000;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
@@ -863,7 +863,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_5.low = 7027324118;
+        assert admin_myUSD_balance_5.low = 7026706000;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = ILiquidityPool.get_unlocked_capital(
@@ -875,7 +875,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5.low = 2972675882;
+        assert put_pool_unlocked_capital_5.low = 2973294000;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -895,7 +895,7 @@ namespace ShortPutRoundTrip {
             lptoken_address=lpt_put_addr,
             maturity=expiry
         );
-        assert put_volatility_5 = 204038077671610280000;
+        assert put_volatility_5 = 177372539170284150100;
 
         // Test option position
         let (opt_long_put_position_5) = ILiquidityPool.get_option_position(
@@ -941,7 +941,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5.low = 2972675882;
+        assert put_pool_balance_5.low = 2973294000;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = ILiquidityPool.get_pool_locked_capital(

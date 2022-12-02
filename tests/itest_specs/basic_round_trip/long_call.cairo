@@ -198,13 +198,13 @@ namespace LongCallRoundTrip {
             maturity=expiry
         );
 
-        assert volatility = 252483777749650896600;  // 288230376151711743900 with old m64x61 codebase
+        assert volatility = 288230376151711743900;  // 288230376151711743900 with old m64x61 codebase
 
         let (unlocked_capital: Uint256) = ILiquidityPool.get_unlocked_capital(contract_address=amm_addr, lptoken_address=lpt_call_addr);
 
-        assert unlocked_capital.low = 4000621641758072952; // 9225453211753752689 with old m64x61 codebase which is 4.000902 ETH
+        assert unlocked_capital.low = 4000902565738717213; // 9225453211753752689 with old m64x61 codebase which is 4.000902 ETH
 
-        assert premia = 1391658545716339; // approx 0.0006 ETH
+        assert premia = 2020558154346487; // approx 0.0006 ETH
 
         // Test balance of lp tokens in the account after the option was bought
         let (bal_eth_lpt_1: Uint256) = ILPToken.balanceOf(
@@ -224,7 +224,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_1.low = 4999378358241927048;
+        assert admin_myETH_balance_1.low = 4999097434261282787;
         // Balance left is 4.999378 which is approx:
         //  5 - premia - (premia * 0.03)
 
@@ -235,7 +235,7 @@ namespace LongCallRoundTrip {
         );
         // size of the unlocked pool is 5ETH (original) - 1ETH (locked by the trade) + premium + 0.03*premium
         // 0.03 because of 3% fees calculated from premium
-        assert call_pool_unlocked_capital_1.low = 4000621641758072952;
+        assert call_pool_unlocked_capital_1.low = 4000902565738717213;
 
         let (put_pool_unlocked_capital_1) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -257,7 +257,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_1 = 252483777749650896600;
+        assert call_volatility_1 = 288230376151711743900;
 
         // Vol of 100 for put pool
         let (put_volatility_1) = ILiquidityPool.get_pool_volatility(
@@ -314,7 +314,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        call_pool_balance_1.low = 5000621641758072952;
+        call_pool_balance_1.low = 5000902565738717213;
 
         // Put Pool
         let (put_pool_balance_1) = ILiquidityPool.get_lpool_balance(
@@ -343,7 +343,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_2 = 2304829751381921619;
+        assert pools_pos_val_call_2 = 2303761625947164530;
         
         let (pools_pos_val_put_2) = ILiquidityPool.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -393,7 +393,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_2.low = 6998167857844257395;
+        assert admin_myETH_balance_2.low = 6997406974146663778;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -409,7 +409,7 @@ namespace LongCallRoundTrip {
         // So the value of pool was 4.000902565738717 + 1 - 0.005128716025264879 = 4.995773849713452
         // Withdrawed 40% -> 1.998309539885381 from unlocked capital
         // Remaining unlocked capital is 4.000902565738717 - 1.998309539885381 = 2.0025930258533364
-        assert call_pool_unlocked_capital_2.low = 2001832142155742605;
+        assert call_pool_unlocked_capital_2.low = 2002593025853336222;
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -431,7 +431,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_2 = 252483777749650896600;
+        assert call_volatility_2 = 288230376151711743900;
 
         // Put vol -> 100
         let (put_volatility_2) = ILiquidityPool.get_pool_volatility(
@@ -488,7 +488,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_2.low = 3001832142155742605;
+        assert call_pool_balance_2.low = 3002593025853336222;
 
         // Put pool
         let (put_pool_balance_2) = ILiquidityPool.get_lpool_balance(
@@ -515,7 +515,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_2.low = 2001832142155742605;
+        assert call_pool_unlocked_capital_2.low = 2002593025853336222;
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -529,7 +529,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_2 = 2299066724532186989;
+        assert pools_pos_val_call_2 = 2296093292106925939;
         
         let (pools_pos_val_put_2) = ILiquidityPool.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -553,7 +553,7 @@ namespace LongCallRoundTrip {
             base_token_address=myeth_addr
         );
 
-        assert premia_2 = 9456769591220133; // approx 0.0049 ETH or 7.22 USD
+        assert premia_2 = 11484227343495679; // approx 0.0049 ETH or 7.22 USD
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -580,14 +580,14 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_3.low = 7000156949570543565;  // WHAT? - Diff here wtr to previous res is less than half  of bps, not worth exploring rn imho
+        assert admin_myETH_balance_3.low = 6999822511648280054;  // WHAT? - Diff here wtr to previous res is less than half  of bps, not worth exploring rn imho
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3.low = 2499843050429456435;
+        assert call_pool_unlocked_capital_3.low = 2500177488351719946;
 
         let (put_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
@@ -620,7 +620,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_3 = 252483777749650896600; // close option has no impact on volatility
+        assert call_volatility_3 = 288230376151711743900; // close option has no impact on volatility
 
         let (put_volatility_3) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
@@ -671,7 +671,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_3.low = 2999843050429456435;
+        assert call_pool_balance_3.low = 3000177488351719946;
         // Previous state - premia + fee on premia
         // 3.0025930258533364 - 0.00249 + 0.00249*0.03 = 3.000177
         
@@ -699,7 +699,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_4 = 1148502614219920853;
+        assert pools_pos_val_call_4 = 1146740266760908653;
         
         let (pools_pos_val_put_4) = ILiquidityPool.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -775,7 +775,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_4.low = 7000156949570543565;
+        assert admin_myETH_balance_4.low = 6999822511648280054;
 
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
@@ -783,7 +783,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_4.low = 2983714018171391918;
+        assert call_pool_unlocked_capital_4.low = 2984048456093655429;
 
         // // 6917938287916112155 translates to 
         // Before settlement -> 2.50017748835172 of unlocked, 0.5 of locked
@@ -808,7 +808,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_4 = 252483777749650896600; // close option has no impact on volatility
+        assert call_volatility_4 = 288230376151711743900; // close option has no impact on volatility
 
         let (put_volatility_4) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
@@ -859,7 +859,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_4.low = 2983714018171391919;
+        assert call_pool_balance_4.low = 2984048456093655430;
 
         let (put_pool_balance_4) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,
@@ -932,7 +932,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_5.low = 7016285981828608081;
+        assert admin_myETH_balance_5.low = 7015951543906344570;
 
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
@@ -940,7 +940,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_5.low = 2983714018171391918;
+        assert call_pool_unlocked_capital_5.low = 2984048456093655429;
 
         // At this moment no additional capital is unlocked
         // (that happened when the option was settled for the pool)
@@ -963,7 +963,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr,
             maturity=expiry
         );
-        assert call_volatility_5 = 252483777749650896600; // close option has no impact on volatility
+        assert call_volatility_5 = 288230376151711743900; // close option has no impact on volatility
 
         let (put_volatility_5) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
@@ -1014,7 +1014,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_5.low = 2983714018171391919;
+        assert call_pool_balance_5.low = 2984048456093655430;
 
         let (put_pool_balance_5) = ILiquidityPool.get_lpool_balance(
             contract_address=amm_addr,

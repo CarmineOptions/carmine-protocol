@@ -60,7 +60,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_long_call = 1391658545716339; // with m64x61 approx 0.00087 ETH, or 1.22 USD , now 0.0006 ETH
+        assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD
 
         // Second trade, SHORT CALL
         let (premia_short_call: Math64x61_) = IAMM.trade_open(
@@ -74,7 +74,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_short_call = 1348092041897528; // WHAT??
+        assert premia_short_call = 2020760452941187; // WHAT??
         //2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
                                                     // with previous trade
         // Second trade, PUT LONG
@@ -89,7 +89,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_long_put = 232821468023008429500;
+        assert premia_long_put = 234655350073966452800;
         
         // Second trade, PUT SHORT
         let (premia_short_put: Math64x61_) = IAMM.trade_open(
@@ -103,7 +103,7 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_short_put = 232679931134786449200;
+        assert premia_short_put = 234722763583748232400;
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()
