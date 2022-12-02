@@ -189,7 +189,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
-    let two = Math64x61.fromFelt(2);
+    const two = 4611686018427387904;
     let trade_volatility = Math64x61.div(volsum, two);
 
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);
