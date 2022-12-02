@@ -268,6 +268,12 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     let (lptoken_usable_index) = get_available_lptoken_addresses_usable_index(0);
     set_available_lptoken_addresses(lptoken_usable_index, lptoken_address);
 
+    // Check if it hasn't been added before
+    with_attr error_message("LPToken has already been added") {
+        let (lptoken_addr) = lptoken_addr_for_given_pooled_token.read(quote_token_address, base_token_address, option_type);
+        assert lptoken_addr = 0;
+    }
+
     // 3) Update following
     lptoken_addr_for_given_pooled_token.write(
         quote_token_address, base_token_address, option_type, lptoken_address
