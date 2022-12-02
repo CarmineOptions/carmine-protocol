@@ -58,6 +58,10 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 
     // 2) Update following
     let hundred = Math64x61.fromFelt(100);
+    with_attr error_message("Option already exists"){
+        let (opt_addr) = get_option_token_address(lptoken_address, option_side, maturity, strike_price);
+        assert opt_addr = 0;
+    }
     pool_volatility.write(lptoken_address, maturity, initial_volatility);
     append_to_available_options(
         option_side,
