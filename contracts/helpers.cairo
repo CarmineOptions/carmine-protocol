@@ -83,9 +83,17 @@ func _get_premia_before_fees{
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
+<<<<<<< HEAD
     current_pool_balance: Math64x61_
 ) -> (total_premia_before_fees: Math64x61_){
 >>>>>>> 689e4cc (Polish replace felt with specific types)
+||||||| parent of e630368 (Get rid of m64x61 everywhere (#78))
+    current_pool_balance: Math64x61_
+) -> (total_premia_before_fees: Math64x61_){
+=======
+    current_pool_balance: Math64x61_,
+) -> (total_premia_before_fees: Int){
+>>>>>>> e630368 (Get rid of m64x61 everywhere (#78))
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -108,7 +116,7 @@ func _get_premia_before_fees{
     // 2) Calculate new volatility, calculate trade volatility
     with_attr error_message("helpers._get_premia_before_fees getting volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
+            current_volatility, option_size, option_type, side, option.strike_price, current_pool_balance
         );
         local tradevol = trade_volatility;
     }
@@ -127,6 +135,7 @@ func _get_premia_before_fees{
         let HUNDRED = Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
+<<<<<<< HEAD
         with_attr error_message("black scholes time until maturity{time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility} current pool balance{current_pool_balance}"){
             let (call_premia, put_premia) = black_scholes(
                 sigma=sigma,
@@ -136,6 +145,25 @@ func _get_premia_before_fees{
                 risk_free_rate_annualized=risk_free_rate_annualized,
             );
         }
+||||||| parent of e630368 (Get rid of m64x61 everywhere (#78))
+        let (call_premia, put_premia) = black_scholes(
+            sigma=sigma,
+            time_till_maturity_annualized=time_till_maturity,
+            strike_price=strike_price,
+            underlying_price=underlying_price,
+            risk_free_rate_annualized=risk_free_rate_annualized,
+        );
+=======
+        with_attr error_message("black scholes ttm{time_till_maturity} strike{strike_price} underlying_price{underlying_price} tradevol{tradevol} currvol{current_volatility} cpb{current_pool_balance}"){
+            let (call_premia, put_premia) = black_scholes(
+                sigma=sigma,
+                time_till_maturity_annualized=time_till_maturity,
+                strike_price=strike_price,
+                underlying_price=underlying_price,
+                risk_free_rate_annualized=risk_free_rate_annualized,
+            );
+        }
+>>>>>>> e630368 (Get rid of m64x61 everywhere (#78))
     }
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED"){
         assert_nn(call_premia);
@@ -205,6 +233,7 @@ func _get_value_of_position{
 }(
     option: Option,
 <<<<<<< HEAD
+<<<<<<< HEAD
     position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
@@ -218,6 +247,11 @@ func _get_value_of_position{
 ) -> (position_value: felt){
 =======
     position_size: Math64x61_,
+||||||| parent of e630368 (Get rid of m64x61 everywhere (#78))
+    position_size: Math64x61_,
+=======
+    position_size: Int,
+>>>>>>> e630368 (Get rid of m64x61 everywhere (#78))
     option_type: OptionType,
     current_volatility: Math64x61_,
     current_pool_balance: Math64x61_
@@ -450,6 +484,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     }
     return x__;
 }
+<<<<<<< HEAD
 
 
 // equivalent to toUint256_balance, but for option_position, which is stored as a felt (Int),
@@ -514,3 +549,52 @@ func get_underlying_from_option_data(option_type: OptionType, base_token_address
         return quote_token_address;
     }
 }
+||||||| parent of e630368 (Get rid of m64x61 everywhere (#78))
+=======
+
+
+// equivalent to toUint256_balance, but for option_position, which is stored as a felt (Int),
+// because we don't need the full range of uint256
+func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Math64x61_,
+    currency_address: Address
+) -> Int {
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+    let x_ = x * dec_;
+
+    with_attr error_message("x_ out of bounds in toUint256_balance"){
+        assert_le(x, Math64x61.BOUND);
+        assert_le(-Math64x61.BOUND, x);
+    }
+    let amount_felt = Math64x61.toFelt(x_);
+
+    return amount_felt;
+}
+
+func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Int,
+    currency_address: Address
+) -> Math64x61_ {
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+
+    let x_ = Math64x61.fromFelt(x);
+    let x__ = x_ / dec_;
+    return x__;
+}
+
+func intToUint256{range_check_ptr}(
+    x: Int
+) -> Uint256 {
+    with_attr error_message("Unable to work with x this big until Cairo 1.0 comes along") {
+        assert_le_felt(x, 2**127-1);
+        let res = Uint256(x, 0);
+    }
+//    const LOW_BITS = 2 ** 128 - 1; //127 ones. Quite possible there's a off-by-one, watch out
+//    let (low_part) = bitwise_and(x, LOW_BITS);
+//    let high_part = x - low_part;
+//    let res = Uint256(low_part, high_part);
+    return res;
+}
+>>>>>>> e630368 (Get rid of m64x61 everywhere (#78))

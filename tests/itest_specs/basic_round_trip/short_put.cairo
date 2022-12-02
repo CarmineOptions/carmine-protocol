@@ -567,7 +567,7 @@ namespace ShortPutRoundTrip {
             contract_address=opt_short_put_addr,
             account=admin_addr
         );
-        assert bal_opt_short_put_tokens_3.low = 500000000000000000;
+        assert bal_opt_short_put_tokens_3.low = 783159565502899114;
 
         let (call_volatility_3) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
@@ -743,7 +743,7 @@ namespace ShortPutRoundTrip {
             contract_address=opt_short_put_addr,
             account=admin_addr
         );
-        assert bal_opt_short_put_tokens_4.low = 500000000000000000;
+        assert bal_opt_short_put_tokens_4.low = 783159565502899114;
 
         let (call_volatility_4) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
@@ -882,7 +882,7 @@ namespace ShortPutRoundTrip {
             contract_address=opt_short_put_addr,
             account=admin_addr
         );
-        assert bal_opt_short_put_tokens_5.low = 0;
+        assert bal_opt_short_put_tokens_5.low = 283159565502899114;
 
         let (call_volatility_5) = ILiquidityPool.get_pool_volatility(
             contract_address=amm_addr,
