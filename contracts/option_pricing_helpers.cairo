@@ -87,7 +87,6 @@ func convert_amount_to_option_currency_from_base_uint256{
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
-    with_attr error_message("unable to convert amount {amount.low} to opt curr from base uint256 with strike {strike_price.low}"){
     if (option_type == OPTION_PUT) {
         let (base_token_decimals) = get_decimal(base_token_address);
         let (dec) = pow10(base_token_decimals);
@@ -102,7 +101,6 @@ func convert_amount_to_option_currency_from_base_uint256{
             assert_uint256_lt(rem, ACCEPTED_AMT_DISCARDED);
         }
         return (converted_amount=quot);
-    }
     }
     return (converted_amount=amount);
 }

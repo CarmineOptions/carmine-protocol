@@ -493,6 +493,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
     let base_address = pool_definition.base_token_address;
     let quote_address = pool_definition.quote_token_address;
+
     // Burn the tokens
     let option_size_uint256 = intToUint256(option_size);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
@@ -542,6 +543,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
         let (current_locked_balance) = get_pool_locked_capital(lptoken_address);
         let (size_to_be_unlocked_in_base) = min(pool_short_position, option_size);
+
         let size_to_be_unlocked_in_base_uint256 = intToUint256(size_to_be_unlocked_in_base);
         let strike_price_uint256 = toUint256_balance(strike_price, quote_address);
         let (size_to_be_unlocked: Uint256) = convert_amount_to_option_currency_from_base_uint256(
@@ -646,6 +648,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
         // The increase_short_position_by and capital_to_be_locked might both be zero,
         // if the long position is sufficient.
+
         with_attr error_message("Unable to work with increase_short_position_by this big until Cairo 1.0 comes along"){
             assert_le_felt(increase_short_position_by, 2**127-1);
         }
@@ -654,6 +657,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let strike_price_uint256 = toUint256_balance(strike_price, quote_address);
         let (capital_to_be_locked) = convert_amount_to_option_currency_from_base_uint256(
             increase_short_position_by_uint256,
+
             option_type,
             strike_price_uint256,
             base_address
@@ -662,6 +666,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let (current_locked_capital) = get_pool_locked_capital(lptoken_address);
         let (new_locked_capital: Uint256, carry_: felt) = uint256_add(current_locked_capital, capital_to_be_locked);
         assert carry_ = 0;
+
 
         // Set the option positions
         set_option_position(

@@ -18,6 +18,7 @@ from starkware.cairo.common.uint256 import (
     uint256_eq,
     uint256_signed_le,
     assert_uint256_lt,
+    assert_uint256_le,
     uint256_signed_nn,
 )
 from starkware.starknet.common.syscalls import get_contract_address
@@ -478,6 +479,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     let (current_pool_position) = get_option_position(
         lptoken_address, option_side, maturity, strike_price
     );
+    let current_pool_position_uint256: Uint256 = toUint256_balance(current_pool_position, lpool_underlying_token);
 
     let new_pool_position = current_pool_position - option_size;
     set_option_position(lptoken_address, option_side, maturity, strike_price, new_pool_position);
@@ -524,6 +526,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // Substracting the combination of long and short rather than separately because of rounding error
         // More specifically transfering the combo to uint256 rather than separate values because
         // of the rounding error
+
         let (long_plus_short_value, carry) = uint256_add(long_value_uint256, short_value_uint256);
         assert carry = 0;
 

@@ -72,10 +72,12 @@ namespace LongCallRoundTrip {
         );
         assert call_pool_unlocked_capital_0.low = 5000000000000000000;
 
+
         let (put_pool_unlocked_capital_0) = ILiquidityPool.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
+
         assert put_pool_unlocked_capital_0.low = 5000000000;
 
         // Test initial balance of option tokens in the account
@@ -153,6 +155,7 @@ namespace LongCallRoundTrip {
             lptoken_address=lpt_call_addr
         );
         assert call_pool_locked_capital_0.low = 0;
+
         let (put_pool_locked_capital_0) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr

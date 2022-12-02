@@ -50,6 +50,27 @@ from helpers import intToUint256, toUint256_balance
 
 
 @view
+func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+) -> (pool_balance: Math64x61_) {
+    alloc_locals;
+
+    // FIXME: return Uint256
+    // FIXME: replace call of this function with calls to get_unlocked_capital
+    // Returns total capital in the pool minus the locked capital
+    // (ie capital available to locking).
+    let (pool_balance_) = get_unlocked_capital(
+        lptoken_address=lptoken_address
+    );
+
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let pool_balance_math64x61: Math64x61_ = fromUint256_balance(pool_balance_, lpool_underlying_token);
+
+    return (pool_balance_math64x61,);
+}
+
+
+@view
 func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
 ) -> (option_availability: Bool) {
