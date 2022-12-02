@@ -18,7 +18,6 @@ from starkware.cairo.common.uint256 import (
     uint256_eq,
     uint256_signed_le,
     assert_uint256_lt,
-    assert_uint256_le,
     uint256_signed_nn,
 )
 from starkware.starknet.common.syscalls import get_contract_address
