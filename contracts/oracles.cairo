@@ -1,7 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.math_cmp import is_le
-from starkware.cairo.common.math import unsigned_div_rem, assert_not_zero
+from starkware.cairo.common.math import unsigned_div_rem, assert_not_zero, assert_le, assert_nn
 from starkware.cairo.common.bool import TRUE, FALSE
 
 from math64x61 import Math64x61
@@ -103,8 +103,9 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
             maturity
         );
     }
-    
-    with_attr error_message("Received zero terminal price from Empiric Oracle"){
+    // FIXME: Checkpoint also stores timestamp, ass some checks that the price isn't too old(probably only after we have more oracles)
+    with_attr error_message("Received negative or zero terminal price(={last_checkpoint.value}) from Empiric Oracle"){
+        assert_nn(last_checkpoint.value);
         assert_not_zero(last_checkpoint.value);
     }
 
