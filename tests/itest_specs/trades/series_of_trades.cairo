@@ -1,14 +1,19 @@
 %lang starknet
 
 from interface_amm import IAMM
+from interface_liquidity_pool import ILiquidityPool
+from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.uint256 import Uint256
 from types import Math64x61_
+from openzeppelin.token.erc20.IERC20 import IERC20
 from constants import EMPIRIC_ORACLE_ADDRESS
+from tests.itest_specs.itest_utils import Stats, StatsInput, print_stats, get_stats
 
 from math64x61 import Math64x61
 
 
 namespace SeriesOfTrades {
-    func trade_open{syscall_ptr: felt*, range_check_ptr}() {
+    func trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
         // FIXME: this only tests the premia and not other variables/storage_vars
         alloc_locals;
 
