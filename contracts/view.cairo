@@ -70,7 +70,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
         let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
 
         with_attr error_message(
-            "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
+            "Failed getting premium in save_all_non_expired_options_with_premia_to_array, cpb_uint256.low {current_pool_balance_uint256.low}"
         ){
             let (premia) = _get_premia_with_fees(
                 option=option,
@@ -194,7 +194,13 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         contract_address=option_token_address,
         account=user_address
     );
-    let position_size = fromUint256_balance(position_size_uint256, option_token_address);
+    // Get value of users position
+    if (option.option_type == OPTION_CALL) {
+        tempvar underlying = option.base_token_address;
+    } else {
+        tempvar underlying = option.quote_token_address;
+    }
+    let position_size = fromUint256_balance(position_size_uint256, underlying);
 
     if (position_size == 0) {
         return save_option_with_position_of_user_to_array(
@@ -212,7 +218,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
     let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
     with_attr error_message(
-        "Failed getting premium in save_all_non_expired_options_with_premia_to_array"
+        "Failed getting premium in save_option_with_position_of_user_to_array"
     ){
         let (premia_with_fees_x_position) = _get_premia_for_get_option_with_position_of_user(
             option, current_volatility, current_pool_balance, position_size

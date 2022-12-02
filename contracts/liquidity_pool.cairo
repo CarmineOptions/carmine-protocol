@@ -1,12 +1,12 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toUint256_balance
+from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toInt_balance, fromInt_balance
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import abs_value, assert_not_zero
+from starkware.cairo.common.math import abs_value, assert_not_zero, assert_le_felt
 from starkware.cairo.common.math_cmp import is_nn, is_not_zero//, is_le
 from starkware.cairo.common.uint256 import (
     Uint256,
@@ -15,6 +15,7 @@ from starkware.cairo.common.uint256 import (
     uint256_sub,
     uint256_unsigned_div_rem,
     uint256_le,
+    uint256_eq,
     uint256_signed_le,
     assert_uint256_lt,
     assert_uint256_le,
@@ -93,7 +94,8 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // Both scaled by the size of position.
     // option position is measured in base token (ETH in case of ETH/USD) that's why
     // the fromUint256_balance uses option.base_token_address
-    let (_option_position) = option_position.read(
+    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let (_option_position) = option_position_.read(
         lptoken_address,
         option.option_side,
         option.maturity,
@@ -111,8 +113,8 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
 
     let (current_pool_balance_uint256) = get_unlocked_capital(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
-    let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
+    let (underlying) = get_underlying_token_address(lptoken_address);
+    let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, underlying);
 
     with_attr error_message("Failed getting value of position in _get_value_of_pool_position"){
         let (value_of_option) = get_value_of_position(
@@ -151,7 +153,7 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     with_attr error_message("Failed to get free_capital in get_lptokens_for_underlying"){
-        let (free_capital) = get_unlocked_capital(lptoken_address);
+        let (free_capital: Uint256) = get_unlocked_capital(lptoken_address);
     }
 
     with_attr error_message("Failed to value pools position in get_lptokens_for_underlying"){
@@ -164,7 +166,7 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         let (value_of_pool, _) = uint256_add(free_capital, value_of_position);
     }
 
-    if (value_of_pool.low == 0) {
+    if (value_of_pool.low == 0 and value_of_pool.high == 0) {
         return (underlying_amt,);
     }
 
@@ -458,7 +460,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     lptoken_address: Address,
     long_value: Math64x61_,
     short_value: Math64x61_,
-    option_size: Math64x61_,
+    option_size: Int,
     option_side: OptionSide,
     maturity: Int,
     strike_price: Math64x61_
@@ -474,17 +476,13 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
     let (current_lpool_balance: Uint256) = get_lpool_balance(lptoken_address);
     let (current_locked_balance: Uint256) = get_pool_locked_capital(lptoken_address);
-    let (current_pool_position) = option_position.read(
+    let (current_pool_position) = get_option_position(
         lptoken_address, option_side, maturity, strike_price
     );
     let current_pool_position_uint256: Uint256 = toUint256_balance(current_pool_position, lpool_underlying_token);
 
-    let option_size_uint256: Uint256 = toUint256_balance(option_size, lpool_underlying_token);
-
-    //let new_pool_position = Math64x61.sub(current_pool_position, option_size);
-    let (new_pool_position_uint256: Uint256) = uint256_sub(current_pool_position_uint256, option_size_uint256);
-    let new_pool_position = fromUint256_balance(new_pool_position_uint256, lpool_underlying_token);
-    option_position.write(lptoken_address, option_side, maturity, strike_price, new_pool_position);
+    let new_pool_position = current_pool_position - option_size;
+    set_option_position(lptoken_address, option_side, maturity, strike_price, new_pool_position);
 
     if (option_side == TRADE_SIDE_LONG) {
         // Pool is LONG
@@ -499,8 +497,6 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
         let (new_lpool_balance: Uint256, carry: felt) = uint256_add(current_lpool_balance, long_value_uint256);
         assert carry = 0;
-        let new_lpool_balance_low = new_lpool_balance.low;
-        let current_lpool_balance_low = current_lpool_balance.low;
         set_lpool_balance(lptoken_address, new_lpool_balance);
     } else {
         // Pool is SHORT
@@ -530,12 +526,11 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // Substracting the combination of long and short rather than separately because of rounding error
         // More specifically transfering the combo to uint256 rather than separate values because
         // of the rounding error
-        let long_plus_short_value_math64x61: Math64x61_ = Math64x61.add(long_value, short_value);
-        let long_plus_short_value_uint256: Uint256 = toUint256_balance(
-            long_plus_short_value_math64x61, lpool_underlying_token
-        );
 
-        let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value_uint256);
+        let (long_plus_short_value, carry) = uint256_add(long_value_uint256, short_value_uint256);
+        assert carry = 0;
+
+        let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value);
 
         with_attr error_message("Not enough capital in the pool") {
             // This will never happen since the capital to pay the users is always locked.
@@ -615,17 +610,14 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let option_type = option.option_type;
 
     // pool's position... has to be nonnegative since the position is per side (long/short)
-    let (option_size) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-
-    with_attr error_message("Received negative option size"){
-        assert_nn(option_size);
-    }
+    let (option_size) = get_option_position(lptoken_address, option_side, maturity, strike_price);
     
     if (option_size == 0){
         // Pool's position is zero, there is nothing to expire.
         // This also checks that the option exists (if it doesn't storage_var returns 0).
         return ();
     }
+
     // From now on we know that pool's position is positive -> option_size > 0.
 
     // Make sure the contract is ready to expire
@@ -639,11 +631,19 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
     let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
 
+    local optsize = option_size;
+    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
+    local optsize64 = option_size_m64x61;
+    local str = strike_price;
+    local term = terminal_price;
+    with_attr error_message("unable to split_option_locked_capital in expire_option_token_for_pool optsize {optsize}, optsize64 {optisize64} strike {str} term {term}"){
     let (long_value, short_value)  = split_option_locked_capital(
-        option_type, option_side, option_size, strike_price, terminal_price
+        option_type, option_side, option_size_m64x61, strike_price, terminal_price
     );
+    }
 
     // Adjusts only the lpool_balance and pool_locked_capital storage_vars
+    with_attr error_message("unable to adjust_lpool_balance_and_pool_locked_capital_expired_options in expire_option_token_for_pool"){
     adjust_lpool_balance_and_pool_locked_capital_expired_options(
         lptoken_address=lptoken_address,
         long_value=long_value,
@@ -653,9 +653,10 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         maturity=maturity,
         strike_price=strike_price
     );
+    }
 
     // We have to adjust the pools option position too.
-    option_position.write(lptoken_address, option_side, maturity, strike_price, 0);
+    set_option_position(lptoken_address, option_side, maturity, strike_price, 0);
 
     return ();
 }

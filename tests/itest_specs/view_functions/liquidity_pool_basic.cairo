@@ -445,7 +445,7 @@ namespace LPBasicViewFunctions {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let one = 10**18;
         let expiry_2 = 1000000000 - 60*60*24;
 
         // Approve the transactions (trade opens).

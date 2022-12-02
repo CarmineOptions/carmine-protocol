@@ -35,7 +35,7 @@ namespace SeriesOfTrades {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let one_option_size = 1 * 10**18;
 
         tempvar tmp_address = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
         %{
@@ -55,26 +55,27 @@ namespace SeriesOfTrades {
             strike_price=strike_price,
             maturity=expiry,
             option_side=0,
-            option_size=one,
+            option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr
         );
 
-        assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD 
+        assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD
 
-        // Second trade, LONG SHORT
+        // Second trade, SHORT CALL
         let (premia_short_call: Math64x61_) = IAMM.trade_open(
             contract_address=amm_addr,
             option_type=0,
             strike_price=strike_price,
             maturity=expiry,
             option_side=1,
-            option_size=one,
+            option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr
         );
 
-        assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
+        assert premia_short_call = 2020760452941187; // WHAT??
+        //2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
                                                     // with previous trade
         // Second trade, PUT LONG
         let (premia_long_put: Math64x61_) = IAMM.trade_open(
@@ -83,7 +84,7 @@ namespace SeriesOfTrades {
             strike_price=strike_price,
             maturity=expiry,
             option_side=0,
-            option_size=one,
+            option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr
         );
@@ -97,7 +98,7 @@ namespace SeriesOfTrades {
             strike_price=strike_price,
             maturity=expiry,
             option_side=1,
-            option_size=one,
+            option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr
         );

@@ -194,10 +194,10 @@ namespace ILiquidityPool {
     }
 
 
-    func get_pools_option_position(
+    func get_option_position(
         lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
     ) -> (
-        res: Math64x61_
+        res: Int
     ) {
     }
 }

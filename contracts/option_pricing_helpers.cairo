@@ -10,6 +10,7 @@ from starkware.cairo.common.uint256 import (
     uint256_mul,
     uint256_unsigned_div_rem,
     assert_uint256_eq,
+    assert_uint256_lt,
 )
 
 from math64x61 import Math64x61
@@ -90,11 +91,15 @@ func convert_amount_to_option_currency_from_base_uint256{
         let (base_token_decimals) = get_decimal(base_token_address);
         let (dec) = pow10(base_token_decimals);
         let dec_ = Uint256(dec, 0);
-        let ZERO = Uint256(0, 0);
         let (adjusted_amount_low: Uint256, adjusted_amount_high: Uint256) = uint256_mul(amount, strike_price);
-        assert_uint256_eq(adjusted_amount_high, ZERO);
+        assert adjusted_amount_high.low = 0;
+        assert adjusted_amount_high.high = 0;
         let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
-        assert_uint256_eq(rem, ZERO); // TODO remove, tests should fail on this.
+        let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0); // one cent in case of ETH/USDC
+        local remlow = rem.low;
+        with_attr error_message("implied rounding higher than max allowed, rem {remlow}"){
+            assert_uint256_lt(rem, ACCEPTED_AMT_DISCARDED);
+        }
         return (converted_amount=quot);
     }
     return (converted_amount=amount);
@@ -114,7 +119,8 @@ func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) 
     let (currtime) = get_block_timestamp();  // is number of seconds... unix timestamp
     let currtime_math = Math64x61.fromFelt(currtime);
     let maturity_math = Math64x61.fromFelt(maturity);
-    let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
+    //let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
+    const secs_in_year = 72717065138563052470272000;
 
     let secs_left = Math64x61.sub(maturity_math, currtime_math);
     assert_nn(secs_left);
@@ -181,7 +187,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
-    let two = Math64x61.fromFelt(2);
+    const two = 4611686018427387904;
     let trade_volatility = Math64x61.div(volsum, two);
 
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);

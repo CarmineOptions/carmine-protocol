@@ -65,14 +65,36 @@ func option_token_address(
 }
 
 
-// Mapping from option params to pool's position
-// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) {
+    alloc_locals;
+    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+
+    let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
+    let newval: Int = toInt_balance(currval, lpool_underlying_token);
+
+    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
+    return ();
+}
+
+
+// DEPRECATED
 @storage_var
 func option_position(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
 ) -> (res: Math64x61_) {
 }
 
+
+// Mapping from option params to pool's position
+// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+@storage_var
+func option_position_(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int
+) -> (res: Int) {
+}
 
 //migration only, to convert m64x61 lpool_balance to Uint256
 @external
@@ -197,17 +219,6 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 
 
 @view
-func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (
-    res: Math64x61_
-) {
-    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    return (position,);
-}
-
-
-@view
 func get_lptoken_address_for_given_option{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -325,6 +336,18 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
+func set_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_, position: Int
+) {
+    with_attr error_message("Unable to set option position {lptoken_address} {maturity} {strike_price} {position}"){
+        assert_nn_le(0, strike_price);
+        assert_nn_le(0, position);
+        option_position_.write(lptoken_address, option_side, maturity, strike_price, position);
+    }
+    return ();
+}
+
+ 
 @view
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -353,6 +376,16 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         lptoken_address, option_side, maturity, strike_price
     );
     return (option_token_address=option_token_addr);
+}
+
+@view
+func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) -> (option_position: Int) {
+    let (opt_pos) = option_position_.read(
+        lptoken_address, option_side, maturity, strike_price
+    );
+    return (option_position=opt_pos);
 }
 
 
