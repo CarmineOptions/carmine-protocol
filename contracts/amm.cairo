@@ -63,7 +63,7 @@ func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
         lptoken_address=lptoken_address
     );
 
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let pool_balance_math64x61: Math64x61_ = fromUint256_balance(pool_balance_, lpool_underlying_token);
 
     return (pool_balance_math64x61,);
@@ -144,16 +144,16 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         let (current_pool_balance) = get_unlocked_capital(
             lptoken_address=lptoken_address
         );
-        with_attr error_message("not enough assets in pool to fulfill requested trade") {
+        with_attr error_message("Not enough assets in pool to fulfill requested trade") {
             assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
         }
 
         if (option_type == OPTION_CALL) {
-            tempvar underlying = base_token_address;
+            tempvar underlying_token = base_token_address;
         } else {
-            tempvar underlying = quote_token_address;
+            tempvar underlying_token = quote_token_address;
         }
-        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
+        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
         let (new_volatility, trade_volatility) = get_new_volatility(
             current_volatility, option_size_m64x61, option_type, side, strike_price, current_pool_balance_m64x61
         );
@@ -272,16 +272,16 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (current_pool_balance) = get_unlocked_capital(
         lptoken_address=lptoken_address
     );
-    with_attr error_message("not enough assets in pool to fulfill requested trade") {
+    with_attr error_message("Not enough assets in pool to fulfill requested trade") {
         assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
     }
 
     if (option_type == OPTION_CALL) {
-        tempvar underlying = base_token_address;
+        tempvar underlying_token = base_token_address;
     } else {
-        tempvar underlying = quote_token_address;
+        tempvar underlying_token = quote_token_address;
     }
-    let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
+    let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
     let (new_volatility, trade_volatility) = get_new_volatility(
         current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, current_pool_balance_m64x61
     );

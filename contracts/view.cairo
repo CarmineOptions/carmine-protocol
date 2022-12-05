@@ -66,7 +66,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
         let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
 
         let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
-        let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+        let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
         let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
 
         with_attr error_message(
@@ -196,11 +196,11 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     );
     // Get value of users position
     if (option.option_type == OPTION_CALL) {
-        tempvar underlying = option.base_token_address;
+        tempvar underlying_token = option.base_token_address;
     } else {
-        tempvar underlying = option.quote_token_address;
+        tempvar underlying_token = option.quote_token_address;
     }
-    let position_size = fromUint256_balance(position_size_uint256, underlying);
+    let position_size = fromUint256_balance(position_size_uint256, underlying_token);
 
     if (position_size == 0) {
         return save_option_with_position_of_user_to_array(
@@ -215,7 +215,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     // Get value of users position
     let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
     let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
     with_attr error_message(
         "Failed getting premium in save_option_with_position_of_user_to_array"

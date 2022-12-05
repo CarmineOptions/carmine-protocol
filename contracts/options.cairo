@@ -231,7 +231,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
             // since only locked_capital storage_var exists
             let (current_balance) = get_lpool_balance(lptoken_address);
-            let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+            let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
             let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
             let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
             assert carry = 0;
@@ -513,7 +513,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // This decrease is happening because burning long is similar to minting short,
     // hence the payment.
     let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
     let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
     set_lpool_balance(lptoken_address, new_balance);
@@ -621,7 +621,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // This increase is happening because burning short is similar to minting long,
     // hence the payment.
     let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
     let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
     assert carry = 0;

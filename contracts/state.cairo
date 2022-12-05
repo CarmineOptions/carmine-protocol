@@ -70,7 +70,7 @@ func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 ) {
     alloc_locals;
     let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
 
     let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
     let newval: Int = toInt_balance(currval, lpool_underlying_token);
@@ -99,8 +99,10 @@ func option_position_(
 //migration only, to convert m64x61 lpool_balance to Uint256
 @external
 func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    alloc_locals;
+
     let (currval: Math64x61_) = lpool_balance.read(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
     set_lpool_balance(lptoken_address, newval);
     return ();
@@ -140,8 +142,10 @@ func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
 //migration only, to convert m64x61 lpool_balance to Uint256
 @external
 func migrate_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    alloc_locals;
+
     let (currval: Math64x61_) = pool_locked_capital.read(lptoken_address);
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
     set_pool_locked_capital(lptoken_address, newval);
     return ();

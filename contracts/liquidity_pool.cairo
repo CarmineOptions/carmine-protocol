@@ -475,7 +475,7 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
     alloc_locals;
 
-    let (lpool_underlying_token: Address) = underlying_token_address.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let long_value_uint256: Uint256 = toUint256_balance(long_value, lpool_underlying_token);
     let short_value_uint256: Uint256 = toUint256_balance(short_value, lpool_underlying_token);
 
