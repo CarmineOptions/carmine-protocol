@@ -40,7 +40,7 @@ from contracts.option_pricing_helpers import (
     convert_amount_to_option_currency_from_base,
     convert_amount_to_option_currency_from_base_uint256,
 )
-from helpers import intToUint256, toUint256_balance, get_underlying_from_option
+from helpers import intToUint256, toUint256_balance, get_underlying_from_option_data
 
 
 

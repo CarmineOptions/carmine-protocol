@@ -341,7 +341,7 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     with_attr error_message(
         "pooled_token_addr does not match the selected pool underlying token address deposit_liquidity"
     ){
-        let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
+        let underlying_token_address = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
         assert underlying_token_address = pooled_token_addr;
     }
 
