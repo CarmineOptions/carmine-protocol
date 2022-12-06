@@ -597,4 +597,17 @@ func intToUint256{range_check_ptr}(
 //    let res = Uint256(low_part, high_part);
     return res;
 }
+<<<<<<< HEAD
 >>>>>>> e630368 (Get rid of m64x61 everywhere (#78))
+||||||| parent of 8eaf535 (Polish with review comments)
+=======
+
+
+func get_underlying_from_option_data(option_type: OptionType, base_token_address: Address, quote_token_address: Address) -> Address {
+    if (option_type == OPTION_CALL) {
+        return base_token_address;
+    } else {
+        return quote_token_address;
+    }
+}
+>>>>>>> 8eaf535 (Polish with review comments)
