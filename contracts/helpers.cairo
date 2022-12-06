@@ -30,7 +30,6 @@ from starkware.cairo.common.math_cmp import is_le, is_nn
 from starkware.cairo.common.uint256 import (
     Uint256,
     assert_le,
-    split_64
 )
 from starkware.cairo.common.bitwise import bitwise_and
 
@@ -372,4 +371,13 @@ func intToUint256{range_check_ptr}(
 //    let high_part = x - low_part;
 //    let res = Uint256(low_part, high_part);
     return res;
+}
+
+
+func get_underlying_from_option_data(option_type: OptionType, base_token_address: Address, quote_token_address: Address) -> Address {
+    if (option_type == OPTION_CALL) {
+        return base_token_address;
+    } else {
+        return quote_token_address;
+    }
 }

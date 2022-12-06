@@ -195,11 +195,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         account=user_address
     );
     // Get value of users position
-    if (option.option_type == OPTION_CALL) {
-        tempvar underlying_token = option.base_token_address;
-    } else {
-        tempvar underlying_token = option.quote_token_address;
-    }
+    let underlying_token = get_underlying_from_option_data(option.option_type, option.base_token_address, option.quote_token_address);
     let position_size = fromUint256_balance(position_size_uint256, underlying_token);
 
     if (position_size == 0) {

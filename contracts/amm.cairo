@@ -40,35 +40,13 @@ from contracts.option_pricing_helpers import (
     convert_amount_to_option_currency_from_base,
     convert_amount_to_option_currency_from_base_uint256,
 )
-from helpers import intToUint256, toUint256_balance
+from helpers import intToUint256, toUint256_balance, get_underlying_from_option
 
 
 
 // ############################
 // Pool information handlers
 // ############################
-
-
-@view
-func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address,
-) -> (pool_balance: Math64x61_) {
-    alloc_locals;
-
-    // FIXME: return Uint256
-    // FIXME: replace call of this function with calls to get_unlocked_capital
-    // Returns total capital in the pool minus the locked capital
-    // (ie capital available to locking).
-    let (pool_balance_) = get_unlocked_capital(
-        lptoken_address=lptoken_address
-    );
-
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let pool_balance_math64x61: Math64x61_ = fromUint256_balance(pool_balance_, lpool_underlying_token);
-
-    return (pool_balance_math64x61,);
-}
-
 
 @view
 func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -104,7 +82,9 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     base_token_address: Address,
     lptoken_address: Address
 ) -> (premia: Math64x61_) {
-    // options_size is always denominated in base tokens (ETH in case of ETH/USDC)
+    // options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
+    // Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+    // Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
 
     alloc_locals;
 
@@ -148,11 +128,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
             assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
         }
 
-        if (option_type == OPTION_CALL) {
-            tempvar underlying_token = base_token_address;
-        } else {
-            tempvar underlying_token = quote_token_address;
-        }
+        let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
         let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
         let (new_volatility, trade_volatility) = get_new_volatility(
             current_volatility, option_size_m64x61, option_type, side, strike_price, current_pool_balance_m64x61
@@ -276,11 +252,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
     }
 
-    if (option_type == OPTION_CALL) {
-        tempvar underlying_token = base_token_address;
-    } else {
-        tempvar underlying_token = quote_token_address;
-    }
+    let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
     let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
     let (new_volatility, trade_volatility) = get_new_volatility(
         current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, current_pool_balance_m64x61

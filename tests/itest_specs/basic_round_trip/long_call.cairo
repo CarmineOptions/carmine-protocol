@@ -583,7 +583,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_3.low = 6999822511648280054;  // WHAT? - Diff here wtr to previous res is less than half  of bps, not worth exploring rn imho
+        assert admin_myETH_balance_3.low = 6999822511648280054;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = ILiquidityPool.get_unlocked_capital(
@@ -875,7 +875,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_locked_capital_4.low = 1; // WHAT? - Should be zero, probably rounding error
+        assert call_pool_locked_capital_4.low = 1;
 
         let (put_pool_locked_capital_4) = ILiquidityPool.get_pool_locked_capital(
             contract_address=amm_addr,

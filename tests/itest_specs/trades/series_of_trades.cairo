@@ -74,9 +74,8 @@ namespace SeriesOfTrades {
             base_token_address=myeth_addr
         );
 
-        assert premia_short_call = 2020760452941187; // WHAT??
-        //2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
-                                                    // with previous trade
+        assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
+                                                     // with previous trade
         // Second trade, PUT LONG
         let (premia_long_put: Math64x61_) = IAMM.trade_open(
             contract_address=amm_addr,
