@@ -71,7 +71,6 @@ func _get_premia_before_fees{
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
-<<<<<<< HEAD
     current_pool_balance: Math64x61_,
 ) -> (total_premia_before_fees: Math64x61_){
 ||||||| parent of 689e4cc (Polish replace felt with specific types)
@@ -96,15 +95,6 @@ func _get_premia_before_fees{
 ) -> (total_premia_before_fees: Int){
 >>>>>>> e630368 (Get rid of m64x61 everywhere (#78))
     // Gets value of position ADJUSTED for fees!!!
-||||||| parent of 15c5a87 (Typo)
-    current_pool_balance: Math64x61_
-) -> (total_premia_before_fees: Math64x61_){
-    // Gets value of position ADJUSTED for fees!!!
-=======
-    current_pool_balance: Math64x61_
-) -> (total_premia_before_fees: Math64x61_){
-    // Gets value of position NOT ADJUSTED for fees!!!
->>>>>>> 15c5a87 (Typo)
 
     alloc_locals;
 
