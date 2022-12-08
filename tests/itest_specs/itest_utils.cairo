@@ -56,14 +56,14 @@ func get_stats{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         lptoken_address=input.lpt_addr,
         maturity=input.expiry
     );
-    let (opt_long_pos) = ILiquidityPool.get_pools_option_position(
+    let (opt_long_pos) = ILiquidityPool.get_option_position(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr,
         option_side=0,
         maturity=input.expiry,
         strike_price=input.strike_price
     );
-    let (opt_short_pos) = ILiquidityPool.get_pools_option_position(
+    let (opt_short_pos) = ILiquidityPool.get_option_position(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr,
         option_side=1,
