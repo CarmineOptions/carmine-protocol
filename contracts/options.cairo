@@ -744,12 +744,14 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     alloc_locals;
 
-    let (option_token_address) = get_option_token_address(
-        lptoken_address=lptoken_address,
-        option_side=option_side,
-        maturity=maturity,
-        strike_price=strike_price
-    );
+    with_attr error_message("expire_option_token failed when getting option token address") {
+        let (option_token_address) = get_option_token_address(
+            lptoken_address=lptoken_address,
+            option_side=option_side,
+            maturity=maturity,
+            strike_price=strike_price
+        );
+    }
 
     let (currency_address) = get_underlying_token_address(lptoken_address);
 
@@ -799,46 +801,60 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     }
 
     // long_value and short_value are both in terms of locked capital
-    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
-    let (long_value, short_value) = split_option_locked_capital(
-        option_type, option_side, option_size_m64x61, strike_price, terminal_price
-    );
-    let long_value_uint256 = toUint256_balance(long_value, currency_address);
-    let short_value_uint256 = toUint256_balance(short_value, currency_address);
-
+    with_attr error_message("expire_option_token failed converting option size to math64x61") {
+        let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
+    }   
+    
+    with_attr error_message("expire_option_token failed when splitting option locked capital") {
+        let (long_value, short_value) = split_option_locked_capital(
+            option_type, option_side, option_size_m64x61, strike_price, terminal_price
+        );
+    }
+    
+    with_attr error_message("expire_option_token failed when converting value to uint") {
+        let long_value_uint256 = toUint256_balance(long_value, currency_address);
+        let short_value_uint256 = toUint256_balance(short_value, currency_address);
+    }
+    
     // Validate that the user is not burning more than he/she has.
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
     let base_address = pool_definition.base_token_address;
-    let option_size_uint256 = intToUint256(option_size);
+    with_attr error_message("expire_option_token failed when converting option_size to uint") {
+        let option_size_uint256 = intToUint256(option_size);
+    }
+
     with_attr error_message("option_size is higher than tokens owned by user") {
         // FIXME: this might be failing because of rounding when converting between
         assert_uint256_le(option_size_uint256, user_tokens_owned);
     }
 
     // Burn the user tokens
-    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
-
-    if (option_side == TRADE_SIDE_LONG) {
-        // User is long
-        // When user was long there is a possibility, that the pool is short,
-        // which means that pool has locked in some capital.
-        // We assume pool is able to "expire" it's functions pretty quickly so the updates
-        // of storage_vars has already happened.
-        IERC20.transfer(
-            contract_address=currency_address,
-            recipient=user_address,
-            amount=long_value_uint256,
-        );
-    } else {
-        // User is short
-        // User locked in capital (no locking happened from pool - no locked capital and similar
-        // storage vars were updated).
-        IERC20.transfer(
-            contract_address=currency_address,
-            recipient=user_address,
-            amount=short_value_uint256,
-        );
+    with_attr error_message("expire_option_token failed when burning option token") {
+        IOptionToken.burn(option_token_address, user_address, option_size_uint256);
     }
 
+    with_attr error_message("expire_option_token failed when transfering funds") {
+        if (option_side == TRADE_SIDE_LONG) {
+            // User is long
+            // When user was long there is a possibility, that the pool is short,
+            // which means that pool has locked in some capital.
+            // We assume pool is able to "expire" it's functions pretty quickly so the updates
+            // of storage_vars has already happened.
+            IERC20.transfer(
+                contract_address=currency_address,
+                recipient=user_address,
+                amount=long_value_uint256,
+            );
+        } else {
+            // User is short
+            // User locked in capital (no locking happened from pool - no locked capital and similar
+            // storage vars were updated).
+            IERC20.transfer(
+                contract_address=currency_address,
+                recipient=user_address,
+                amount=short_value_uint256,
+            );
+        }
+    }
     return ();
 }

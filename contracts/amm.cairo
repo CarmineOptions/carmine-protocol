@@ -519,25 +519,29 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
 
     alloc_locals;
 
-    // lptoken_address serves as an identifier of selected liquidity pool
-    let (lptoken_address) = get_lptoken_address_for_given_option(
-        quote_token_address,
-        base_token_address,
-        option_type
-    );
+    with_attr error_message("trade_settle failed when calling get_lptoken_address_for_given_option") {
+        // lptoken_address serves as an identifier of selected liquidity pool
+        let (lptoken_address) = get_lptoken_address_for_given_option(
+            quote_token_address,
+            base_token_address,
+            option_type
+        );
+    }
 
-    // Validate the validity of the input.
-    validate_trade_input(
-        option_type=option_type,
-        strike_price=strike_price,
-        maturity=maturity,
-        option_side=option_side,
-        option_size=option_size,
-        quote_token_address=quote_token_address,
-        base_token_address=base_token_address,
-        lptoken_address=lptoken_address,
-        open_position=FALSE,
-    );
+    with_attr error_message("trade_settle failed when validating trade input") {
+        // Validate the validity of the input.
+        validate_trade_input(
+            option_type=option_type,
+            strike_price=strike_price,
+            maturity=maturity,
+            option_side=option_side,
+            option_size=option_size,
+            quote_token_address=quote_token_address,
+            base_token_address=base_token_address,
+            lptoken_address=lptoken_address,
+            open_position=FALSE,
+        );
+    }
 
     // Position can be expired/settled only if the maturity has passed.
     let (current_block_time) = get_block_timestamp();
@@ -545,18 +549,21 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
         assert_le(maturity, current_block_time);
     }
 
-    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    with_attr error_message("trade_settle failed when fetching terminal price") {
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    }
 
-    expire_option_token(
-        lptoken_address=lptoken_address,
-        option_type=option_type,
-        option_side=option_side,
-        strike_price=strike_price,
-        terminal_price=terminal_price,
-        option_size=option_size,
-        maturity=maturity,
-    );
-
+    with_attr error_message("trade_settle failed when expirying option token") {
+        expire_option_token(
+            lptoken_address=lptoken_address,
+            option_type=option_type,
+            option_side=option_side,
+            strike_price=strike_price,
+            terminal_price=terminal_price,
+            option_size=option_size,
+            maturity=maturity,
+        );
+    }
     return ();
 }
