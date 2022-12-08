@@ -354,8 +354,13 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     let (decimal) = get_decimal(currency_address);
     let (dec_) = pow10(decimal);
 
-    let x_ = Math64x61.fromFelt(x);
-    let x__ = x_ / dec_;
+    with_attr error_message("fromInt_balance failed when converting to Math64x61") {
+        let x_ = Math64x61.fromFelt(x);
+    }
+
+    with_attr error_message("fromInt_balance failed when dividing x by dec") {
+        let x__ = x_ / dec_;
+    }
     return x__;
 }
 
