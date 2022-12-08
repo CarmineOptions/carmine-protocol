@@ -1,6 +1,4 @@
 %lang starknet
-// FIXME: TBD
-// test something weird... for example different number of decimals in base token (different than 18)
 
 from constants import EMPIRIC_ORACLE_ADDRESS
 from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -355,8 +353,8 @@ namespace NonEthRoundTrip {
 
         let one = Math64x61.fromFelt(1);
         let ten = Math64x61.fromFelt(10);
-        let tenth = Math64x61.div(one, ten);
-        let ten_k = Math64x61.fromFelt(10000);
+        let tenth = 10000000; // 0.1 * 10**8
+        let ten_k = 1000000000000; // 10_000 * 10 ** 8
 
         %{
             stop_mock_current_price_btc = mock_call(
@@ -426,13 +424,12 @@ namespace NonEthRoundTrip {
         assert admin_myusd_balance_2.low = 5000000000;
 
         // Test inlocked capital in the pools 
-        assert res_long_btc_2.pool_unlocked_capital = 40515450;
+        assert res_long_btc_2.pool_unlocked_capital = 40515449;
         assert res_long_doge_2.pool_unlocked_capital = 4093790479051;
 
         // Test balance of option tokens 
-        // FIXME: BTC OPT balance is wrong
-        assert res_long_btc_2.bal_opt = 9999999;
-        assert res_short_btc_2.bal_opt = 9999999;
+        assert res_long_btc_2.bal_opt = 10000000;
+        assert res_short_btc_2.bal_opt = 10000000;
         assert res_long_doge_2.bal_opt = 1000000000000;
         assert res_short_doge_2.bal_opt = 1000000000000;
 
@@ -442,20 +439,20 @@ namespace NonEthRoundTrip {
         
         // Test pools position
         assert res_long_btc_2.opt_long_pos = 0; 
-        assert res_long_btc_2.opt_short_pos = 230584300921369395; 
+        assert res_long_btc_2.opt_short_pos = 10000000; 
         assert res_long_doge_2.opt_long_pos = 0; 
-        assert res_long_doge_2.opt_short_pos = 23058430092136939520000; 
+        assert res_long_doge_2.opt_short_pos = 1000000000000; 
 
         // Test lpool balance
         assert res_long_btc_2.lpool_balance = 50515449;
         assert res_long_doge_2.lpool_balance = 5093790479051;
 
         // Test pool locked capital
-        assert res_long_btc_2.pool_locked_capital = 9999999;
+        assert res_long_btc_2.pool_locked_capital = 10000000;
         assert res_long_doge_2.pool_locked_capital = 1000000000000;
 
         // Test value of pools positions
-        assert res_long_btc_2.pool_position_val = 218696637995298236;
+        assert res_long_btc_2.pool_position_val = 218696637999427944;
         assert res_long_doge_2.pool_position_val = 20895712607624488722410;
 
         // ///////////////////////////////////////////////////
@@ -559,13 +556,13 @@ namespace NonEthRoundTrip {
         assert admin_myusd_balance_3.low = 5000000000;
 
         // Test unlocked capital in the pools 
-        assert res_long_btc_3.pool_unlocked_capital = 30417020;
+        assert res_long_btc_3.pool_unlocked_capital = 30417019;
         assert res_long_doge_3.pool_unlocked_capital = 3075049087440;
         
         // Test balance of option tokens 
         // FIXME: BTC OPT balance is wrong
-        assert res_long_btc_3.bal_opt = 9999999;
-        assert res_short_btc_3.bal_opt = 9999999;
+        assert res_long_btc_3.bal_opt = 10000000;
+        assert res_short_btc_3.bal_opt = 10000000;
         assert res_long_doge_3.bal_opt = 1000000000000;
         assert res_short_doge_3.bal_opt = 1000000000000;
 
@@ -575,20 +572,20 @@ namespace NonEthRoundTrip {
 
         // Test pools position
         assert res_long_btc_3.opt_long_pos = 0; 
-        assert res_long_btc_3.opt_short_pos = 230584300921369395; 
+        assert res_long_btc_3.opt_short_pos = 10000000; 
         assert res_long_doge_3.opt_long_pos = 0; 
-        assert res_long_doge_3.opt_short_pos = 23058430092136939520000; 
+        assert res_long_doge_3.opt_short_pos = 1000000000000; 
         
         // Test lpool balance
         assert res_long_btc_3.lpool_balance = 40417019;
         assert res_long_doge_3.lpool_balance = 4075049087440;
         
         // Test pool locked capital
-        assert res_long_btc_3.pool_locked_capital = 9999999;
+        assert res_long_btc_3.pool_locked_capital = 10000000;
         assert res_long_doge_3.pool_locked_capital = 1000000000000;
         
         // Test value of pools positions
-        assert res_long_btc_3.pool_position_val = 230098370877489612;
+        assert res_long_btc_3.pool_position_val = 230098370883568831;
         assert res_long_doge_3.pool_position_val = 23056931060077044986801;
 
 
@@ -596,7 +593,7 @@ namespace NonEthRoundTrip {
         // // CLOSE HALF OF THE BOUGHT OPTIONS
         // ///////////////////////////////////////////////////
         let two = Math64x61.fromFelt(2);
-        let twentieth = Math64x61.div(tenth, two);
+        let twentieth = 5000000; // 0.05 * 10**8
         let five_k = Math64x61.div(ten_k, two);
         let tmp_address = EMPIRIC_ORACLE_ADDRESS;
         tempvar myusd_addr;
@@ -732,9 +729,9 @@ namespace NonEthRoundTrip {
 
         // // Test pools option position
         assert res_long_btc_4.opt_long_pos = 0; 
-        assert res_long_btc_4.opt_short_pos = 115292150460684698; 
+        assert res_long_btc_4.opt_short_pos = 5000000; 
         assert res_long_doge_4.opt_long_pos = 0; 
-        assert res_long_doge_4.opt_short_pos = 11529215046068469760000; 
+        assert res_long_doge_4.opt_short_pos = 500000000000; 
 
         // // Test lpool balance
         assert res_long_btc_4.lpool_balance = 40172981;
@@ -745,7 +742,7 @@ namespace NonEthRoundTrip {
         assert res_long_doge_4.pool_locked_capital = 500000000000;
         
         // // Test value of pools positions
-        assert res_long_btc_4.pool_position_val = 109307446862396962;
+        assert res_long_btc_4.pool_position_val = 109307446862396961;
         assert res_long_doge_4.pool_position_val = 11326989549444587778048;
 
         ///////////////////////////////////////////////////
@@ -842,13 +839,13 @@ namespace NonEthRoundTrip {
             contract_address=mydoge_addr,
             account=admin_addr
         );
-        assert admin_mydoge_balance_5.low = 5021449615620;
+        assert admin_mydoge_balance_5.low = 5021449615619;
 
         let (admin_mybtc_balance_5: Uint256) = IERC20.balanceOf(
             contract_address=mybtc_addr,
             account=admin_addr
         );
-        assert admin_mybtc_balance_5.low = 50311507;
+        assert admin_mybtc_balance_5.low = 50311506;
 
         let (admin_myusd_balance_5: Uint256) = IERC20.balanceOf(
             contract_address=myusd_addr,
@@ -889,9 +886,9 @@ namespace NonEthRoundTrip {
         assert res_long_doge_5.pool_volatility = 225116988705750895546;
         
         // // Test pools position
-        assert res_long_btc_5.opt_long_pos = 115292150460684697; 
+        assert res_long_btc_5.opt_long_pos = 5000000; 
         assert res_long_btc_5.opt_short_pos = 0; 
-        assert res_long_doge_5.opt_long_pos = 11529215046068469760000; 
+        assert res_long_doge_5.opt_long_pos = 500000000000; 
         assert res_long_doge_5.opt_short_pos = 0; 
 
         // // Test lpool balance
@@ -992,13 +989,13 @@ namespace NonEthRoundTrip {
             contract_address=mydoge_addr,
             account=admin_addr
         );
-        assert admin_mydoge_balance_6.low = 6016092090715;
+        assert admin_mydoge_balance_6.low = 6016092090714;
 
         let (admin_mybtc_balance_6: Uint256) = IERC20.balanceOf(
             contract_address=mybtc_addr,
             account=admin_addr
         );
-        assert admin_mybtc_balance_6.low = 60235697;
+        assert admin_mybtc_balance_6.low = 60235696;
 
         let (admin_myusd_balance_6: Uint256) = IERC20.balanceOf(
             contract_address=myusd_addr,
@@ -1034,9 +1031,9 @@ namespace NonEthRoundTrip {
         assert res_long_doge_6.pool_volatility = 225116988705750895546;
 
         // Test pools position
-        assert res_long_btc_6.opt_long_pos = 115292150460684697; 
+        assert res_long_btc_6.opt_long_pos = 5000000; 
         assert res_long_btc_6.opt_short_pos = 0; 
-        assert res_long_doge_6.opt_long_pos = 11529215046068469760000; 
+        assert res_long_doge_6.opt_long_pos = 500000000000; 
         assert res_long_doge_6.opt_short_pos = 0; 
         
         // Test lpool balance
@@ -1284,16 +1281,16 @@ namespace NonEthRoundTrip {
         );
         assert admin_myusd_balance_8.low = 5000000000;
         
-        // %{
-        //     print(f"{ids.admin_mydoge_balance_8.low}")
-        //     print(f"{ids.admin_mybtc_balance_8.low}")
-        //     print(f"{ids.admin_myusd_balance_8.low}")
-        // %}
+        %{
+            print(f"{ids.admin_mydoge_balance_8.low}")
+            print(f"{ids.admin_mybtc_balance_8.low}")
+            print(f"{ids.admin_myusd_balance_8.low}")
+        %}
         
-        // print_stats(res_long_btc_8);
-        // print_stats(res_short_btc_8);
-        // print_stats(res_long_doge_8);
-        // print_stats(res_short_doge_8);
+        print_stats(res_long_btc_8);
+        print_stats(res_short_btc_8);
+        print_stats(res_long_doge_8);
+        print_stats(res_short_doge_8);
 
         // // Test unlocked capital in the pools 
         assert res_long_btc_8.pool_unlocked_capital = 30020090;
@@ -1384,6 +1381,8 @@ namespace NonEthRoundTrip {
             quote_token_address=myusd_addr,
             base_token_address=mydoge_addr
         );
+
+        // FIXME: this fails in expire_option_token, because option_size_math is 1447401115466452485478929113238028042249242886132638679989352114604809492890
         IAMM.trade_settle(
             contract_address=amm_addr,
             option_type=0,
@@ -1418,17 +1417,6 @@ namespace NonEthRoundTrip {
             account=admin_addr
         );
         assert admin_myusd_balance_9.low = 5000000000;
-
-        %{
-            print(f"{ids.admin_mydoge_balance_9.low}")
-            print(f"{ids.admin_mybtc_balance_9.low}")
-            print(f"{ids.admin_myusd_balance_9.low}")
-        %}
-        
-        print_stats(res_long_btc_9);
-        print_stats(res_short_btc_9);
-        print_stats(res_long_doge_9);
-        print_stats(res_short_doge_9);
 
         // // Test unlocked capital in the pools 
         assert res_long_btc_9.pool_unlocked_capital = 30020090;
