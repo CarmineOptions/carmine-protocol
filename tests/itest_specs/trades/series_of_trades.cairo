@@ -180,9 +180,11 @@ namespace SeriesOfTrades {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        // let one = Math64x61.fromFelt(1);
+        let one = 1000000000000000000;
         let two = Math64x61.fromFelt(2);
-        let half = Math64x61.div(one, two);
+        // let half = Math64x61.div(one, two);
+        let half = 500000000000000000;
 
         tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
@@ -234,14 +236,14 @@ namespace SeriesOfTrades {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_0.low = 3493922427;
+        assert admin_myUSD_balance_0.low = 3493922426;
         
         // Test amount of myETH on option-buyer's account
         let (admin_myETH_balance_0: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_0.low = 3999947508456065619;
+        assert admin_myETH_balance_0.low = 3999947508456065618;
 
         let (stats_long_put_0) = get_stats(long_put_input);
         let (stats_short_put_0) = get_stats(short_put_input);
@@ -412,7 +414,8 @@ namespace SeriesOfTrades {
         let strike_price = Math64x61.fromFelt(1500);
         let one = Math64x61.fromFelt(1);
         let two = Math64x61.fromFelt(2);
-        let half = Math64x61.div(one, two);
+        // let half = Math64x61.div(one, two);
+        let half = 500000000000000000;
 
         tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
@@ -561,14 +564,14 @@ namespace SeriesOfTrades {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_1.low = 4987244894;
+        assert admin_myUSD_balance_1.low = 4987244895;
         
         // Test amount of myETH on option-buyer's account
         let (admin_myETH_balance_1: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_1.low = 4999640592192102082;
+        assert admin_myETH_balance_1.low = 4999640592192102083;
 
         let (stats_long_put_1) = get_stats(long_put_input);
         let (stats_short_put_1) = get_stats(short_put_input);
@@ -684,8 +687,8 @@ namespace SeriesOfTrades {
         additional_setup(); //conducts some trades
         trade_settle_before_pool(); // Settles and option before the pool
         expire_options_for_pool(); // expires all the options for pool
-        // trade_settle_part(); // Settles part of trades
-        // trade_settle_all(); // Settles all of the trade
+        // trade_settle_part(); // settles part of trade
+        // trade_settle_all(); // settles all of the trade
         
         return ();
     }
@@ -842,6 +845,171 @@ namespace SeriesOfTrades {
         return ();
     }
 
+    func trade_settle_part{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+        alloc_locals;
+
+
+        tempvar lpt_call_addr;
+        tempvar lpt_put_addr;
+        tempvar opt_long_call_addr;
+        tempvar opt_short_call_addr;
+        tempvar opt_long_put_addr;
+        tempvar opt_short_put_addr;
+        tempvar amm_addr;
+        tempvar myusd_addr;
+        tempvar myeth_addr;
+        tempvar admin_addr;
+
+        tempvar expiry;
+        %{
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+            ids.opt_long_call_addr = context.opt_long_call_addr_0
+            ids.opt_short_call_addr = context.opt_short_call_addr_0
+            ids.opt_long_put_addr = context.opt_long_put_addr_0
+            ids.opt_short_put_addr = context.opt_short_put_addr_0
+
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+
+            ids.expiry = context.expiry_0
+        %}
+
+        let strike_price = Math64x61.fromFelt(1500);
+        let one = Math64x61.fromFelt(1);
+        let two = Math64x61.fromFelt(2);
+        let half = Math64x61.div(one, two);
+
+        tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
+        %{
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            )
+            stop_mock_terminal_price = mock_call(
+                ids.tmp_address, "get_last_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+            )
+        %}
+
+        %{ warp(1000000000 + 60*60*24 + 1, target_contract_address = context.amm_addr) %}
+        
+        // Settle half of SHORT CALL and PUT
+        IAMM.trade_settle(
+            contract_address=amm_addr,
+            option_type=0,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=1,
+            option_size=half,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr
+        );
+        IAMM.trade_settle(
+            contract_address=amm_addr,
+            option_type=1,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=1,
+            option_size=half,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr
+        );
+
+        // Define inputs for get_stats function
+        let long_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let long_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+
+        // Test amount of myUSD on option-buyer's account
+        let (admin_myUSD_balance_0: Uint256) = IERC20.balanceOf(
+            contract_address=myusd_addr,
+            account=admin_addr
+        );
+        assert admin_myUSD_balance_0.low = 3493922427;
+        
+        // Test amount of myETH on option-buyer's account
+        let (admin_myETH_balance_0: Uint256) = IERC20.balanceOf(
+            contract_address=myeth_addr,
+            account=admin_addr
+        );
+        assert admin_myETH_balance_0.low = 3999947508456065619;
+
+        let (stats_long_put_0) = get_stats(long_put_input);
+        let (stats_short_put_0) = get_stats(short_put_input);
+        let (stats_short_call_0) = get_stats(short_call_input);
+        let (stats_long_call_0) = get_stats(long_call_input);
+        
+        print_stats(stats_long_call_0);
+        print_stats(stats_short_call_0);
+        print_stats(stats_long_put_0);
+        print_stats(stats_short_put_0);
+        
+        %{
+            print(str(ids.admin_myUSD_balance_0.low), str(ids.admin_myETH_balance_0.low))
+        %}
+
+        // Assert amount of unlocked capital
+        assert stats_long_put_0.pool_unlocked_capital = 5006077574;
+        assert stats_long_call_0.pool_unlocked_capital = 5000052491543934382;
+
+        // Assert position from pool's position
+        assert stats_long_put_0.opt_long_pos = 0;
+        assert stats_long_put_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_long_pos = 0;
+
+        // Assert lpool balance
+        assert stats_long_put_0.lpool_balance = 5006077574;
+        assert stats_long_call_0.lpool_balance = 5000052491543934382;
+
+        // Assert locked capital
+        assert stats_long_put_0.pool_locked_capital = 0;
+        assert stats_long_call_0.pool_locked_capital = 0;
+
+        // Assert pool position value
+        assert stats_long_put_0.pool_position_val = 0;
+        assert stats_long_call_0.pool_position_val = 0;
+
+        %{
+            stop_prank_amm()
+            stop_mock_current_price()
+            stop_mock_terminal_price()
+        %}
+
+        return ();
+    }
+    
     func expire_options_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
         alloc_locals;
 
@@ -952,7 +1120,8 @@ namespace SeriesOfTrades {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        // let one = Math64x61.fromFelt(1);
+        let one = 1000000000000000000; // 1 * 10 **18
         tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
