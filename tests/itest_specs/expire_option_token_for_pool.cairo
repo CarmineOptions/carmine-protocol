@@ -150,7 +150,7 @@ namespace ExpireOptionTokenForPool {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let one = 1000000000000000000; // 1 * 10**18
 
         let (premia_put) = IAMM.trade_open(
             contract_address=amm_addr,
@@ -223,7 +223,7 @@ namespace ExpireOptionTokenForPool {
 
         // Assert amount of unlocked capital
         assert stats_long_put_1.pool_unlocked_capital = 5109724195;
-        assert stats_long_call_1.pool_unlocked_capital = 4971488265749645016;
+        assert stats_long_call_1.pool_unlocked_capital = 4971488265749645015;
         
         // Assert volatility
         assert stats_long_put_1.pool_volatility = 329406144173384850100; 
@@ -245,7 +245,7 @@ namespace ExpireOptionTokenForPool {
 
         // Assert locked capital
         assert stats_long_put_1.pool_locked_capital = 0;
-        assert stats_long_call_1.pool_locked_capital = 0;
+        assert stats_long_call_1.pool_locked_capital = 1;
 
         // Assert pool position value
         assert stats_long_put_1.pool_position_val = 0;
@@ -291,7 +291,7 @@ namespace ExpireOptionTokenForPool {
 
         // Assert amount of unlocked capital
         assert stats_long_put_2.pool_unlocked_capital = 5109724195;
-        assert stats_long_call_2.pool_unlocked_capital = 4971488265749645016;
+        assert stats_long_call_2.pool_unlocked_capital = 4971488265749645015;
         
         // Assert volatility
         assert stats_long_put_2.pool_volatility = 329406144173384850100; 
@@ -309,7 +309,7 @@ namespace ExpireOptionTokenForPool {
 
         // Assert locked capital
         assert stats_long_put_2.pool_locked_capital = 0;
-        assert stats_long_call_2.pool_locked_capital = 0;
+        assert stats_long_call_2.pool_locked_capital = 1;
 
         // Assert pool position value
         assert stats_long_put_2.pool_position_val = 0;
