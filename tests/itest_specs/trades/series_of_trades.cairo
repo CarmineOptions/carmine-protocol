@@ -14,15 +14,21 @@ from math64x61 import Math64x61
 
 namespace SeriesOfTrades {
     func trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-        // FIXME: this only tests the premia and not other variables/storage_vars
         alloc_locals;
 
         // 12 hours after listing, 12 hours before expir
         %{ warp(1000000000 + 60*60*12, target_contract_address = context.amm_addr) %}
 
         tempvar lpt_call_addr;
+        tempvar lpt_put_addr;
+        
         tempvar opt_long_call_addr;
+        tempvar opt_short_call_addr;
+        tempvar opt_long_put_addr;
+        tempvar opt_short_put_addr;
+        
         tempvar amm_addr;
+        
         tempvar myusd_addr;
         tempvar myeth_addr;
         tempvar admin_addr;
@@ -30,7 +36,13 @@ namespace SeriesOfTrades {
         tempvar expiry;
         %{
             ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+
             ids.opt_long_call_addr = context.opt_long_call_addr_0
+            ids.opt_short_call_addr = context.opt_short_call_addr_0
+            ids.opt_long_put_addr = context.opt_long_put_addr_0
+            ids.opt_short_put_addr = context.opt_short_put_addr_0
+            
             ids.amm_addr = context.amm_addr
             ids.myusd_addr = context.myusd_address
             ids.myeth_addr = context.myeth_address
@@ -108,6 +120,83 @@ namespace SeriesOfTrades {
         );
 
         assert premia_short_put = 234722763583748232400;
+        
+        let long_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let long_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+
+        // Test amount of myUSD on option-buyer's account
+        let (admin_myUSD_balance_0: Uint256) = IERC20.balanceOf(
+            contract_address=myusd_addr,
+            account=admin_addr
+        );
+        assert admin_myUSD_balance_0.low = 3493922426;
+        
+        // Test amount of myETH on option-buyer's account
+        let (admin_myETH_balance_0: Uint256) = IERC20.balanceOf(
+            contract_address=myeth_addr,
+            account=admin_addr
+        );
+        assert admin_myETH_balance_0.low = 3999947508456065618;
+
+        let (stats_long_put_0) = get_stats(long_put_input);
+        let (stats_short_put_0) = get_stats(short_put_input);
+        let (stats_short_call_0) = get_stats(short_call_input);
+        let (stats_long_call_0) = get_stats(long_call_input);
+
+        // Assert amount of unlocked capital
+        assert stats_long_put_0.pool_unlocked_capital = 5006077574;
+        assert stats_long_call_0.pool_unlocked_capital = 5000052491543934382;
+
+        // Assert position from pool's position
+        assert stats_long_put_0.opt_long_pos = 0;
+        assert stats_long_put_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_long_pos = 0;
+
+        // Assert lpool balance
+        assert stats_long_put_0.lpool_balance = 5006077574;
+        assert stats_long_call_0.lpool_balance = 5000052491543934382;
+
+        // Assert locked capital
+        assert stats_long_put_0.pool_locked_capital = 0;
+        assert stats_long_call_0.pool_locked_capital = 0;
+
+        // Assert pool position value
+        assert stats_long_put_0.pool_position_val = 0;
+        assert stats_long_call_0.pool_position_val = 0;
+        
+        
+        
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()
