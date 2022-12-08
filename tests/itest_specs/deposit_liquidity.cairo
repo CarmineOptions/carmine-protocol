@@ -336,7 +336,8 @@ namespace DepositLiquidity {
         );
 
         // Conduct trades
-        let one_math = Math64x61.fromFelt(1);
+        // let one_math = Math64x61.fromFelt(1);
+        let one_int = 1000000000000000000; // 1 * 10**18
         let one_k_math = Math64x61.fromFelt(1000);
         
         let (long_call_premia) = IAMM.trade_open(
@@ -345,12 +346,12 @@ namespace DepositLiquidity {
             strike_price = strike_price,
             maturity = expiry,
             option_side = 0,
-            option_size = one_math,
+            option_size = one_int,
             quote_token_address = myusd_addr,
             base_token_address = myeth_addr
         ); 
         assert long_call_premia = 7766812800888664;
-        // 0.00337 ETH, 4.7 USD
+        // 0.00589 ETH, 4.7 USD 
         // Trade vol: 253642731013506334650 -> 110.0
         
         let (short_call_premia) = IAMM.trade_open(
@@ -359,12 +360,12 @@ namespace DepositLiquidity {
             strike_price = strike_price,
             maturity = expiry_longer,
             option_side = 1,
-            option_size = one_math,
+            option_size = one_int,
             quote_token_address = myusd_addr,
             base_token_address = myeth_addr
         ); 
-        assert short_call_premia = 13117481027175095;
-        // 0.0568 ETH, 7.96 USD
+        assert short_call_premia = 13117481027175095; 
+        // 0.00383 ETH, 7.96 USD
         // Trade vol: 211380046947561167350 -> 91.671482
 
         let (long_put_premia) = IAMM.trade_open(
@@ -373,7 +374,7 @@ namespace DepositLiquidity {
             strike_price = strike_price,
             maturity = expiry,
             option_side = 0,
-            option_size = one_math,
+            option_size = one_int,
             quote_token_address = myusd_addr,
             base_token_address = myeth_addr
         ); 
@@ -387,7 +388,7 @@ namespace DepositLiquidity {
             strike_price = strike_price,
             maturity = expiry_longer,
             option_side = 1,
-            option_size = one_math,
+            option_size = one_int,
             quote_token_address = myusd_addr,
             base_token_address = myeth_addr
         ); 
@@ -400,7 +401,7 @@ namespace DepositLiquidity {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_2.low = 2494850138;
+        assert admin_myUSD_balance_2.low = 2494850137;
         // 5000 - 1000 - long_put_premia - long_put_fee + short_put_premia - short_put_fee - 1500(need for short trade)
         
         // Test amount of myETH on option-buyer's account
@@ -408,7 +409,7 @@ namespace DepositLiquidity {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_2.low = 3002048768885205017;
+        assert admin_myETH_balance_2.low = 3002048768885205016;
         // 5 - 1 - long_call_premia - long_call_fee + short_call_premia - short_call_fee - 1(needed for short trade)
 
         let (stats_long_put_2) = get_stats(long_put_input);
@@ -430,15 +431,15 @@ namespace DepositLiquidity {
 
         // Assert option position from pool's perspective
         assert stats_long_put_2.opt_long_pos = 0;
-        assert stats_long_put_2.opt_short_pos = 2305843009213693952; // 1
+        assert stats_long_put_2.opt_short_pos = 1000000000000000000; // 1
 
         assert stats_long_call_2.opt_long_pos = 0;
-        assert stats_long_call_2.opt_short_pos = 2305843009213693952; // 1
+        assert stats_long_call_2.opt_short_pos = 1000000000000000000; // 1
 
-        assert stats_short_put_2.opt_long_pos = 2305843009213693952; // 1
+        assert stats_short_put_2.opt_long_pos = 1000000000000000000; // 1
         assert stats_short_put_2.opt_short_pos = 0;
 
-        assert stats_short_call_2.opt_long_pos = 2305843009213693952; // 1
+        assert stats_short_call_2.opt_long_pos = 1000000000000000000; // 1
         assert stats_short_call_2.opt_short_pos = 0;
 
         // Assert lpool balance
@@ -514,14 +515,14 @@ namespace DepositLiquidity {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_3.low = 1494850138;
+        assert admin_myUSD_balance_3.low = 1494850137;
         
         // Test amount of myETH on option-buyer's account
         let (admin_myETH_balance_3: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_3.low = 2002048768885205017;
+        assert admin_myETH_balance_3.low = 2002048768885205016;
 
         let (stats_long_put_3) = get_stats(long_put_input);
         let (stats_short_put_3) = get_stats(short_put_input_2);
@@ -544,15 +545,15 @@ namespace DepositLiquidity {
 
         // Assert position from pool's perspective -> still same
         assert stats_long_put_3.opt_long_pos = 0;
-        assert stats_long_put_3.opt_short_pos = 2305843009213693952;
+        assert stats_long_put_3.opt_short_pos = 1000000000000000000;
 
         assert stats_long_call_3.opt_long_pos = 0;
-        assert stats_long_call_3.opt_short_pos = 2305843009213693952;
+        assert stats_long_call_3.opt_short_pos = 1000000000000000000;
 
-        assert stats_short_put_3.opt_long_pos = 2305843009213693952;
+        assert stats_short_put_3.opt_long_pos = 1000000000000000000;
         assert stats_short_put_3.opt_short_pos = 0;
 
-        assert stats_short_call_3.opt_long_pos = 2305843009213693952;
+        assert stats_short_call_3.opt_long_pos = 1000000000000000000;
         assert stats_short_call_3.opt_short_pos = 0;
 
         // Assert lpool balance
