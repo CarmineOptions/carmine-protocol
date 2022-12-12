@@ -327,7 +327,11 @@ func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
     );
     if (lptoken_balance.low == 0 and lptoken_balance.high == 0){
         let zero_val = Uint256(0, 0);
-        let res = UserPoolInfo(value_of_user_stake=zero_val, pool_info=pool_info);
+        let res = UserPoolInfo(
+            value_of_user_stake=zero_val,
+            size_of_users_tokens=Uint256(0, 0),
+            pool_info=pool_info
+        );
         return res;
     }
 
@@ -337,6 +341,7 @@ func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 
     let user_pool_info = UserPoolInfo(
         value_of_user_stake=value_of_user_stake,
+        size_of_users_tokens=lptoken_balance,
         pool_info=pool_info
     );
 
