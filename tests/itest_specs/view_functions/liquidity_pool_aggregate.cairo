@@ -89,7 +89,10 @@ namespace LPAggregateViewFunctions {
         assert user_pools_info[0].pool_info.staked_capital = Math64x61.fromFelt(5);
         assert user_pools_info[0].pool_info.unlocked_capital = Math64x61.fromFelt(5);
         assert user_pools_info[0].pool_info.value_of_pool_position = 0;
-        assert user_pools_info[0].value_of_user_stake = Uint256(5000000000000000000, 0);
+        assert user_pools_info[0].value_of_user_stake.low = 5000000000000000000;
+        assert user_pools_info[0].value_of_user_stake.high = 0;
+        assert user_pools_info[0].size_of_users_tokens.low = 5000000000000000000;
+        assert user_pools_info[0].size_of_users_tokens.high = 0;
 
         assert user_pools_info[1].pool_info.pool.option_type = 1;
         assert user_pools_info[1].pool_info.pool.quote_token_address = myusd_addr;
@@ -98,7 +101,10 @@ namespace LPAggregateViewFunctions {
         assert user_pools_info[1].pool_info.staked_capital = Math64x61.fromFelt(5000);
         assert user_pools_info[1].pool_info.unlocked_capital = Math64x61.fromFelt(5000);
         assert user_pools_info[1].pool_info.value_of_pool_position = 0;
-        assert user_pools_info[1].value_of_user_stake = Uint256(5000000000, 0);
+        assert user_pools_info[1].value_of_user_stake.low = 5000000000;
+        assert user_pools_info[1].value_of_user_stake.high = 0;
+        assert user_pools_info[1].size_of_users_tokens.low = 5000000000;
+        assert user_pools_info[1].size_of_users_tokens.high = 0;
 
         return ();
     }
