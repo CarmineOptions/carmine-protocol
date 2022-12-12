@@ -2,19 +2,19 @@
 protostar-version = "0.7.0"
 lib-path = "lib"
 cairo-path = [
-    "./lib/cairo_contracts/src",
-    "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
-    "contracts/"
+  "./lib/cairo_contracts/src",
+  "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
+  "contracts/",
 ]
 
 [contracts]
 amm = [
-    "./contracts/amm.cairo",
-    "./contracts/liquidity_pool.cairo",
-    "./contracts/options.cairo",
-    "./contracts/state.cairo",
-    "./contracts/view.cairo",
-    "./contracts/proxy_utils.cairo"
+  "./contracts/amm.cairo",
+  "./contracts/liquidity_pool.cairo",
+  "./contracts/options.cairo",
+  "./contracts/state.cairo",
+  "./contracts/view.cairo",
+  "./contracts/proxy_utils.cairo",
 ]
 lptoken = ["contracts/lptoken.cairo"]
 option_token = ["contracts/option_token.cairo"]

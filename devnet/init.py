@@ -221,3 +221,7 @@ write_env_vars()
 print('Done')
 print("Finished in %s seconds" %
       (timedelta(seconds=time.time() - start_time)), flush=True)
+
+while True:
+    time.sleep(300)
+    print("I've been up for another 5 minutes!", flush=True)

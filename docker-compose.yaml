@@ -5,14 +5,16 @@ services:
     # this image tag has static seed,
     # therefore the accounts stay the same
     image: shardlabs/starknet-devnet:latest-arm-seed0
-
-  proxy:
-    build:
-      dockerfile: Dockerfile.nginx
-    depends_on:
-      - devnet
     ports:
-      - 5050:80
+      - 5050:5050
+
+  # proxy:
+  #   build:
+  #     dockerfile: Dockerfile.nginx
+  #   depends_on:
+  #     - devnet
+  #   ports:
+  #     - 5050:80
 
   deploy:
     build:
