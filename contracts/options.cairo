@@ -605,7 +605,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
 
     // Burn the tokens
-    let option_size_uint256 = toUint256_balance(option_size, base_address);
+    let option_size_uint256 = intToUint256(option_size, base_address);
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
     // User receives back its locked capital, pays premia and fees
@@ -659,9 +659,8 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         //let increase_short_position_by_uint256 = intToUint256(increase_short_position_by);
         let increase_short_position_by_uint256 = Uint256(increase_short_position_by, 0);
         let strike_price_uint256 = toUint256_balance(strike_price, quote_address);
-        let (capital_to_be_locked) = convert_amount_to_option_currency_from_base_uint256(
+        let (capital_to_be_locked: Uint256) = convert_amount_to_option_currency_from_base_uint256(
             increase_short_position_by_uint256,
-
             option_type,
             strike_price_uint256,
             base_address
