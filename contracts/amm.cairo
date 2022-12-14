@@ -484,7 +484,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     with_attr error_message("Trading of given maturity has been stopped before expiration") {
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
-    with_attr error_message("unable to close_postiion in trade_close"){
+    with_attr error_message("unable to close_position in trade_close"){
         let (premia) = close_position(
             option_type,
             strike_price,
