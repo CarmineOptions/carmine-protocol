@@ -200,4 +200,14 @@ namespace ILiquidityPool {
         res: Math64x61_
     ) {
     }
+
+    func get_total_premia(
+        option: Option,
+        lptoken_address: Address,
+        position_size: Math64x61_,
+    ) -> (
+        total_premia_before_fees: Math64x61_,
+        total_premia_including_fees: Math64x61_
+    ) {
+    }
 }

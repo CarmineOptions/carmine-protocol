@@ -1,5 +1,7 @@
 %lang starknet
 
+from contracts.helpers import _get_premia_before_fees
+
 // This file contains view functions that are to be called only from the frontend (and by traders).
 // In no case should code in any other file call any function here. (Except for tests of course.)
 
@@ -166,7 +168,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     if (lptoken_address == 0) {
         return array_len_so_far;
     }
-
+    
     // Jump to next pool when current pool's options were iterated.
     let (option) = get_available_options(lptoken_address, option_index);
     if (option.quote_token_address == 0 and option.base_token_address == 0) {
@@ -453,3 +455,52 @@ func _get_option_info_from_addresses{
 
     return (option = option);
 }
+
+@view
+func get_total_premia{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    option: Option,
+    lptoken_address: Address,
+    position_size: Math64x61_,
+) -> (
+    total_premia_before_fees: Math64x61_,
+    total_premia_including_fees: Math64x61_
+) {
+    alloc_locals;
+
+    let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+    let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+
+    with_attr error_message(
+        "Failed when getting premia before fees in view.get_total_premia_including_fees"
+    ){
+        let (total_premia_before_fees) = _get_premia_before_fees(
+            option=option,
+            position_size=position_size,
+            option_type=option.option_type,
+            current_volatility=current_volatility,
+            current_pool_balance=current_pool_balance
+        );
+    }
+    
+    with_attr error_message("Failed when calculating fees in view.get_total_premia_bedore_fees") {
+
+        with_attr error_message("Received negative fees in view.get_total_premia") {
+            let (total_fees) = get_fees(total_premia_before_fees);
+            assert_nn(total_fees);
+        }
+
+        with_attr error_message("Received negative premia with fees in view.get_total_premia"){
+            let (total_premia_including_fees) = add_premia_fees(option.option_side, total_premia_before_fees, total_fees);
+            assert_nn(total_premia_including_fees);
+        }
+
+    }
+
+    return (
+        total_premia_before_fees = total_premia_before_fees,
+        total_premia_including_fees = total_premia_including_fees,
+    );
+}
+
