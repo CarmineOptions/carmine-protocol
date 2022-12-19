@@ -572,6 +572,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         );
         let size_to_increase_long_position = option_size - size_to_be_unlocked_in_base;
         let new_pools_long_position = pools_long_position + size_to_increase_long_position;
+        assert_nn(new_pools_long_position);
         set_option_position(
             lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
         );
@@ -649,6 +650,9 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let increase_short_position_by = option_size - decrease_long_position_by;
         let new_long_position = pool_long_position - decrease_long_position_by;
         let new_short_position = pool_short_position + increase_short_position_by;
+        assert_nn(new_long_position);
+        assert_nn(new_short_position);
+        
 
         // The increase_short_position_by and capital_to_be_locked might both be zero,
         // if the long position is sufficient.
