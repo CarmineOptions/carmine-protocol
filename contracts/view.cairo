@@ -494,28 +494,35 @@ func get_total_premia{
 }(
     _option: Option,
     lptoken_address: Address,
-    position_size: Math64x61_,
+    position_size: Uint256,
     is_closing: Bool,
 ) -> (
     total_premia_before_fees: Math64x61_,
     total_premia_including_fees: Math64x61_
 ) {
     alloc_locals;
+    with_attr error_message("Error in prep"){
+        let (option) = _get_option_with_correct_side(_option, is_closing);
 
-    let (option) = _get_option_with_correct_side(_option, is_closing);
-
-    let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-    let (current_pool_balance) = get_unlocked_capital(lptoken_address);
-
+        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+        let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+        let underlying = get_underlying_from_option_data(option.option_type, option.base_token_address, option.quote_token_address);
+    }
+    with_attr error_message(
+        "Failed while converting pool balance and position size"
+    ){
+        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
+        let position_size_m64x61 = fromUint256_balance(position_size, option.base_token_address);
+    }
     with_attr error_message(
         "Failed when getting premia before fees in view.get_total_premia_including_fees"
     ){
         let (total_premia_before_fees) = _get_premia_before_fees(
             option=option,
-            position_size=position_size,
+            position_size=position_size_m64x61,
             option_type=option.option_type,
             current_volatility=current_volatility,
-            current_pool_balance=current_pool_balance
+            current_pool_balance=current_pool_balance_m64x61
         );
     }
     
