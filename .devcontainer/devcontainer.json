@@ -1,17 +1,12 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.245.2/containers/python-3
 {
-	"name": "Python 3",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": "..",
-		"args": { 
-			// Update 'VARIANT' to pick a Python version: 3, 3.10, 3.9, 3.8, 3.7, 3.6
-			// Append -bullseye or -buster to pin to an OS version.
-			// Use -bullseye variants on local on arm64/Apple Silicon.
-			"VARIANT": "3.9-bullseye",
-			// Options
-			"NODE_VERSION": "none"
+	"name": "Python 3.9 on Ubuntu 22.04",
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"features": {
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.9",
+			"installTools": false
 		}
 	},
 	// Configure tool-specific properties.
@@ -37,7 +32,8 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"ms-python.python",
-				"ms-python.vscode-pylance"
+				"ms-python.vscode-pylance",
+				"Starkware.cairo"
 			]
 		}
 	},
@@ -48,8 +44,5 @@
 	"postCreateCommand": "git submodule update --init && curl -L https://raw.githubusercontent.com/software-mansion/protostar/master/install.sh | bash",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-	"remoteUser": "vscode",
-	"features": {
-		"git": "os-provided"
-	}
+	"remoteUser": "vscode"
 }
