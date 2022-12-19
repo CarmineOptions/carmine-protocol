@@ -4,6 +4,7 @@ from constants import EMPIRIC_ORACLE_ADDRESS
 from interface_lptoken import ILPToken
 from interface_liquidity_pool import ILiquidityPool
 from interface_amm import IAMM
+from types import Option
 
 from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -588,6 +589,132 @@ namespace LPBasicViewFunctions {
         return ();
     }
 
+    func get_total_premia{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
+
+        local tmp_address = EMPIRIC_ORACLE_ADDRESS;
+
+        tempvar lpt_call_addr;
+        tempvar lpt_put_addr;
+        tempvar amm_addr;
+        tempvar myusd_addr;
+        tempvar myeth_addr;
+        tempvar admin_addr;
+        tempvar expiry;
+        tempvar opt_long_call_addr;
+
+        let strike_price = Math64x61.fromFelt(1500);
+        let one = Math64x61.fromFelt(1);
+        %{
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+            ids.expiry = context.expiry_0
+            ids.opt_long_call_addr = context.opt_long_call_addr_0
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+
+            stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
+
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            )
+        %}
+
+        let option_long_call = Option (
+            0, 
+            expiry,
+            strike_price,
+            myusd_addr,
+            myeth_addr,
+            0,
+        );
+
+        let option_short_call = Option (
+            1, 
+            expiry,
+            strike_price,
+            myusd_addr,
+            myeth_addr,
+            0,
+        );
+        
+        let option_long_put = Option (
+            0, 
+            expiry,
+            strike_price,
+            myusd_addr,
+            myeth_addr,
+            1,
+        );
+
+        let option_short_put = Option (
+            1, 
+            expiry,
+            strike_price,
+            myusd_addr,
+            myeth_addr,
+            1,
+        );
+
+        let (
+            total_premia_before_fees_long_call,
+            total_premia_including_fees_long_call
+        ) = ILiquidityPool.get_total_premia(
+            amm_addr,
+            option_long_call,
+            lpt_call_addr,
+            one
+        );
+
+        let (
+            total_premia_before_fees_short_call,
+            total_premia_including_fees_short_call
+        ) = ILiquidityPool.get_total_premia(
+            amm_addr,
+            option_short_call,
+            lpt_call_addr,
+            one
+        );
+    
+        let (
+            total_premia_before_fees_long_put,
+            total_premia_including_fees_long_put
+        ) = ILiquidityPool.get_total_premia(
+            amm_addr,
+            option_long_put,
+            lpt_put_addr,
+            one
+        );
+
+        let (
+            total_premia_before_fees_short_put,
+            total_premia_including_fees_short_put
+        ) = ILiquidityPool.get_total_premia(
+            amm_addr,
+            option_short_put,
+            lpt_put_addr,
+            one
+        );
+
+        // Results copied from long/short_put/call round trips (same option size, maturity, strike etc)
+        assert total_premia_before_fees_long_call = 2020558154346487;
+        assert total_premia_including_fees_long_call = 2081174898976881;
+
+        assert total_premia_before_fees_short_call = 627445539966218;
+        assert total_premia_including_fees_short_call = 608622173767232;
+        
+        assert total_premia_before_fees_long_put = 234655350073966452800;
+        assert total_premia_including_fees_long_put = 241695010576185446327;
+
+        assert total_premia_before_fees_short_put = 231276759164374043900;
+        assert total_premia_including_fees_short_put = 224338456389442822640;
+
+        return();
+    }
 
     // FIXME: add all of the simple view functions that need setup
 }
