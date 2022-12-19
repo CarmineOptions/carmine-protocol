@@ -170,3 +170,9 @@ func test_get_user_pool_infos{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     LPAggregateViewFunctions.get_user_pool_infos();
     return ();
 }
+
+@external
+func test_get_total_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_total_premia();
+    return ();
+}

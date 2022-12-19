@@ -7,20 +7,22 @@ from contracts.constants import (
     OPTION_PUT,
     TRADE_SIDE_LONG,
     RISK_FREE_RATE,
+    STOP_TRADING_BEFORE_MATURITY_SECONDS,
     get_empiric_key,
     get_opposite_side,
     get_decimal
 )
 from contracts.fees import get_fees
 from contracts.option_pricing import black_scholes
-from contracts.oracles import empiric_median_price
+from contracts.oracles import empiric_median_price, get_terminal_price
 from contracts.option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
     add_premia_fees,
     get_new_volatility
 )
-from contracts.types import Option, Math64x61_, Address, OptionType, Int
+
+from contracts.types import Option, Math64x61_, Address, OptionType
 
 
 from starkware.cairo.common.bool import TRUE
@@ -32,10 +34,14 @@ from starkware.cairo.common.uint256 import (
     assert_le,
 )
 from starkware.cairo.common.bitwise import bitwise_and
+from starkware.starknet.common.syscalls import get_block_timestamp
+
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
 from lib.pow import pow10
+
+
 
 func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     value_a: felt, value_b: felt
@@ -146,6 +152,43 @@ func _get_premia_before_fees{
 }
 
 
+func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    option_type: OptionType,
+    option_side: OptionSide,
+    option_size: Math64x61_,
+    strike_price: Math64x61_,
+    terminal_price: Math64x61_, // terminal price is price at which option is being settled
+) -> (long_value: Math64x61_, short_value: Math64x61_) {
+    alloc_locals;
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    if (option_type == OPTION_CALL) {
+        // User receives max(0, option_size * (terminal_price - strike_price) / terminal_price) in base token for long
+        // User receives (option_size - long_profit) for short
+        let price_diff = Math64x61.sub(terminal_price, strike_price);
+        let to_be_paid_quote = Math64x61.mul(option_size, price_diff);
+        let to_be_paid_base = Math64x61.div(to_be_paid_quote, terminal_price);
+        let (to_be_paid_buyer) = max(0, to_be_paid_base);
+
+        let to_be_paid_seller = Math64x61.sub(option_size, to_be_paid_buyer);
+
+        return (to_be_paid_buyer, to_be_paid_seller);
+    }
+
+    // For Put option
+    // User receives  max(0, option_size * (strike_price - terminal_price)) in base token for long
+    // User receives (option_size * strike_price - long_profit) for short
+    let price_diff = Math64x61.sub(strike_price, terminal_price);
+    let amount_x_diff_quote = Math64x61.mul(option_size, price_diff);
+    let (to_be_paid_buyer) = max(0, amount_x_diff_quote);
+    let to_be_paid_seller_ = Math64x61.mul(option_size, strike_price);
+    let to_be_paid_seller = Math64x61.sub(to_be_paid_seller_, to_be_paid_buyer);
+
+    return (to_be_paid_buyer, to_be_paid_seller);
+}
+
+
 func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -158,6 +201,31 @@ func _get_value_of_position{
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
+
+    // Marek
+    // If the value of expired has to be calculated use the below
+    let (current_block_time) = get_block_timestamp();
+    let maturity = option.maturity;
+    let is_ripe = is_le(maturity, current_block_time);
+    if (is_ripe == TRUE) {
+        let quote_token_address = option.quote_token_address;
+        let base_token_address = option.base_token_address;
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+
+        let (long_value, short_value) = split_option_locked_capital(
+            option.option_type, option.option_side, position_size, option.strike_price, terminal_price
+        );
+        if (option.option_side == TRADE_SIDE_LONG) {
+            return (long_value,);
+        }
+        return (short_value,);
+    }
+
+    // Fail if the value of option that matures in 2 hours or less (can't price the option)
+    with_attr error_message("Unable to calculate position value, please wait till option with maturity {maturity} expires.") {
+        assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
+    }
 
     let side = option.option_side;
     let strike_price = option.strike_price;

@@ -60,5 +60,6 @@ struct PoolInfo {
 
 struct UserPoolInfo {
     value_of_user_stake: Uint256,
+    size_of_users_tokens: Uint256,
     pool_info: PoolInfo,
 }

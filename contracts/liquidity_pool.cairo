@@ -553,43 +553,6 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 }
 
 
-func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    option_type: OptionType,
-    option_side: OptionSide,
-    option_size: Math64x61_,
-    strike_price: Math64x61_,
-    terminal_price: Math64x61_, // terminal price is price at which option is being settled
-) -> (long_value: Math64x61_, short_value: Math64x61_) {
-    alloc_locals;
-
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-
-    if (option_type == OPTION_CALL) {
-        // User receives max(0, option_size * (terminal_price - strike_price) / terminal_price) in base token for long
-        // User receives (option_size - long_profit) for short
-        let price_diff = Math64x61.sub(terminal_price, strike_price);
-        let to_be_paid_quote = Math64x61.mul(option_size, price_diff);
-        let to_be_paid_base = Math64x61.div(to_be_paid_quote, terminal_price);
-        let (to_be_paid_buyer) = max(0, to_be_paid_base);
-
-        let to_be_paid_seller = Math64x61.sub(option_size, to_be_paid_buyer);
-
-        return (to_be_paid_buyer, to_be_paid_seller);
-    }
-
-    // For Put option
-    // User receives  max(0, option_size * (strike_price - terminal_price)) in base token for long
-    // User receives (option_size * strike_price - long_profit) for short
-    let price_diff = Math64x61.sub(strike_price, terminal_price);
-    let amount_x_diff_quote = Math64x61.mul(option_size, price_diff);
-    let (to_be_paid_buyer) = max(0, amount_x_diff_quote);
-    let to_be_paid_seller_ = Math64x61.mul(option_size, strike_price);
-    let to_be_paid_seller = Math64x61.sub(to_be_paid_seller_, to_be_paid_buyer);
-
-    return (to_be_paid_buyer, to_be_paid_seller);
-}
-
-
 @external
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,

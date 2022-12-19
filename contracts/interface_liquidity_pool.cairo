@@ -7,7 +7,7 @@
 from starkware.cairo.common.uint256 import Uint256
 from types import (
     Address, OptionType, Math64x61_, OptionSide, Int, OptionWithPremia, Option, PoolInfo,
-    UserPoolInfo
+    UserPoolInfo, Bool
 )
 
 @contract_interface
@@ -198,6 +198,17 @@ namespace ILiquidityPool {
         lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
     ) -> (
         res: Int
+    ) {
+    }
+
+    func get_total_premia(
+        option: Option,
+        lptoken_address: Address,
+        position_size: Math64x61_,
+        is_closing: Bool,
+    ) -> (
+        total_premia_before_fees: Math64x61_,
+        total_premia_including_fees: Math64x61_
     ) {
     }
 }
