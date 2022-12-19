@@ -22,7 +22,7 @@ from contracts.option_pricing_helpers import (
     get_new_volatility
 )
 
-from contracts.types import Option, Math64x61_, Address, OptionType
+from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide
 
 
 from starkware.cairo.common.bool import TRUE
@@ -74,7 +74,7 @@ func _get_premia_before_fees{
     option_type: OptionType,
     current_volatility: Math64x61_,
     current_pool_balance: Math64x61_,
-) -> (total_premia_before_fees: Int){
+) -> (total_premia_before_fees: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -361,6 +361,7 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         let amount_felt = Math64x61.toFelt(x_);
         let res = Uint256(low = amount_felt, high = 0);
     }
+
     return res;
 }
 
@@ -411,6 +412,7 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         assert_le(-Math64x61.BOUND, x);
     }
     let amount_felt = Math64x61.toFelt(x_);
+    assert_nn(amount_felt);
 
     return amount_felt;
 }

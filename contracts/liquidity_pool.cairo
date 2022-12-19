@@ -1,7 +1,7 @@
 %lang starknet
 
 // Part of the main contract to not add complexity by having to transfer tokens between our own contracts
-from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toInt_balance, fromInt_balance
+from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toInt_balance, fromInt_balance, split_option_locked_capital
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 
