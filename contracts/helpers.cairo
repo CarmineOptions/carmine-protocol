@@ -66,7 +66,7 @@ func _get_premia_before_fees{
 }(
     option: Option,
     position_size: felt,
-    option_type: felt,
+    option_type: felt, //FIXME: This argument is redundant
     current_volatility: felt,
     current_pool_balance: felt
 ) -> (total_premia_before_fees: felt){
@@ -279,7 +279,7 @@ func _get_premia_with_fees{
 }(
     option: Option,
     position_size: felt,
-    option_type: felt,
+    option_type: felt, // FIXME: Option struct already contains option_type
     current_volatility: felt,
     current_pool_balance: felt
 ) -> (position_value: felt){
