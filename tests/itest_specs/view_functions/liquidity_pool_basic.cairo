@@ -667,7 +667,8 @@ namespace LPBasicViewFunctions {
             amm_addr,
             option_long_call,
             lpt_call_addr,
-            one
+            one,
+            0
         );
 
         let (
@@ -677,7 +678,8 @@ namespace LPBasicViewFunctions {
             amm_addr,
             option_short_call,
             lpt_call_addr,
-            one
+            one,
+            0
         );
     
         let (
@@ -687,7 +689,8 @@ namespace LPBasicViewFunctions {
             amm_addr,
             option_long_put,
             lpt_put_addr,
-            one
+            one,
+            0
         );
 
         let (
@@ -697,7 +700,8 @@ namespace LPBasicViewFunctions {
             amm_addr,
             option_short_put,
             lpt_put_addr,
-            one
+            one,
+            0
         );
 
         // Results copied from long/short_put/call round trips (same option size, maturity, strike etc)
