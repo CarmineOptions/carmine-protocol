@@ -1,6 +1,7 @@
 %lang starknet
 
 from contracts.helpers import _get_premia_before_fees
+from contracts.types import OptionWithUsersPosition
 
 // This file contains view functions that are to be called only from the frontend (and by traders).
 // In no case should code in any other file call any function here. (Except for tests of course.)
@@ -226,7 +227,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     // Create OptionWithUsersPosition and append to array
     let option_with_users_position = OptionWithUsersPosition(
         option=option,
-        position_size=position_size,
+        position_size=position_size_uint256,
         value_of_position=premia_with_fees_x_position,
     );
 

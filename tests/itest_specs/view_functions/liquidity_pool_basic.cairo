@@ -552,7 +552,7 @@ namespace LPBasicViewFunctions {
         );
 
         // *8 because the OptionWithUsersPosition struct has 8 elements
-        assert options_with_position_len = 2*8;
+        assert options_with_position_len = 2*9;
 
         // Options
         let option_side_0 = get_array_element(0, options_with_position_len, options_with_position);

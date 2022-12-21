@@ -35,7 +35,7 @@ struct OptionWithPremia {
 
 struct OptionWithUsersPosition {
     option: Option,
-    position_size: Math64x61_,
+    position_size: Uint256,
     value_of_position: Math64x61_,
 }
 
