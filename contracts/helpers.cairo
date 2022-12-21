@@ -26,13 +26,10 @@ from contracts.types import Option, Math64x61_, Address, OptionType, Int, Option
 
 
 from starkware.cairo.common.bool import TRUE
-from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem, assert_le_felt
+from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le, is_nn
-from starkware.cairo.common.uint256 import (
-    Uint256,
-    assert_le,
-)
+from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bitwise import bitwise_and
 from starkware.starknet.common.syscalls import get_block_timestamp
 
@@ -353,8 +350,8 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         let x_ = x * dec_;
 
         with_attr error_message("x_ out of bounds in toUint256_balance"){
-            assert_le(x, Math64x61.BOUND);
-            assert_le(0, x);
+            assert_le(x_, Math64x61.BOUND);
+            assert_nn(x_);
         }
 
         let amount_felt = Math64x61.toFelt(x_);
@@ -371,9 +368,6 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 ) -> Math64x61_ {
     alloc_locals;
 
-    let x_low = x.low;
-    assert x.high = 0;
-
     with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
         let (decimal) = get_decimal(currency_address);
@@ -389,7 +383,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // no need to get sign of y, sin dec_ is positiove
         // tempvar product = x * FRACT_PART;
         // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
-        let (x__, _) = signed_div_rem(x_, dec_, Math64x61.BOUND);
+        let (x__, _) = unsigned_div_rem(x_, dec_);
         Math64x61.assert64x61(x__);
     }
     return x__;
@@ -407,8 +401,8 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     let x_ = x * dec_;
 
     with_attr error_message("x_ out of bounds in toUint256_balance"){
-        assert_le(x, Math64x61.BOUND);
-        assert_le(-Math64x61.BOUND, x);
+        assert_le(x_, Math64x61.BOUND);
+        assert_nn(x_);
     }
     let amount_felt = Math64x61.toFelt(x_);
     assert_nn(amount_felt);
@@ -420,13 +414,16 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     x: Int,
     currency_address: Address
 ) -> Math64x61_ {
+    assert_nn(x);
     let (decimal) = get_decimal(currency_address);
     let (dec_) = pow10(decimal);
 
-
-    let x_ = Math64x61.fromFelt(x);
-    with_attr error_message("fromInt_balance failed signed_div_rem( {dec_} {x__} ") {
-        let (x__, _) = signed_div_rem(x_, dec_, Math64x61.BOUND);
+    with_attr error_message("unable to convert {x} to math64x61 number"){
+        let x_ = Math64x61.fromFelt(x);
+        with_attr error_message("fromInt_balance failed unsigned_div_rem( {dec_} {x__} )") {
+            let (x__, _) = unsigned_div_rem(x_, dec_);
+        }
+        Math64x61.assert64x61(x__);
     }
     return x__;
 }
