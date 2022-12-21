@@ -223,6 +223,13 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             );  // Transaction will fail if there is not enough fund on users account
         }
 
+        TradeOpen.emit(
+            caller=user_address,
+            option_token=option_token_address,
+            capital_transfered=premia_including_fees_uint256,
+            option_tokens_minted=option_size_uint256,
+        );
+
         // Pool is locking in capital inly if there is no previous position to cover the user's long
         //      -> if pool does not have sufficient long to "pass down to user", it has to lock
         //           capital... option position has to be updated too!!!
@@ -347,6 +354,13 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
                 amount=to_be_paid_by_user,
             );
         }
+
+        TradeOpen.emit(
+            caller=user_address,
+            option_token=option_token_address,
+            capital_transfered=to_be_paid_by_user_uint256,
+            option_tokens_minted=option_size_uint256,
+        );
 
         // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
         // since only locked_capital storage_var exists
@@ -512,6 +526,13 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         amount=premia_including_fees_uint256,
     );
 
+    TradeClose.emit(
+        caller=user_address,
+        option_token=option_token_address,
+        capital_transfered=premia_including_fees_uint256,
+        option_tokens_burned=option_size_uint256,
+    );
+
     // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
     // This decrease is happening because burning long is similar to minting short,
     // hence the payment.
@@ -619,6 +640,13 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         contract_address=currency_address,
         recipient=user_address,
         amount=total_user_payment,
+    );
+
+    TradeClose.emit(
+        caller=user_address,
+        option_token=option_token_address,
+        capital_transfered=total_user_payment_uint256,
+        option_tokens_burned=option_size_uint256,
     );
 
     // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
@@ -835,8 +863,42 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     }
 
     // Burn the user tokens
-    with_attr error_message("expire_option_token failed when burning option token") {
-        IOptionToken.burn(option_token_address, user_address, option_size_uint256);
+    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
+
+    if (option_side == TRADE_SIDE_LONG) {
+        // User is long
+        // When user was long there is a possibility, that the pool is short,
+        // which means that pool has locked in some capital.
+        // We assume pool is able to "expire" it's functions pretty quickly so the updates
+        // of storage_vars has already happened.
+        IERC20.transfer(
+            contract_address=currency_address,
+            recipient=user_address,
+            amount=long_value_uint256,
+        );
+
+        TradeSettle.emit(
+            caller=user_address,
+            option_token=option_token_address,
+            capital_transfered=long_value_uint256,
+            option_tokens_burned=option_size_uint256,
+        );
+    } else {
+        // User is short
+        // User locked in capital (no locking happened from pool - no locked capital and similar
+        // storage vars were updated).
+        IERC20.transfer(
+            contract_address=currency_address,
+            recipient=user_address,
+            amount=short_value_uint256,
+        );
+
+        TradeSettle.emit(
+            caller=user_address,
+            option_token=option_token_address,
+            capital_transfered=short_value_uint256,
+            option_tokens_burned=option_size_uint256,
+        );
     }
 
     with_attr error_message("expire_option_token failed when transfering funds") {
