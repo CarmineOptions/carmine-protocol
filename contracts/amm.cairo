@@ -101,11 +101,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
             base_token_address
         );
 
-        let option_size_m64x61_ = Math64x61.fromFelt(option_size);
-        let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
-        let (base_div) = pow10(base_decimals);
-        let base_div_m64x61 = Math64x61.fromFelt(base_div);
-        let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+        let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
         // 1) Get current volatility
         let (current_volatility) = get_pool_volatility(
@@ -228,11 +224,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     );
     assert option_size_in_pool_currency.high = 0;
 
-    let option_size_m64x61_ = Math64x61.fromFelt(option_size);
-    let (base_decimals: felt) = IERC20.decimals(contract_address=base_token_address);
-    let (base_div) = pow10(base_decimals);
-    let base_div_m64x61 = Math64x61.fromFelt(base_div);
-    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(

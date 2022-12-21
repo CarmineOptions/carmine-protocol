@@ -97,7 +97,7 @@ func _get_premia_before_fees{
     // 2) Calculate new volatility, calculate trade volatility
     with_attr error_message("helpers._get_premia_before_fees getting volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, option.strike_price, current_pool_balance
+            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
         );
         local tradevol = trade_volatility;
     }
@@ -202,7 +202,6 @@ func _get_value_of_position{
 
     alloc_locals;
 
-    // Marek
     // If the value of expired has to be calculated use the below
     let (current_block_time) = get_block_timestamp();
     let maturity = option.maturity;
@@ -355,7 +354,7 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
         with_attr error_message("x_ out of bounds in toUint256_balance"){
             assert_le(x, Math64x61.BOUND);
-            assert_le(-Math64x61.BOUND, x);
+            assert_le(0, x);
         }
 
         let amount_felt = Math64x61.toFelt(x_);

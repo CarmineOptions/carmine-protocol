@@ -40,16 +40,18 @@ namespace LPAggregateViewFunctions {
         assert poolinfo[0].pool.quote_token_address = myusd_addr;
         assert poolinfo[0].pool.base_token_address = myeth_addr;
         assert poolinfo[0].lptoken_address = lpt_call_addr;
-        assert poolinfo[0].staked_capital = Uint256(low=5000000000000000000, high=0);
-        assert_uint256_eq(poolinfo[0].unlocked_capital, Uint256(5000000000000000000, 0));
+        let five_eth = Uint256(low=5000000000000000000, high=0);
+        assert_uint256_eq(poolinfo[0].staked_capital, five_eth);
+        assert_uint256_eq(poolinfo[0].unlocked_capital, five_eth);
         assert poolinfo[0].value_of_pool_position = 0;
 
         assert poolinfo[1].pool.option_type = 1;
         assert poolinfo[1].pool.quote_token_address = myusd_addr;
         assert poolinfo[1].pool.base_token_address = myeth_addr;
         assert poolinfo[1].lptoken_address = lpt_put_addr;
-        assert poolinfo[1].staked_capital = Uint256(low=5000000000, high=0);
-        assert_uint256_eq(poolinfo[1].unlocked_capital, Uint256(5000000000, 0));
+        let fifty_usdc = Uint256(low=5000000000, high=0);
+        assert_uint256_eq(poolinfo[1].staked_capital, fifty_usdc);
+        assert_uint256_eq(poolinfo[1].unlocked_capital, fifty_usdc);
         assert poolinfo[1].value_of_pool_position = 0;
 
         return ();
@@ -86,8 +88,9 @@ namespace LPAggregateViewFunctions {
         assert user_pools_info[0].pool_info.pool.quote_token_address = myusd_addr;
         assert user_pools_info[0].pool_info.pool.base_token_address = myeth_addr;
         assert user_pools_info[0].pool_info.lptoken_address = lpt_call_addr;
-        assert user_pools_info[0].pool_info.staked_capital = Uint256(low=5000000000000000000, high=0);
-        assert_uint256_eq(user_pools_info[0].pool_info.unlocked_capital, Uint256(5000000000000000000, 0));
+        let five_eth = Uint256(low=5000000000000000000, high=0);
+        assert_uint256_eq(user_pools_info[0].pool_info.staked_capital, five_eth);
+        assert_uint256_eq(user_pools_info[0].pool_info.unlocked_capital, five_eth);
         assert user_pools_info[0].pool_info.value_of_pool_position = 0;
         assert user_pools_info[0].value_of_user_stake.low = 5000000000000000000;
         assert user_pools_info[0].value_of_user_stake.high = 0;
@@ -98,8 +101,9 @@ namespace LPAggregateViewFunctions {
         assert user_pools_info[1].pool_info.pool.quote_token_address = myusd_addr;
         assert user_pools_info[1].pool_info.pool.base_token_address = myeth_addr;
         assert user_pools_info[1].pool_info.lptoken_address = lpt_put_addr;
-        assert user_pools_info[1].pool_info.staked_capital = Uint256(low=5000000000, high=0);
-        assert_uint256_eq(user_pools_info[1].pool_info.unlocked_capital, Uint256(5000000000, 0));
+        let fifty_usdc = Uint256(low=5000000000, high=0);
+        assert_uint256_eq(user_pools_info[1].pool_info.staked_capital, fifty_usdc);
+        assert_uint256_eq(user_pools_info[1].pool_info.unlocked_capital, fifty_usdc);
         assert user_pools_info[1].pool_info.value_of_pool_position = 0;
         assert user_pools_info[1].value_of_user_stake.low = 5000000000;
         assert user_pools_info[1].value_of_user_stake.high = 0;
