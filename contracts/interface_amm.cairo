@@ -10,7 +10,7 @@ namespace IAMM {
         strike_price : Math64x61_,
         maturity : Int,
         option_side : OptionSide,
-        option_size : Math64x61_,
+        option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
     ) -> (premia : Math64x61_) {
@@ -22,7 +22,7 @@ namespace IAMM {
         strike_price : Math64x61_,
         maturity : Int,
         option_side : OptionSide,
-        option_size : Math64x61_,
+        option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
     ) -> (premia : Math64x61_) {
@@ -34,7 +34,7 @@ namespace IAMM {
         strike_price : Math64x61_,
         maturity : Int,
         option_side : OptionSide,
-        option_size : Math64x61_,
+        option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
     ) {
