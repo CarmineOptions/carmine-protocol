@@ -300,6 +300,11 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 ) {
     alloc_locals;
 
+    with_attr error_message("Trading is currently halted."){
+        let halt_status = get_trading_halt();
+        assert halt_status = 0;
+    }
+
     with_attr error_message("Given option_type is not available") {
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }

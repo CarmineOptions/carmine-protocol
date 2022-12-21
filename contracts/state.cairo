@@ -94,6 +94,11 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 }
 
 
+@storage_var
+func trading_halted() -> (status: Bool) {
+}
+
+
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // storage_var handlers and helpers
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -349,6 +354,28 @@ func get_available_lptoken_addresses_usable_index{
     let (usable_index) = get_available_lptoken_addresses_usable_index(starting_index + 1);
 
     return (usable_index = usable_index);
+}
+
+
+func get_trading_halt{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}() -> Bool {
+    let (res) = trading_halted.read();
+    return res;
+}
+
+
+func set_trading_halt{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    new_status: Bool
+){
+    // FIXME check for reentrancy
+    assert_nn(new_status);
+    assert_le(new_status, 1);
+    Proxy.assert_only_admin();
+    trading_halted.write(new_status);
+    return ();
 }
 
 
