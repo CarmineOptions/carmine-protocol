@@ -5,13 +5,23 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn
 from starkware.starknet.common.syscalls import get_block_timestamp
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_mul,
+    uint256_unsigned_div_rem,
+    assert_uint256_eq,
+    assert_uint256_lt,
+)
+
 from math64x61 import Math64x61
+from lib.pow import pow10
 
 from contracts.constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
-    TRADE_SIDE_SHORT
+    TRADE_SIDE_SHORT,
+    get_decimal,
 )
 from contracts.types import (Math64x61_, OptionType, OptionSide, Int, Address)
 
@@ -60,6 +70,42 @@ func convert_amount_to_option_currency_from_base{
 }
 
 
+func convert_amount_to_option_currency_from_base_uint256{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    amount: Uint256,
+    option_type: OptionType,
+    strike_price: Uint256,
+    base_token_address: Address,
+) -> (converted_amount: Uint256) {
+    // Amount is in base tokens (in ETH in case of ETH/USDC)
+    // This function puts amount into the currency required by given option_type
+    //  - for call into base token (ETH in case of ETH/USDC)
+    //  - for put into quote token (USDC in case of ETH/USDC)
+
+    alloc_locals;
+
+    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+
+    if (option_type == OPTION_PUT) {
+        let (base_token_decimals) = get_decimal(base_token_address);
+        let (dec) = pow10(base_token_decimals);
+        let dec_ = Uint256(dec, 0);
+        let (adjusted_amount_low: Uint256, adjusted_amount_high: Uint256) = uint256_mul(amount, strike_price);
+        assert adjusted_amount_high.low = 0;
+        assert adjusted_amount_high.high = 0;
+        let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
+        let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0); // one cent in case of ETH/USDC
+        local remlow = rem.low;
+        with_attr error_message("implied rounding higher than max allowed, rem {remlow}"){
+            assert_uint256_lt(rem, ACCEPTED_AMT_DISCARDED);
+        }
+        return (converted_amount=quot);
+    }
+    return (converted_amount=amount);
+}
+
+
 func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) -> (
     time_till_maturity: Math64x61_
 ) {
@@ -73,7 +119,8 @@ func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) 
     let (currtime) = get_block_timestamp();  // is number of seconds... unix timestamp
     let currtime_math = Math64x61.fromFelt(currtime);
     let maturity_math = Math64x61.fromFelt(maturity);
-    let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
+    //let secs_in_year = Math64x61.fromFelt(60 * 60 * 24 * 365);
+    const secs_in_year = 72717065138563052470272000;
 
     let secs_left = Math64x61.sub(maturity_math, currtime_math);
     assert_nn(secs_left);
@@ -119,7 +166,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     option_type: OptionType,
     side: OptionSide,
     strike_price: Math64x61_,
-    current_pool_balance: felt,
+    current_pool_balance: Math64x61_,
 ) -> (new_volatility: Math64x61_, trade_volatility: Math64x61_) {
     // Calculates two volatilities, one for trade that is happening
     // and the other to update the volatility param (storage_var).
@@ -140,7 +187,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
-    let two = Math64x61.fromFelt(2);
+    const two = 4611686018427387904;
     let trade_volatility = Math64x61.div(volsum, two);
 
     return (new_volatility=new_volatility, trade_volatility=trade_volatility);

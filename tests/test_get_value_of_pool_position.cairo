@@ -70,7 +70,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     
     // Buy single long call and put option
     let strike_price = Math64x61.fromFelt(1500);
-    let one = Math64x61.fromFelt(1);
+    let one = 1 * 10**18;
 
     let (_) = IAMM.trade_open(
         contract_address=amm_addr,
@@ -108,7 +108,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // 1500 - premia - fee -> the user is long, pool is short
     // 1500 - 106.6060193865178 - 106.6060193865178 * 0.03
-    assert pools_pos_val_put_2 = 3205573266941764271305;
+    assert pools_pos_val_put_2 = 3205573266942251031383;
 
     // Close both positions
     let (_) = IAMM.trade_close(
@@ -182,7 +182,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Premia - fees -> User is short, pool is long
     // 108.79470021290733 - 108.79470021290733 * 0.03
-    assert pools_pos_val_put_4 = 243337593957669002910;
+    assert pools_pos_val_put_4 = 243337593954798513823;
 
     // Close both positions
     let (_) = IAMM.trade_close(
@@ -220,8 +220,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     assert pools_pos_val_put_5 = 0;
 
     // Open put/call long/short positions(long=1, short=0.5)
-    let two = Math64x61.fromFelt(2);
-    let half = Math64x61.div(one, two);
+    let half = one / 2;
 
     // Calls
     let (_) = IAMM.trade_open(
@@ -283,10 +282,10 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     ); 
     // Pool is net short -> locked_capital - premia - fees
     // 0.5*1500 - 53.17407585832186 - 53.17407585832186 * 0.03
-    assert pools_pos_val_put_6 = 1603092853688281053408;
+    assert pools_pos_val_put_6 = 1603092853689235878240;
 
     // Close half of all the positions
-    let quarter = Math64x61.div(half, two);
+    let quarter = half / 2;
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
         option_type=0,
@@ -343,7 +342,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Locked capital - premia - fee -> User is long, pool is short
     // 0.25 * 1500 - 26.790869645069446 - 26.790869645069446 * 0.03
-    assert pools_pos_val_put_6 = 801062322788841330820;
+    assert pools_pos_val_put_6 = 801062322789410988336;
 
     // Close rest of the positions
     let (_) = IAMM.trade_close(
@@ -400,8 +399,8 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     assert pools_pos_val_put_7 = 0;
 
     // Buy bigger chunks of pools balances
-    let four = Math64x61.fromFelt(4);
-    let three = Math64x61.fromFelt(3);
+    let four = one * 4;
+    let three = one * 3;
 
     let (_) = IAMM.trade_open(
         contract_address=amm_addr,
@@ -440,7 +439,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 3 * 1500 - 846.1417797601932 - 846.1417797601932 * 0.03
-    assert pools_pos_val_put_8 = 8361863997390646214035;
+    assert pools_pos_val_put_8 = 8361864002013207397714;
    
     %{
         stop_warp_1()
@@ -467,7 +466,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 3 * 1500 - 440.1255978239911 - 440.1255978239911 * 0.03
-    assert pools_pos_val_put_9 = 9327329881260327729038;
+    assert pools_pos_val_put_9 = 9327329884763632257101;
 
     // Open short positions
     let (_) = IAMM.trade_open(
@@ -507,7 +506,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // (3 - 0.5) * 1500 - 241.56835326689273 - 241.56835326689273 * 0.03
-    assert pools_pos_val_put_10 = 8071083459950106180495;
+    assert pools_pos_val_put_10 = 8071083462034334682134;
 
     %{
         stop_warp_2()

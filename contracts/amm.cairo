@@ -6,8 +6,10 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_le
 from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.uint256 import assert_uint256_le
 from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
+from lib.pow import pow10
 
 from contracts.constants import (
     VOLATILITY_LOWER_BOUND,
@@ -35,8 +37,10 @@ from contracts.option_pricing_helpers import (
     get_time_till_maturity,
     add_premia_fees,
     get_new_volatility,
-    convert_amount_to_option_currency_from_base
+    convert_amount_to_option_currency_from_base,
+    convert_amount_to_option_currency_from_base_uint256,
 )
+from helpers import intToUint256, toUint256_balance, get_underlying_from_option_data
 
 
 
@@ -44,25 +48,10 @@ from contracts.option_pricing_helpers import (
 // Pool information handlers
 // ############################
 
-
-@view
-func get_pool_available_balance{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address,
-) -> (pool_balance: Math64x61_) {
-    // Returns total capital in the pool minus the locked capital
-    // (ie capital available to locking).
-    let (pool_balance_) = get_unlocked_capital(
-        lptoken_address=lptoken_address
-    );
-
-    return (pool_balance_,);
-}
-
-
 @view
 func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
-) -> (option_availability: felt) {
+) -> (option_availability: Bool) {
     let (option_address) = get_option_token_address(
         lptoken_address=lptoken_address,
         option_side=option_side,
@@ -88,22 +77,31 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     strike_price: Math64x61_,
     maturity: Int,
     side: OptionSide,
-    option_size: Math64x61_,
+    option_size: Int,
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
 ) -> (premia: Math64x61_) {
-    // options_size is always denominated in base tokens (ETH in case of ETH/USDC)
+    // options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
+    // Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+    // Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
 
     alloc_locals;
 
     with_attr error_message("do_trade premia calculation and updates failed") {
         // 0) Helper values
-        let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-            option_size,
+        with_attr error_message("conversions failed in do_trade"){
+            let option_size_uint256 = intToUint256(option_size);
+            let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
+        }
+        let (option_size_in_pool_currency: Uint256) = convert_amount_to_option_currency_from_base_uint256(
+            option_size_uint256,
             option_type,
-            strike_price
+            strike_price_uint256,
+            base_token_address
         );
+
+        let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
         // 1) Get current volatility
         let (current_volatility) = get_pool_volatility(
@@ -119,13 +117,17 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 3) Calculate new volatility, calculate trade volatility
         
-        let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-        assert_nn_le(1, current_pool_balance);
-        with_attr error_message("not enough assets in pool to fulfill requested trade") {
-            assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+        let (current_pool_balance) = get_unlocked_capital(
+            lptoken_address=lptoken_address
+        );
+        with_attr error_message("Not enough assets in pool to fulfill requested trade") {
+            assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
         }
+
+        let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
+        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
         let (new_volatility, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
+            current_volatility, option_size_m64x61, option_type, side, strike_price, current_pool_balance_m64x61
         );
 
         // 4) Update volatility
@@ -160,7 +162,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
                 call_premia, put_premia, option_type, underlying_price
             );
             // premia adjusted by size (multiplied by size)
-            let total_premia_before_fees = Math64x61.mul(premia, option_size);
+            let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
         }
 
         // 8) Get fees
@@ -170,6 +172,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         let (total_fees) = get_fees(total_premia_before_fees);
         let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
     }
+
+    assert option_size_in_pool_currency.high = 0;
 
     // 9) Make the trade
     mint_option_token(
@@ -193,11 +197,11 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     strike_price : Math64x61_,
     maturity : Int,
     side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int, // in base token
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address
-) -> (premia : felt) {
+) -> (premia : Math64x61_) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
     // "user does not have opinion on the market state" - this may change down the line
@@ -210,11 +214,17 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     let (opposite_side) = get_opposite_side(side);
 
-    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base(
-        option_size,
+    let option_size_uint256 = intToUint256(option_size);
+    let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
+    let (option_size_in_pool_currency) = convert_amount_to_option_currency_from_base_uint256(
+        option_size_uint256,
         option_type,
-        strike_price
+        strike_price_uint256,
+        base_token_address
     );
+    assert option_size_in_pool_currency.high = 0;
+
+    let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
     // 1) Get current volatility
     let (current_volatility) = get_pool_volatility(
@@ -227,12 +237,17 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatility
-    let (current_pool_balance) = get_pool_available_balance(lptoken_address);
-    assert_nn_le(1, current_pool_balance);
-    assert_nn_le(option_size_in_pool_currency, current_pool_balance);
+    let (current_pool_balance) = get_unlocked_capital(
+        lptoken_address=lptoken_address
+    );
+    with_attr error_message("Not enough assets in pool to fulfill requested trade") {
+        assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
+    }
 
+    let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
+    let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size, option_type, opposite_side, strike_price, current_pool_balance
+        current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, current_pool_balance_m64x61
     );
 
     // 4) Update volatility
@@ -262,7 +277,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         call_premia, put_premia, option_type, underlying_price
     );
     // premia adjusted by size (multiplied by size)
-    let total_premia_before_fees = Math64x61.mul(premia, option_size);
+    let total_premia_before_fees = Math64x61.mul(premia, option_size_m64x61);
 
     // 8) Get fees
     // fees are already in the currency same as premia
@@ -272,17 +287,19 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (total_premia) = add_premia_fees(opposite_side, total_premia_before_fees, total_fees);
 
     // 9) Make the trade
-    burn_option_token(
-        lptoken_address=lptoken_address,
-        option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency,
-        option_side=side,
-        option_type=option_type,
-        maturity=maturity,
-        strike_price=strike_price,
-        premia_including_fees=total_premia,
-        underlying_price=underlying_price
-    );
+    with_attr error_message("Unable to burn option token in close_position"){
+        burn_option_token(
+            lptoken_address=lptoken_address,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
+            option_side=side,
+            option_type=option_type,
+            maturity=maturity,
+            strike_price=strike_price,
+            premia_including_fees=total_premia,
+            underlying_price=underlying_price
+        );
+    }
 
     return (premia=premia);
 }
@@ -292,7 +309,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address,
@@ -367,7 +384,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int, // in base token currency
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
@@ -418,7 +435,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
@@ -459,16 +476,18 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     with_attr error_message("Trading of given maturity has been stopped before expiration") {
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
-    let (premia) = close_position(
-        option_type,
-        strike_price,
-        maturity,
-        option_side,
-        option_size,
-        quote_token_address,
-        base_token_address,
-        lptoken_address
-    );
+    with_attr error_message("unable to close_position in trade_close"){
+        let (premia) = close_position(
+            option_type,
+            strike_price,
+            maturity,
+            option_side,
+            option_size,
+            quote_token_address,
+            base_token_address,
+            lptoken_address
+        );
+    }
     return (premia=premia);
 
 }
@@ -480,7 +499,7 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
     strike_price : Math64x61_,
     maturity : Int,
     option_side : OptionSide,
-    option_size : Math64x61_,
+    option_size : Int,
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
@@ -492,25 +511,29 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
 
     alloc_locals;
 
-    // lptoken_address serves as an identifier of selected liquidity pool
-    let (lptoken_address) = get_lptoken_address_for_given_option(
-        quote_token_address,
-        base_token_address,
-        option_type
-    );
+    with_attr error_message("trade_settle failed when calling get_lptoken_address_for_given_option") {
+        // lptoken_address serves as an identifier of selected liquidity pool
+        let (lptoken_address) = get_lptoken_address_for_given_option(
+            quote_token_address,
+            base_token_address,
+            option_type
+        );
+    }
 
-    // Validate the validity of the input.
-    validate_trade_input(
-        option_type=option_type,
-        strike_price=strike_price,
-        maturity=maturity,
-        option_side=option_side,
-        option_size=option_size,
-        quote_token_address=quote_token_address,
-        base_token_address=base_token_address,
-        lptoken_address=lptoken_address,
-        open_position=FALSE,
-    );
+    with_attr error_message("trade_settle failed when validating trade input") {
+        // Validate the validity of the input.
+        validate_trade_input(
+            option_type=option_type,
+            strike_price=strike_price,
+            maturity=maturity,
+            option_side=option_side,
+            option_size=option_size,
+            quote_token_address=quote_token_address,
+            base_token_address=base_token_address,
+            lptoken_address=lptoken_address,
+            open_position=FALSE,
+        );
+    }
 
     // Position can be expired/settled only if the maturity has passed.
     let (current_block_time) = get_block_timestamp();
@@ -518,18 +541,21 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
         assert_le(maturity, current_block_time);
     }
 
-    let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    with_attr error_message("trade_settle failed when fetching terminal price") {
+        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    }
 
-    expire_option_token(
-        lptoken_address=lptoken_address,
-        option_type=option_type,
-        option_side=option_side,
-        strike_price=strike_price,
-        terminal_price=terminal_price,
-        option_size=option_size,
-        maturity=maturity,
-    );
-
+    with_attr error_message("trade_settle failed when expirying option token") {
+        expire_option_token(
+            lptoken_address=lptoken_address,
+            option_type=option_type,
+            option_side=option_side,
+            strike_price=strike_price,
+            terminal_price=terminal_price,
+            option_size=option_size,
+            maturity=maturity,
+        );
+    }
     return ();
 }

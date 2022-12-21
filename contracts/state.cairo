@@ -65,8 +65,22 @@ func option_token_address(
 }
 
 
-// Mapping from option params to pool's position
-// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) {
+    alloc_locals;
+    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
+
+    let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
+    let newval: Int = toInt_balance(currval, lpool_underlying_token);
+
+    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
+    return ();
+}
+
+
+// DEPRECATED
 @storage_var
 func option_position(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -74,11 +88,38 @@ func option_position(
 }
 
 
+// Mapping from option params to pool's position
+// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+@storage_var
+func option_position_(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int
+) -> (res: Int) {
+}
+
+//migration only, to convert m64x61 lpool_balance to Uint256
+@external
+func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    alloc_locals;
+
+    let (currval: Math64x61_) = lpool_balance.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
+    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
+    set_lpool_balance(lptoken_address, newval);
+    return ();
+}
+
+
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
+// DEPRECATED
 @storage_var
 func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
+// we must rename the storage var during the migration, because otherwise Starknet would be angry that we are writing a struct
+@storage_var
+func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
 }
 
 
@@ -89,8 +130,25 @@ func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
     // - start pool with no position
     // - user sells option (user locks capital), pool pays premia and does not lock capital
     // - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unlocked capital"
+// DEPRECATED
 @storage_var
 func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
+@storage_var
+func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
+}
+
+//migration only, to convert m64x61 lpool_balance to Uint256
+@external
+func migrate_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
+    alloc_locals;
+
+    let (currval: Math64x61_) = pool_locked_capital.read(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
+    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
+    set_pool_locked_capital(lptoken_address, newval);
+    return ();
 }
 
 
@@ -119,18 +177,36 @@ func set_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 @view
 func get_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (res: Math64x61_) {
-    let (balance) = lpool_balance.read(lptoken_address);
+) -> (res: Uint256) {
+    let (balance) = lpool_balance_.read(lptoken_address);
     return (balance,);
+}
+
+
+func set_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, balance: Uint256
+) -> () {
+    assert_uint256_le(Uint256(0, 0), balance);
+    lpool_balance_.write(lptoken_address, balance);
+    return ();
 }
 
 
 @view
 func get_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (res: Math64x61_) {
-    let (locked_capital) = pool_locked_capital.read(lptoken_address);
+) -> (res: Uint256) {
+    let (locked_capital) = pool_locked_capital_.read(lptoken_address);
     return (locked_capital,);
+}
+
+
+func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, balance: Uint256
+) -> () {
+    assert_uint256_le(Uint256(0, 0), balance);
+    pool_locked_capital_.write(lptoken_address, balance);
+    return ();
 }
 
 
@@ -143,17 +219,6 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     alloc_locals;
     let (option) = available_options.read(lptoken_address, order_i);
     return (option,);
-}
-
-
-@view
-func get_pools_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (
-    res: Math64x61_
-) {
-    let (position) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    return (position,);
 }
 
 
@@ -275,20 +340,34 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
+func set_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_, position: Int
+) {
+    with_attr error_message("Unable to set option position {lptoken_address} {maturity} {strike_price} {position}"){
+        assert_nn_le(0, strike_price);
+        assert_nn_le(0, position);
+        option_position_.write(lptoken_address, option_side, maturity, strike_price, position);
+    }
+    return ();
+}
+
+ 
 @view
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
-) -> (unlocked_capital: Math64x61_) {
+) -> (unlocked_capital: Uint256) {
+    alloc_locals;
     // Returns capital that is unlocked for immediate extraction/use.
     // This is for example ETH in case of ETH/USD CALL options.
 
     // Capital locked by the pool
-    let (locked_capital) = pool_locked_capital.read(lptoken_address);
+    let (locked_capital: Uint256) = get_pool_locked_capital(lptoken_address);
 
     // Get capital that is sum of unlocked (available) and locked capital.
-    let (contract_balance) = lpool_balance.read(lptoken_address);
+    let (contract_balance: Uint256) = get_lpool_balance(lptoken_address);
 
-    let unlocked_capital = Math64x61.sub(contract_balance, locked_capital);
+    let (unlocked_capital: Uint256) = uint256_sub(contract_balance, locked_capital);
+
     return (unlocked_capital = unlocked_capital);
 }
 
@@ -301,6 +380,16 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         lptoken_address, option_side, maturity, strike_price
     );
     return (option_token_address=option_token_addr);
+}
+
+@view
+func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) -> (option_position: Int) {
+    let (opt_pos) = option_position_.read(
+        lptoken_address, option_side, maturity, strike_price
+    );
+    return (option_position=opt_pos);
 }
 
 
@@ -425,9 +514,8 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // inefficiency and wastefulness of this functions doesn't matter, since it will be axed before going to mainnet.
 // used only in removal of an option, which is something that will never happen
 func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: felt,
+    lptoken_address: Address,
     index: felt
-
 ) {
 
     // Write zero option in provided index
@@ -439,7 +527,7 @@ func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBu
 }
 
 func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: felt,
+    lptoken_address: Address,
     index: felt
 ) {
     alloc_locals;

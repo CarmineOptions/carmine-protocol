@@ -21,18 +21,20 @@ from contracts.option_pricing_helpers import (
     add_premia_fees,
     get_new_volatility
 )
-from contracts.types import Option, Math64x61_, Address, OptionType, OptionSide
+
+from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide
+
 
 from starkware.cairo.common.bool import TRUE
-from starkware.cairo.common.math import assert_nn, assert_not_zero, signed_div_rem
+from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math_cmp import is_le
-from starkware.cairo.common.uint256 import (
-    Uint256,
-    assert_le
-)
+from starkware.cairo.common.math_cmp import is_le, is_nn
+from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.bitwise import bitwise_and
 from starkware.starknet.common.syscalls import get_block_timestamp
 
+
+from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
 from lib.pow import pow10
 
@@ -65,11 +67,11 @@ func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt, //FIXME: This argument is redundant
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (total_premia_before_fees: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_,
+) -> (total_premia_before_fees: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
@@ -79,6 +81,7 @@ func _get_premia_before_fees{
     let strike_price = option.strike_price;
     let quote_token_address = option.quote_token_address;
     let base_token_address = option.base_token_address;
+    assert option_type = option.option_type; // TODO remove once tests pass even with this
 
     let option_size = position_size;
 
@@ -93,11 +96,13 @@ func _get_premia_before_fees{
         let (_, trade_volatility) = get_new_volatility(
             current_volatility, option_size, option_type, side, strike_price, current_pool_balance
         );
+        local tradevol = trade_volatility;
     }
 
     // 3) Get time till maturity
     with_attr error_message("helpers._get_premia_before_fees getting time_till_maturity FAILED"){
-        let (time_till_maturity) = get_time_till_maturity(maturity);
+        let (ttm) = get_time_till_maturity(maturity);
+        local time_till_maturity = ttm;
     }
 
     // 4) risk free rate
@@ -108,13 +113,15 @@ func _get_premia_before_fees{
         let HUNDRED = Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-        let (call_premia, put_premia) = black_scholes(
-            sigma=sigma,
-            time_till_maturity_annualized=time_till_maturity,
-            strike_price=strike_price,
-            underlying_price=underlying_price,
-            risk_free_rate_annualized=risk_free_rate_annualized,
-        );
+        with_attr error_message("black scholes time until maturity{time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility} current pool balance{current_pool_balance}"){
+            let (call_premia, put_premia) = black_scholes(
+                sigma=sigma,
+                time_till_maturity_annualized=time_till_maturity,
+                strike_price=strike_price,
+                underlying_price=underlying_price,
+                risk_free_rate_annualized=risk_free_rate_annualized,
+            );
+        }
     }
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED"){
         assert_nn(call_premia);
@@ -183,16 +190,15 @@ func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt,
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (position_value: felt){
+    position_size: Int,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
 
-    // Marek
     // If the value of expired has to be calculated use the below
     let (current_block_time) = get_block_timestamp();
     let maturity = option.maturity;
@@ -220,11 +226,15 @@ func _get_value_of_position{
     let side = option.option_side;
     let strike_price = option.strike_price;
 
-    let option_size = position_size;
+    let option_size_m64x61_ = Math64x61.fromFelt(position_size);
+    let (base_decimals: felt) = IERC20.decimals(contract_address=option.base_token_address);
+    let (base_div) = pow10(base_decimals);
+    let base_div_m64x61 = Math64x61.fromFelt(base_div);
+    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
 
     let (total_premia_before_fees) = _get_premia_before_fees(
         option=option,
-        position_size=position_size,
+        position_size=option_size_m64x61,
         option_type=option_type,
         current_volatility=current_volatility,
         current_pool_balance=current_pool_balance
@@ -253,8 +263,7 @@ func _get_value_of_position{
     }
 
     if (option_type == OPTION_CALL) {
-        let locked_capital = option_size;
-        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
+        let locked_and_premia_with_fees = Math64x61.sub(option_size_m64x61, premia_with_fees);
 
         with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 1 is negative FAILED"){
             assert_nn(locked_and_premia_with_fees);
@@ -262,7 +271,7 @@ func _get_value_of_position{
         return (position_value = locked_and_premia_with_fees);
     } else {
 
-        let locked_capital = Math64x61.mul(option_size, strike_price);
+        let locked_capital = Math64x61.mul(option_size_m64x61, strike_price);
         let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
 
         with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 2 is negative FAILED"){
@@ -278,11 +287,11 @@ func _get_premia_with_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     option: Option,
-    position_size: felt,
-    option_type: felt, // FIXME: Option struct already contains option_type
-    current_volatility: felt,
-    current_pool_balance: felt
-) -> (position_value: felt){
+    position_size: Math64x61_,
+    option_type: OptionType,
+    current_volatility: Math64x61_,
+    current_pool_balance: Math64x61_
+) -> (position_value: Math64x61_){
     // Gets premia ADJUSTED for fees!!!
     // FIXME: this is basically the same as _get_value_of_position... only one is from perspective
     // of liquidating position and the other from perspective of entering position
@@ -341,13 +350,14 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         let x_ = x * dec_;
 
         with_attr error_message("x_ out of bounds in toUint256_balance"){
-            assert_le(x, Math64x61.BOUND);
-            assert_le(-Math64x61.BOUND, x);
+            assert_le(x_, Math64x61.BOUND);
+            assert_nn(x_);
         }
 
         let amount_felt = Math64x61.toFelt(x_);
         let res = Uint256(low = amount_felt, high = 0);
     }
+
     return res;
 }
 
@@ -357,9 +367,6 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     currency_address: Address
 ) -> Math64x61_ {
     alloc_locals;
-
-    let x_low = x.low;
-    assert x.high = 0;
 
     with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
@@ -376,8 +383,70 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // no need to get sign of y, sin dec_ is positiove
         // tempvar product = x * FRACT_PART;
         // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
-        let (x__, _) = signed_div_rem(x_, dec_, Math64x61.BOUND);
+        let (x__, _) = unsigned_div_rem(x_, dec_);
         Math64x61.assert64x61(x__);
     }
     return x__;
+}
+
+
+// equivalent to toUint256_balance, but for option_position, which is stored as a felt (Int),
+// because we don't need the full range of uint256
+func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Math64x61_,
+    currency_address: Address
+) -> Int {
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+    let x_ = x * dec_;
+
+    with_attr error_message("x_ out of bounds in toUint256_balance"){
+        assert_le(x_, Math64x61.BOUND);
+        assert_nn(x_);
+    }
+    let amount_felt = Math64x61.toFelt(x_);
+    assert_nn(amount_felt);
+
+    return amount_felt;
+}
+
+func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    x: Int,
+    currency_address: Address
+) -> Math64x61_ {
+    assert_nn(x);
+    let (decimal) = get_decimal(currency_address);
+    let (dec_) = pow10(decimal);
+
+    with_attr error_message("unable to convert {x} to math64x61 number"){
+        let x_ = Math64x61.fromFelt(x);
+        with_attr error_message("fromInt_balance failed unsigned_div_rem( {dec_} {x__} )") {
+            let (x__, _) = unsigned_div_rem(x_, dec_);
+        }
+        Math64x61.assert64x61(x__);
+    }
+    return x__;
+}
+
+func intToUint256{range_check_ptr}(
+    x: Int
+) -> Uint256 {
+    with_attr error_message("Unable to work with x this big until Cairo 1.0 comes along") {
+        assert_le_felt(x, 2**127-1);
+        let res = Uint256(x, 0);
+    }
+//    const LOW_BITS = 2 ** 128 - 1; //127 ones. Quite possible there's a off-by-one, watch out
+//    let (low_part) = bitwise_and(x, LOW_BITS);
+//    let high_part = x - low_part;
+//    let res = Uint256(low_part, high_part);
+    return res;
+}
+
+
+func get_underlying_from_option_data(option_type: OptionType, base_token_address: Address, quote_token_address: Address) -> Address {
+    if (option_type == OPTION_CALL) {
+        return base_token_address;
+    } else {
+        return quote_token_address;
+    }
 }

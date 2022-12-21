@@ -41,10 +41,6 @@ namespace IAMM {
     }
 
 
-    func get_pool_available_balance(lptoken_address: Address,) -> (pool_balance: Math64x61_) {
-    }
-
-
     func is_option_available(
         lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
     ) -> (option_availability: felt) {

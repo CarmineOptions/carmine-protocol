@@ -53,8 +53,8 @@ struct Pool {
 struct PoolInfo {
     pool: Pool,
     lptoken_address: Address,
-    staked_capital: Math64x61_,  // lpool_balance
-    unlocked_capital: Math64x61_,
+    staked_capital: Uint256,  // lpool_balance
+    unlocked_capital: Uint256,
     value_of_pool_position: Math64x61_,
 }
 

@@ -121,7 +121,7 @@ namespace ILiquidityPool {
     }
 
 
-    func get_unlocked_capital(lptoken_address: Address) -> (unlocked_capital: Math64x61_) {
+    func get_unlocked_capital(lptoken_address: Address) -> (unlocked_capital: Uint256) {
     }
 
 
@@ -180,11 +180,11 @@ namespace ILiquidityPool {
     }
 
 
-    func get_lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
+    func get_lpool_balance(lptoken_address: Address) -> (res: Uint256) {
     }
 
 
-    func get_pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
+    func get_pool_locked_capital(lptoken_address: Address) -> (res: Uint256) {
     }
 
 
@@ -194,17 +194,17 @@ namespace ILiquidityPool {
     }
 
 
-    func get_pools_option_position(
+    func get_option_position(
         lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
     ) -> (
-        res: Math64x61_
+        res: Int
     ) {
     }
 
     func get_total_premia(
         option: Option,
         lptoken_address: Address,
-        position_size: Math64x61_,
+        position_size: Uint256,
         is_closing: Bool,
     ) -> (
         total_premia_before_fees: Math64x61_,

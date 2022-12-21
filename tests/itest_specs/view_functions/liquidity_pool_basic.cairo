@@ -446,7 +446,7 @@ namespace LPBasicViewFunctions {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let one = 10**18;
         let expiry_2 = 1000000000 - 60*60*24;
 
         // Approve the transactions (trade opens).
@@ -604,7 +604,7 @@ namespace LPBasicViewFunctions {
         tempvar opt_long_call_addr;
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        let one = Uint256(1 * 10 ** 18, 0);
         %{
             ids.lpt_call_addr = context.lpt_call_addr
             ids.lpt_put_addr = context.lpt_put_addr
