@@ -22,6 +22,14 @@ from contracts.constants import (
     get_empiric_key,
     get_opposite_side,
 )
+from contracts.events import (
+    TradeOpen,
+    TradeClose,
+    TradeSettle,
+    DepositLiquidity,
+    WithdrawLiquidity,
+    ExpireOptionTokenForPool
+)
 from contracts.fees import get_fees
 from contracts.interface_liquidity_pool import ILiquidityPool
 from contracts.option_pricing import black_scholes

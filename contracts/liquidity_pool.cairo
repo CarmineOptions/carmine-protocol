@@ -358,6 +358,13 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
     }
 
+    DepositLiquidity.emit(
+        caller=caller_addr,
+        lp_token=lptoken_address,
+        capital_transfered=amount,
+        lp_tokens_minted=mint_amount,
+    );
+
     // Update the lpool_balance after the mint_amount has been computed
     // (get_lptokens_for_underlying uses lpool_balance)
     with_attr error_message("Failed to update the lpool_balance"){
@@ -442,6 +449,13 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         // Burn LP tokens
         ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
     }
+
+    WithdrawLiquidity.emit(
+        caller=caller_addr,
+        lp_token=lptoken_address,
+        capital_transfered=underlying_amount_uint256,
+        lp_tokens_burned=lp_token_amount,
+    );
 
     with_attr error_message("Failed to write new lpool_balance in withdraw_liquidity"){
         // Update that the capital in the pool (including the locked capital).
@@ -544,6 +558,13 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     // Side is from perspective of pool!!!
 
     alloc_locals;
+
+    ExpireOptionTokenForPool.emit(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        strike_price=strike_price,
+        maturity=maturity,
+    );
 
     let (option) = _get_option_info(
         lptoken_address=lptoken_address,
