@@ -339,19 +339,22 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let (to_be_paid_by_user) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
 
         // Move (option_size minus (premia minus fees)) from user to the pool
-        
-        IERC20.transferFrom(
-            contract_address=currency_address,
-            sender=user_address,
-            recipient=current_contract_address,
-            amount=to_be_paid_by_user,
-        );
+        with_attr error_message("Failed to lock up enough capital, tried to transfer {to_be_paid_by_user} of {currency_address}") {
+            IERC20.transferFrom(
+                contract_address=currency_address,
+                sender=user_address,
+                recipient=current_contract_address,
+                amount=to_be_paid_by_user,
+            );
+        }
 
         // Decrease lpool_balance by premia_including_fees -> this also decreases unlocked capital
         // since only locked_capital storage_var exists
-        let (current_balance) = get_lpool_balance(lptoken_address);
-        let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
-        set_lpool_balance(lptoken_address, new_balance);
+        with_attr error_message("Failed to adjust lpool_balance"){
+            let (current_balance) = get_lpool_balance(lptoken_address);
+            let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
+            set_lpool_balance(lptoken_address, new_balance);
+        }
 
         // User is going short, hence user is locking in capital...
         //      if pool has short position -> unlock pool's capital
