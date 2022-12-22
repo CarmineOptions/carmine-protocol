@@ -551,7 +551,7 @@ namespace LPBasicViewFunctions {
             user_address=admin_address
         );
 
-        // *8 because the OptionWithUsersPosition struct has 8 elements
+        // *9 because the OptionWithUsersPosition struct has 9 elements
         assert options_with_position_len = 2*9;
 
         // Options
@@ -567,9 +567,9 @@ namespace LPBasicViewFunctions {
         );
         assert option_token_address_0 = opt_long_call_addr_1;
 
-        let option_side_1 = get_array_element(8, options_with_position_len, options_with_position);
-        let option_maturity_1 = get_array_element(9, options_with_position_len, options_with_position);
-        let option_strike_1 = get_array_element(10, options_with_position_len, options_with_position);
+        let option_side_1 = get_array_element(9, options_with_position_len, options_with_position);
+        let option_maturity_1 = get_array_element(10, options_with_position_len, options_with_position);
+        let option_strike_1 = get_array_element(11, options_with_position_len, options_with_position);
         let (option_token_address_1) = ILiquidityPool.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
