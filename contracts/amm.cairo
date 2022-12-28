@@ -80,7 +80,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_size: Int,
     quote_token_address: Address,
     base_token_address: Address,
-    lptoken_address: Address
+    lptoken_address: Address,
+    desired_price: Math64x61_, // Should be total premia including fees
+    max_price_diff: Math64x61_, // Maximum abs diff from desired_price
+    should_check_slippage: Math64x61_, // Whether the slippage should be checked
 ) -> (premia: Math64x61_) {
     // options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
     // Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
@@ -188,7 +191,23 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         underlying_price=underlying_price,
     );
 
-    return (premia=premia);
+    // 10) Validate slippage and return premia
+    if (should_check_slippage == FALSE) { 
+        // Don't check anything and return premia
+        return (premia=premia);
+    } else {
+        // Check that difference of current and desired price
+        // is lower than max_price_diff
+        let _price_diff = Math64x61.sub(total_premia, desired_price);
+        let price_diff = abs_value(_price_diff);
+
+        with_attr error_message("Current price varies too much from desired_price") {
+            let x = Math64x61.sub(max_price_diff, price_diff);
+            assert_nn(x);
+        }
+
+        return (premia=premia);
+    }
 }
 
 
@@ -200,7 +219,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     option_size : Int, // in base token
     quote_token_address: Address,
     base_token_address: Address,
-    lptoken_address: Address
+    lptoken_address: Address,
+    desired_price: Math64x61_, // Should be total premia including fees
+    max_price_diff: Math64x61_, // Maximum abs diff from desired_price
+    should_check_slippage: Math64x61_, // Whether the slippage should be checked
 ) -> (premia : Math64x61_) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
@@ -301,7 +323,23 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         );
     }
 
-    return (premia=premia);
+    // 10) Validate slippage and return premia
+    if (should_check_slippage == FALSE) { 
+        // Don't check anything and return premia
+        return (premia=premia);
+    } else {
+        // Check that difference of current and desired price
+        // is lower than max_price_diff
+        let _price_diff = Math64x61.sub(total_premia, desired_price);
+        let price_diff = abs_value(_price_diff);
+
+        with_attr error_message("Current price varies too much from desired_price") {
+            let x = Math64x61.sub(max_price_diff, price_diff);
+            assert_nn(x);
+        }
+
+        return (premia=premia);
+    }
 }
 
 func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -388,6 +426,9 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
+    desired_price: Math64x61_, // The price that user wants
+    max_price_diff: Math64x61_, // Max abs diff from desire_price
+    should_check_slippage: Math64x61_, // Whether the slippage should be checked
 ) -> (premia : Math64x61_) {
     // User wants to open a position
 
@@ -422,7 +463,10 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
             option_size,
             quote_token_address,
             base_token_address,
-            lptoken_address
+            lptoken_address,
+            desired_price,
+            max_price_diff,
+            should_check_slippage,
         );
     }
     return (premia=premia);
@@ -439,6 +483,9 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
+    desired_price: Math64x61_, // The price that user wants
+    max_price_diff: Math64x61_, // Max abs diff from desire_price
+    should_check_slippage: Math64x61_, // Whether the slippage should be checked
 ) -> (premia : Math64x61_) {
     // User is closing a position before the option has expired
     //  -> side is what the user wants to close
@@ -485,7 +532,10 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
             option_size,
             quote_token_address,
             base_token_address,
-            lptoken_address
+            lptoken_address,
+            desired_price,
+            max_price_diff,
+            should_check_slippage,
         );
     }
     return (premia=premia);
