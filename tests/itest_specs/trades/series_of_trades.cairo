@@ -151,5 +151,108 @@ namespace SeriesOfTrades {
         return ();
     }
 
+    func test_slippage{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
 
+        // 12 hours after listing, 12 hours before expir
+        %{ warp(1000000000 + 60*60*12, target_contract_address = context.amm_addr) %}
+
+        // tempvar lpt_call_addr;
+        // tempvar opt_long_call_addr;
+        tempvar amm_addr;
+        tempvar myusd_addr;
+        tempvar myeth_addr;
+        tempvar admin_addr;
+
+        tempvar expiry;
+        %{
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+
+            ids.expiry = context.expiry_0
+        %}
+
+        let strike_price = Math64x61.fromFelt(1500);
+        let one_option_size = 1 * 10**18;
+
+        tempvar tmp_address = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
+        %{
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            )
+            stop_mock_terminal_price = mock_call(
+                ids.tmp_address, "get_last_checkpoint_before", [145000000000, 0, 0, 0, 0]  # mock terminal ETH price at 1450
+            )
+        %}
+
+        // First trade, LONG CALL, should pass
+        let (_) = IAMM.trade_open(
+            contract_address=amm_addr,
+            option_type=0,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=0,
+            option_size=one_option_size,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            desired_price=2020558154346487,
+            max_price_diff=101027907717324, // Around 5%
+            should_check_slippage=1, 
+        );
+        // Second trade, SHORT CALL, should pass
+        let (_) = IAMM.trade_open(
+            contract_address=amm_addr,
+            option_type=0,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=1,
+            option_size=one_option_size,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            desired_price=1939930034823539,
+            max_price_diff=96996501741176, // Around 5%
+            should_check_slippage=1, 
+        );
+        // Second trade, PUT LONG, should pass
+        let (_) = IAMM.trade_open(
+            contract_address=amm_addr,
+            option_type=1,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=0,
+            option_size=one_option_size,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            desired_price=241695010576185458688,
+            max_price_diff=11732767503698323456, // Around 5%
+            should_check_slippage=1, 
+        );
+
+        %{
+            # Following trade will fail
+            expect_revert(
+                error_message = "Current price varies too much from desired_price"
+            )
+        %}
+        
+        // Second trade, PUT SHORT, should NOT pass
+        let (_) = IAMM.trade_open(
+            contract_address=amm_addr,
+            option_type=1,
+            strike_price=strike_price,
+            maturity=expiry,
+            option_side=1,
+            option_size=one_option_size,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            desired_price=211250487225373425664,
+            max_price_diff=10562524361268672512, // Around 5%
+            should_check_slippage=1,
+        );
+
+        return ();
+    }
 }
