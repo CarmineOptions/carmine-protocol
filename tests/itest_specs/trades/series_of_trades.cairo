@@ -57,7 +57,10 @@ namespace SeriesOfTrades {
             option_side=0,
             option_size=one_option_size,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD
@@ -71,7 +74,10 @@ namespace SeriesOfTrades {
             option_side=1,
             option_size=one_option_size,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
@@ -85,7 +91,10 @@ namespace SeriesOfTrades {
             option_side=0,
             option_size=one_option_size,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia_long_put = 234655350073966452800;
@@ -99,7 +108,10 @@ namespace SeriesOfTrades {
             option_side=1,
             option_size=one_option_size,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia_short_put = 234722763583748232400;
