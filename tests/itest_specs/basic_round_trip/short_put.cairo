@@ -215,7 +215,10 @@ namespace ShortPutRoundTrip {
             option_side=1,
             option_size=one,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia = 231276759164374043900; // approx 100.45491895597071 USD...
@@ -520,7 +523,10 @@ namespace ShortPutRoundTrip {
             option_side=1,
             option_size=half,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            desired_price=0,
+            max_price_diff=0,
+            should_check_slippage=0, // Skip slippage check
         );
 
         assert premia = 124515225675871019200; // approx 53.9998712746395 USD...
