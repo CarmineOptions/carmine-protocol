@@ -13,6 +13,9 @@ namespace IAMM {
         option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
+        desired_price: Math64x61_, 
+        max_price_diff: Math64x61_, 
+        should_check_slippage: Math64x61_, 
     ) -> (premia : Math64x61_) {
     }
 
@@ -25,6 +28,9 @@ namespace IAMM {
         option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
+        desired_price: Math64x61_, 
+        max_price_diff: Math64x61_, 
+        should_check_slippage: Math64x61_, 
     ) -> (premia : Math64x61_) {
     }
 
