@@ -192,9 +192,7 @@ namespace LongCallRoundTrip {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=230584300921369395200000, // 100_000
         );
 
         let (volatility: Math64x61_) = IAMM.get_pool_volatility(
@@ -556,9 +554,7 @@ namespace LongCallRoundTrip {
             option_size=half,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=-230584300921369395200000, // 100_000
         );
 
         assert premia_2 = 11484227343495679; // approx 0.0049 ETH or 7.22 USD
