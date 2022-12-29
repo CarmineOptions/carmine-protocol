@@ -80,9 +80,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -94,9 +92,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
 
     let (pools_pos_val_call_2) = IAMM.get_value_of_pool_position(
@@ -125,9 +121,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -138,9 +132,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
     );
 
     // Test value of pools position -> Should be zero
@@ -166,9 +158,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -180,9 +170,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
 
     let (pools_pos_val_call_4) = IAMM.get_value_of_pool_position(
@@ -211,9 +199,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -224,9 +210,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
     
     // Test value of pools position -> Should be zero
@@ -255,9 +239,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -269,9 +251,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
 
     // Puts
@@ -284,9 +264,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -298,9 +276,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
     let (pools_pos_val_call_6) = IAMM.get_value_of_pool_position(
         contract_address = amm_addr,
@@ -329,9 +305,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -342,9 +316,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -355,9 +327,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
 
     );
     let (_) = IAMM.trade_close(
@@ -369,9 +339,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
 
     // Test value of pools position 
@@ -401,9 +369,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -414,9 +380,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -427,9 +391,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // 100_000
     );
     let (_) = IAMM.trade_close(
         contract_address=amm_addr,
@@ -440,9 +402,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // -100_000
     );
     // Test value of pools position -> Should be zero
     let (pools_pos_val_call_7) = IAMM.get_value_of_pool_position(
@@ -470,9 +430,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=four,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -484,9 +442,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=three,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=230584300921369395200000, // 100_000
     );
 
     // Test value of pools position 
@@ -543,9 +499,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
     
     let (_) = IAMM.trade_open(
@@ -557,9 +511,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        desired_price=0,
-        max_price_diff=0,
-        should_check_slippage=0, // Skip slippage check
+        limit_desired_price=-230584300921369395200000, // -100_000
     );
 
     // test value of pools position 
