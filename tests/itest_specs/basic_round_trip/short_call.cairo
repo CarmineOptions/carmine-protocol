@@ -193,9 +193,7 @@ namespace ShortCallRoundTrip {
             option_size=one,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=-230584300921369395200000, // 100_000
         );
 
         assert premia = 627445539966218; // approx 0.00036 ETH which may sound like way too different from the long premia, but the trade_vol here is 91.6
@@ -538,9 +536,7 @@ namespace ShortCallRoundTrip {
             option_size=half,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=230584300921369395200000, // 100_000
         );
 
         assert premia_2 = 6665617208432872;

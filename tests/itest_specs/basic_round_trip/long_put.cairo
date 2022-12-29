@@ -202,9 +202,7 @@ namespace LongPutRoundTrip {
             option_size=one,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=230584300921369395200000, // 100_000
         );
         assert premia = 234655350073966452800; // approx 101.7655361342164 USD...
         // notice difference in comparison to CALL premia... this is caused by different trade volatility
@@ -523,9 +521,7 @@ namespace LongPutRoundTrip {
             option_size=half,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=-230584300921369395200000, // 100_000
         );
 
         assert premia = 134675785494767915950; // approx 58.40631168584766 USD...
