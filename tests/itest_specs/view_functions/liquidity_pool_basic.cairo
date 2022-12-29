@@ -478,9 +478,7 @@ namespace LPBasicViewFunctions {
             option_size=one,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=230584300921369395200000, // 100_000
         );
 
         let (premia) = IAMM.trade_open(
@@ -492,9 +490,7 @@ namespace LPBasicViewFunctions {
             option_size=one,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            desired_price=0,
-            max_price_diff=0,
-            should_check_slippage=0, // Skip slippage check
+            limit_desired_price=230584300921369395200000, // 100_000
         );
         %{
             stop_warp_add_user_position_1()
