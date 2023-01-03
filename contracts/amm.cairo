@@ -441,9 +441,6 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
         open_position=TRUE,
     );
 
-    // Validate deadline
-    check_deadline(tx_deadline);
-
     with_attr error_message("do_trade failed") {
         let (premia) = do_trade(
             option_type,
@@ -457,6 +454,10 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
             limit_desired_price,
         );
     }
+
+    // Validate deadline
+    check_deadline(tx_deadline);
+
     return (premia=premia);
 }
 
@@ -511,9 +512,6 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
 
-    // Validate deadline
-    check_deadline(tx_deadline);
-
     with_attr error_message("unable to close_position in trade_close"){
         let (premia) = close_position(
             option_type,
@@ -527,6 +525,10 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
             limit_desired_price,
         );
     }
+
+    // Validate deadline
+    check_deadline(tx_deadline);
+    
     return (premia=premia);
 
 }
