@@ -38,6 +38,17 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
 from lib.pow import pow10, pow5, pow2
 
+func check_deadline{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(deadline: felt) {
+
+    let (current_block_time) = get_block_timestamp();
+
+    with_attr error_message("Transaction is too old") {
+        assert_le(current_block_time, deadline);
+    }
+
+    return ();
+}
+
 
 
 func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(

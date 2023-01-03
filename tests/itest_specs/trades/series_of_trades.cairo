@@ -59,6 +59,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         assert premia_long_call = 2020558154346487; // approx 0.00087 ETH, or 1.22 USD
@@ -74,6 +75,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=-230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
@@ -89,6 +91,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         assert premia_long_put = 234655350073966452800;
@@ -104,6 +107,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=-230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         assert premia_short_put = 234722763583748232400;
@@ -191,6 +195,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=2121586062063811, // + 5%
+            tx_deadline=99999999999, // Disable deadline
         );
         // Second trade, SHORT CALL, should pass
         let (_) = IAMM.trade_open(
@@ -203,6 +208,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=1919722430294127, // - 5%
+            tx_deadline=99999999999, // Disable deadline
         );
         // Second trade, PUT LONG, should pass
         let (_) = IAMM.trade_open(
@@ -215,6 +221,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=246528910787709173760, // + 2%
+            tx_deadline=99999999999, // Disable deadline
         );
 
         %{
@@ -235,6 +242,7 @@ namespace SeriesOfTrades {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=237069991219585712128,
+            tx_deadline=99999999999, // Disable deadline
         );
 
         return ();
