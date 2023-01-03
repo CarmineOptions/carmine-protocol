@@ -80,7 +80,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -93,7 +93,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -123,7 +123,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -135,7 +135,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -162,7 +162,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -175,7 +175,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -205,7 +205,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -217,7 +217,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -247,7 +247,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -260,7 +260,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -274,7 +274,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=one,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -287,7 +287,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (pools_pos_val_call_6) = IAMM.get_value_of_pool_position(
@@ -317,7 +317,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -329,7 +329,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -341,7 +341,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -353,7 +353,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -384,7 +384,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -396,7 +396,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -408,7 +408,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // 100_000
+        limit_total_premia=-230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     let (_) = IAMM.trade_close(
@@ -420,7 +420,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=quarter,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // -100_000
+        limit_total_premia=230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     // Test value of pools position -> Should be zero
@@ -449,7 +449,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=four,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -462,7 +462,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=three,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=230584300921369395200000, // 100_000
+        limit_total_premia=230584300921369395200000, // 100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
@@ -520,7 +520,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
     
@@ -533,7 +533,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         option_size=half,
         quote_token_address=myusd_addr,
         base_token_address=myeth_addr,
-        limit_desired_price=-230584300921369395200000, // -100_000
+        limit_total_premia=-230584300921369395200000, // -100_000
         tx_deadline=99999999999, // Disable deadline
     );
 
