@@ -13,7 +13,7 @@ namespace IAMM {
         option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
-        limit_desired_price: Math64x61_, 
+        limit_total_premia: Math64x61_, 
         tx_deadline: Int,
     ) -> (premia : Math64x61_) {
     }
@@ -27,7 +27,7 @@ namespace IAMM {
         option_size : Int,
         quote_token_address: Address,
         base_token_address: Address,
-        limit_desired_price: Math64x61_, 
+        limit_total_premia: Math64x61_, 
         tx_deadline: Int,
     ) -> (premia : Math64x61_) {
     }

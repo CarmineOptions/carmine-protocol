@@ -193,7 +193,7 @@ namespace LongCallRoundTrip {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=230584300921369395200000, // 100_000
+            limit_total_premia=230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -556,7 +556,7 @@ namespace LongCallRoundTrip {
             option_size=half,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=-230584300921369395200000, // 100_000
+            limit_total_premia=-230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
