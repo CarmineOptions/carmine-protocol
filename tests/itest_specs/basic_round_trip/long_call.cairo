@@ -194,6 +194,7 @@ namespace LongCallRoundTrip {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         let (volatility: Math64x61_) = ILiquidityPool.get_pool_volatility(
@@ -556,6 +557,7 @@ namespace LongCallRoundTrip {
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             limit_desired_price=-230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
 
         assert premia_2 = 11484227343495679; // approx 0.0049 ETH or 7.22 USD
