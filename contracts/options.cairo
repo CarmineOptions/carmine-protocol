@@ -358,7 +358,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         TradeOpen.emit(
             caller=user_address,
             option_token=option_token_address,
-            capital_transfered=to_be_paid_by_user_uint256,
+            capital_transfered=to_be_paid_by_user,
             option_tokens_minted=option_size_uint256,
         );
 
@@ -645,7 +645,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     TradeClose.emit(
         caller=user_address,
         option_token=option_token_address,
-        capital_transfered=total_user_payment_uint256,
+        capital_transfered=total_user_payment,
         option_tokens_burned=option_size_uint256,
     );
 
@@ -864,43 +864,6 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     // Burn the user tokens
     IOptionToken.burn(option_token_address, user_address, option_size_uint256);
-
-    if (option_side == TRADE_SIDE_LONG) {
-        // User is long
-        // When user was long there is a possibility, that the pool is short,
-        // which means that pool has locked in some capital.
-        // We assume pool is able to "expire" it's functions pretty quickly so the updates
-        // of storage_vars has already happened.
-        IERC20.transfer(
-            contract_address=currency_address,
-            recipient=user_address,
-            amount=long_value_uint256,
-        );
-
-        TradeSettle.emit(
-            caller=user_address,
-            option_token=option_token_address,
-            capital_transfered=long_value_uint256,
-            option_tokens_burned=option_size_uint256,
-        );
-    } else {
-        // User is short
-        // User locked in capital (no locking happened from pool - no locked capital and similar
-        // storage vars were updated).
-        IERC20.transfer(
-            contract_address=currency_address,
-            recipient=user_address,
-            amount=short_value_uint256,
-        );
-
-        TradeSettle.emit(
-            caller=user_address,
-            option_token=option_token_address,
-            capital_transfered=short_value_uint256,
-            option_tokens_burned=option_size_uint256,
-        );
-    }
-
     with_attr error_message("expire_option_token failed when transfering funds") {
         if (option_side == TRADE_SIDE_LONG) {
             // User is long
@@ -913,6 +876,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
                 recipient=user_address,
                 amount=long_value_uint256,
             );
+
+            TradeSettle.emit(
+                caller=user_address,
+                option_token=option_token_address,
+                capital_transfered=long_value_uint256,
+                option_tokens_burned=option_size_uint256,
+            );
         } else {
             // User is short
             // User locked in capital (no locking happened from pool - no locked capital and similar
@@ -921,6 +891,13 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
                 contract_address=currency_address,
                 recipient=user_address,
                 amount=short_value_uint256,
+            );
+
+            TradeSettle.emit(
+                caller=user_address,
+                option_token=option_token_address,
+                capital_transfered=short_value_uint256,
+                option_tokens_burned=option_size_uint256,
             );
         }
     }
