@@ -58,7 +58,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=230584300921369395200000, // 100_000
+            limit_total_premia=230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -74,7 +74,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=-230584300921369395200000, // 100_000
+            limit_total_premia=-230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -90,7 +90,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=230584300921369395200000, // 100_000
+            limit_total_premia=230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -106,7 +106,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=-230584300921369395200000, // 100_000
+            limit_total_premia=-230584300921369395200000, // 100_000
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -194,7 +194,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=2121586062063811, // + 5%
+            limit_total_premia=2121586062063811, // + 5%
             tx_deadline=99999999999, // Disable deadline
         );
         // Second trade, SHORT CALL, should pass
@@ -207,7 +207,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=1919722430294127, // - 5%
+            limit_total_premia=1919722430294127, // - 5%
             tx_deadline=99999999999, // Disable deadline
         );
         // Second trade, PUT LONG, should pass
@@ -220,7 +220,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=246528910787709173760, // + 2%
+            limit_total_premia=246528910787709173760, // + 2%
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -241,7 +241,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=237069991219585712128,
+            limit_total_premia=237069991219585712128,
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -295,7 +295,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=2121586062063811,
+            limit_total_premia=2121586062063811,
             tx_deadline=1000043210, // Current time + 10
         );
         // Second trade, SHORT CALL, should pass
@@ -308,7 +308,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=1919722430294127, 
+            limit_total_premia=1919722430294127, 
             tx_deadline=1000043205, // Current time + 5
         );
         // Second trade, PUT LONG, should pass
@@ -321,7 +321,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=246528910787709173760, 
+            limit_total_premia=246528910787709173760, 
             tx_deadline=1000043201, // Current time + 1
         );
 
@@ -342,7 +342,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_desired_price=0,
+            limit_total_premia=0,
             tx_deadline=1000043199, // Current time - 1
         );
 

@@ -89,7 +89,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address,
-    limit_desired_price: Math64x61_, // Should be total premia including fees
+    limit_total_premia: Math64x61_, // Should be total premia including fees
 ) -> (premia: Math64x61_) {
     // options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
     // Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
@@ -200,9 +200,9 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     // 10) Validate slippage
     with_attr error_message("Current premia with fees is out of slippage bounds."){
         if (side == TRADE_SIDE_LONG) {
-            assert_le(total_premia, limit_desired_price);
+            assert_le(total_premia, limit_total_premia);
         } else {
-            assert_le(limit_desired_price, total_premia);
+            assert_le(limit_total_premia, total_premia);
         }
     }
 
@@ -219,7 +219,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address,
-    limit_desired_price: Math64x61_, // Should be total premia including fees - w.r.t. to opposite side
+    limit_total_premia: Math64x61_, // Should be total premia including fees - w.r.t. to opposite side
 ) -> (premia : Math64x61_) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
@@ -323,9 +323,9 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // 10) Validate slippage
     with_attr error_message("Current premia with fees is out of slippage bounds."){
         if (opposite_side == TRADE_SIDE_LONG) {
-            assert_le(total_premia, limit_desired_price);
+            assert_le(total_premia, limit_total_premia);
         } else {
-            assert_le(limit_desired_price, total_premia);
+            assert_le(limit_total_premia, total_premia);
         }
     }
     
@@ -421,7 +421,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
-    limit_desired_price: Math64x61_, // The limit price that user wants
+    limit_total_premia: Math64x61_, // The limit price that user wants
     tx_deadline: Int,
 ) -> (premia : Math64x61_) {
     // User wants to open a position
@@ -458,7 +458,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
             quote_token_address,
             base_token_address,
             lptoken_address,
-            limit_desired_price,
+            limit_total_premia,
         );
     }
 
@@ -479,7 +479,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
-    limit_desired_price: Math64x61_, // The limit price that user wants
+    limit_total_premia: Math64x61_, // The limit price that user wants
     tx_deadline: Int,
 ) -> (premia : Math64x61_) {
     // User is closing a position before the option has expired
@@ -529,7 +529,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
             quote_token_address,
             base_token_address,
             lptoken_address,
-            limit_desired_price,
+            limit_total_premia,
         );
     }
 
