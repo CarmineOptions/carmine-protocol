@@ -64,7 +64,7 @@ func option_token_address(
 ) -> (res: Address) {
 }
 
-
+@external
 func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
 ) {
