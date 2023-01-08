@@ -368,6 +368,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 ) -> Math64x61_ {
     alloc_locals;
 
+    local x_low = x.low;
     with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
         let (decimal) = get_decimal(currency_address);
@@ -420,7 +421,7 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 
     with_attr error_message("unable to convert {x} to math64x61 number"){
         let x_ = Math64x61.fromFelt(x);
-        with_attr error_message("fromInt_balance failed unsigned_div_rem( {dec_} {x__} )") {
+        with_attr error_message("fromInt_balance failed unsigned_div_rem( {dec_} {x_} )") {
             let (x__, _) = unsigned_div_rem(x_, dec_);
         }
         Math64x61.assert64x61(x__);
