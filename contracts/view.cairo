@@ -72,8 +72,9 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
         let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
         let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
 
+        let current_pool_balance_uint256_low = current_pool_balance_uint256.low;
         with_attr error_message(
-            "Failed getting premium in save_all_non_expired_options_with_premia_to_array, cpb_uint256.low {current_pool_balance_uint256.low}"
+            "Failed getting premium in save_all_non_expired_options_with_premia_to_array, cpb_uint256.low {current_pool_balance_uint256_low}"
         ){
             let (premia) = _get_premia_with_fees(
                 option=option,
