@@ -1,0 +1,1336 @@
+[
+    {
+        "members": [
+            {
+                "name": "low",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "high",
+                "offset": 1,
+                "type": "felt"
+            }
+        ],
+        "name": "Uint256",
+        "size": 2,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "option_side",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "offset": 1,
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "offset": 2,
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "offset": 3,
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "offset": 4,
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "offset": 5,
+                "type": "felt"
+            }
+        ],
+        "name": "Option",
+        "size": 6,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "quote_token_address",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "offset": 1,
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "offset": 2,
+                "type": "felt"
+            }
+        ],
+        "name": "Pool",
+        "size": 3,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "value_of_user_stake",
+                "offset": 0,
+                "type": "Uint256"
+            },
+            {
+                "name": "size_of_users_tokens",
+                "offset": 2,
+                "type": "Uint256"
+            },
+            {
+                "name": "pool_info",
+                "offset": 4,
+                "type": "PoolInfo"
+            }
+        ],
+        "name": "UserPoolInfo",
+        "size": 13,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "pool",
+                "offset": 0,
+                "type": "Pool"
+            },
+            {
+                "name": "lptoken_address",
+                "offset": 3,
+                "type": "felt"
+            },
+            {
+                "name": "staked_capital",
+                "offset": 4,
+                "type": "Uint256"
+            },
+            {
+                "name": "unlocked_capital",
+                "offset": 6,
+                "type": "Uint256"
+            },
+            {
+                "name": "value_of_pool_position",
+                "offset": 8,
+                "type": "felt"
+            }
+        ],
+        "name": "PoolInfo",
+        "size": 9,
+        "type": "struct"
+    },
+    {
+        "data": [
+            {
+                "name": "caller",
+                "type": "felt"
+            },
+            {
+                "name": "option_token",
+                "type": "felt"
+            },
+            {
+                "name": "capital_transfered",
+                "type": "Uint256"
+            },
+            {
+                "name": "option_tokens_minted",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "TradeOpen",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "caller",
+                "type": "felt"
+            },
+            {
+                "name": "option_token",
+                "type": "felt"
+            },
+            {
+                "name": "capital_transfered",
+                "type": "Uint256"
+            },
+            {
+                "name": "option_tokens_burned",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "TradeClose",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "caller",
+                "type": "felt"
+            },
+            {
+                "name": "option_token",
+                "type": "felt"
+            },
+            {
+                "name": "capital_transfered",
+                "type": "Uint256"
+            },
+            {
+                "name": "option_tokens_burned",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "TradeSettle",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "caller",
+                "type": "felt"
+            },
+            {
+                "name": "lp_token",
+                "type": "felt"
+            },
+            {
+                "name": "capital_transfered",
+                "type": "Uint256"
+            },
+            {
+                "name": "lp_tokens_minted",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "DepositLiquidity",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "caller",
+                "type": "felt"
+            },
+            {
+                "name": "lp_token",
+                "type": "felt"
+            },
+            {
+                "name": "capital_transfered",
+                "type": "Uint256"
+            },
+            {
+                "name": "lp_tokens_burned",
+                "type": "Uint256"
+            }
+        ],
+        "keys": [],
+        "name": "WithdrawLiquidity",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "ExpireOptionTokenForPool",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "sigma",
+                "type": "felt"
+            },
+            {
+                "name": "time_till_maturity_annualized",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "underlying_price",
+                "type": "felt"
+            },
+            {
+                "name": "risk_free_rate_annualized",
+                "type": "felt"
+            }
+        ],
+        "name": "black_scholes",
+        "outputs": [
+            {
+                "name": "call_premia",
+                "type": "felt"
+            },
+            {
+                "name": "put_premia",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "key",
+                "type": "felt"
+            }
+        ],
+        "name": "empiric_median_price",
+        "outputs": [
+            {
+                "name": "price",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "key",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "get_terminal_price",
+        "outputs": [
+            {
+                "name": "price",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "is_option_available",
+        "outputs": [
+            {
+                "name": "option_availability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_open",
+        "outputs": [
+            {
+                "name": "premia",
+                "type": "felt"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_close",
+        "outputs": [
+            {
+                "name": "premia",
+                "type": "felt"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "option_size",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "trade_settle",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "data": [
+            {
+                "name": "previousOwner",
+                "type": "felt"
+            },
+            {
+                "name": "newOwner",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "OwnershipTransferred",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_value_of_pool_position",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option",
+                "type": "Option"
+            },
+            {
+                "name": "position_size",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "current_volatility",
+                "type": "felt"
+            },
+            {
+                "name": "current_pool_balance",
+                "type": "felt"
+            }
+        ],
+        "name": "get_value_of_position",
+        "outputs": [
+            {
+                "name": "position_value",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "lpt_amt",
+                "type": "Uint256"
+            }
+        ],
+        "name": "get_underlying_for_lptokens",
+        "outputs": [
+            {
+                "name": "underlying_amt",
+                "type": "Uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "add_lptoken",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "pooled_token_addr",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "amount",
+                "type": "Uint256"
+            }
+        ],
+        "name": "deposit_liquidity",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "pooled_token_addr",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lp_token_amount",
+                "type": "Uint256"
+            }
+        ],
+        "name": "withdraw_liquidity",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "expire_option_token_for_pool",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "index",
+                "type": "felt"
+            }
+        ],
+        "name": "remove_option",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            },
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            },
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_token_address_",
+                "type": "felt"
+            },
+            {
+                "name": "initial_volatility",
+                "type": "felt"
+            }
+        ],
+        "name": "add_option",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "migrate_option_position",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "migrate_lpool_balance",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "migrate_pool_locked_capital",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "order_i",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_lptoken_addresses",
+        "outputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_lpool_balance",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "Uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_locked_capital",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "Uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "order_i",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_options",
+        "outputs": [
+            {
+                "name": "option",
+                "type": "Option"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "quote_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "base_token_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_type",
+                "type": "felt"
+            }
+        ],
+        "name": "get_lptoken_address_for_given_option",
+        "outputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_addres",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_definition_from_lptoken_address",
+        "outputs": [
+            {
+                "name": "pool",
+                "type": "Pool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_type",
+        "outputs": [
+            {
+                "name": "option_type",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            }
+        ],
+        "name": "get_pool_volatility",
+        "outputs": [
+            {
+                "name": "pool_volatility",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_underlying_token_address",
+        "outputs": [
+            {
+                "name": "underlying_token_address_",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_unlocked_capital",
+        "outputs": [
+            {
+                "name": "unlocked_capital",
+                "type": "Uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_token_address",
+        "outputs": [
+            {
+                "name": "option_token_address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_side",
+                "type": "felt"
+            },
+            {
+                "name": "maturity",
+                "type": "felt"
+            },
+            {
+                "name": "strike_price",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_position",
+        "outputs": [
+            {
+                "name": "option_position",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "starting_index",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_options_usable_index",
+        "outputs": [
+            {
+                "name": "usable_index",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "starting_index",
+                "type": "felt"
+            }
+        ],
+        "name": "get_available_lptoken_addresses_usable_index",
+        "outputs": [
+            {
+                "name": "usable_index",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_trading_halt",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "new_status",
+                "type": "felt"
+            }
+        ],
+        "name": "set_trading_halt",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_all_options",
+        "outputs": [
+            {
+                "name": "array_len",
+                "type": "felt"
+            },
+            {
+                "name": "array",
+                "type": "felt*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_all_non_expired_options_with_premia",
+        "outputs": [
+            {
+                "name": "array_len",
+                "type": "felt"
+            },
+            {
+                "name": "array",
+                "type": "felt*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "user_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_with_position_of_user",
+        "outputs": [
+            {
+                "name": "array_len",
+                "type": "felt"
+            },
+            {
+                "name": "array",
+                "type": "felt*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_all_lptoken_addresses",
+        "outputs": [
+            {
+                "name": "array_len",
+                "type": "felt"
+            },
+            {
+                "name": "array",
+                "type": "felt*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "user",
+                "type": "felt"
+            }
+        ],
+        "name": "get_user_pool_infos",
+        "outputs": [
+            {
+                "name": "user_pool_infos_len",
+                "type": "felt"
+            },
+            {
+                "name": "user_pool_infos",
+                "type": "UserPoolInfo*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_all_poolinfo",
+        "outputs": [
+            {
+                "name": "pool_info_len",
+                "type": "felt"
+            },
+            {
+                "name": "pool_info",
+                "type": "PoolInfo*"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "option_token_address",
+                "type": "felt"
+            }
+        ],
+        "name": "get_option_info_from_addresses",
+        "outputs": [
+            {
+                "name": "option",
+                "type": "Option"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "_option",
+                "type": "Option"
+            },
+            {
+                "name": "lptoken_address",
+                "type": "felt"
+            },
+            {
+                "name": "position_size",
+                "type": "Uint256"
+            },
+            {
+                "name": "is_closing",
+                "type": "felt"
+            }
+        ],
+        "name": "get_total_premia",
+        "outputs": [
+            {
+                "name": "total_premia_before_fees",
+                "type": "felt"
+            },
+            {
+                "name": "total_premia_including_fees",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "data": [
+            {
+                "name": "implementation",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "Upgraded",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "previousAdmin",
+                "type": "felt"
+            },
+            {
+                "name": "newAdmin",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "AdminChanged",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "proxy_admin",
+                "type": "felt"
+            }
+        ],
+        "name": "initializer",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "new_implementation",
+                "type": "felt"
+            }
+        ],
+        "name": "upgrade",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getAdmin",
+        "outputs": [
+            {
+                "name": "address",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "address",
+                "type": "felt"
+            }
+        ],
+        "name": "setAdmin",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getImplementationHash",
+        "outputs": [
+            {
+                "name": "implementation_hash",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
