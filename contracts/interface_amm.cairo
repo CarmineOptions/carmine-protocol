@@ -1,6 +1,6 @@
 %lang starknet
 
-from types import Address, OptionType, Math64x61_, OptionSide, Int, Option
+from types import Address, OptionType, Math64x61_, OptionSide, Int, Option, Bool
 from starkware.cairo.common.uint256 import Uint256
 
 @contract_interface
@@ -46,4 +46,11 @@ namespace IAMM {
     ) -> (option_availability: felt) {
     }
 
+    
+    func set_trading_halt(new_status: Bool) -> () {
+    }
+
+
+    func get_trading_halt() -> (res: Bool) {
+    }
 }

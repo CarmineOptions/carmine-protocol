@@ -326,7 +326,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     alloc_locals;
 
     with_attr error_message("Trading is currently halted."){
-        let halt_status = get_trading_halt();
+        let (halt_status) = get_trading_halt();
         assert halt_status = 0;
     }
 

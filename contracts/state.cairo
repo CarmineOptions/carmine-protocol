@@ -446,19 +446,21 @@ func get_available_lptoken_addresses_usable_index{
 }
 
 
+@view
 func get_trading_halt{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}() -> Bool {
+}() -> (res: Bool) {
     let (res) = trading_halted.read();
-    return res;
+    return (res,);
 }
 
 
+@external
 func set_trading_halt{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     new_status: Bool
-){
+) -> () {
     // FIXME check for reentrancy
     assert_nn(new_status);
     assert_le(new_status, 1);
