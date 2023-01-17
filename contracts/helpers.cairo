@@ -383,10 +383,30 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
         // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
         let (decimal) = get_decimal(currency_address);
-        let (dec_) = pow10(decimal);
+        // let (dec_) = pow10(decimal);
+        let (five_to_dec) = pow5(decimal);
         // let dec = Math64x61.fromFelt(dec_);
 
-        let x_ = Math64x61.fromUint256(x);
+        // let x_ = Math64x61.fromUint256(x);
+        // "Math64x61.fromUint256" is just fromFelt(x.low)
+        // "Math64x61.fromFelt(x.low)" multiplies the number by Math64x61.FRACT_PART (2 ** 61)
+        // and checks that x.low is within Math64x61.INT_PART
+        assert x.high = 0;
+        let x_low = x.low;
+
+        // Increase the bound of original Math64x61.INT_PART check
+        // We can do this, because below the multiplication "let x_ = x_low * decreased_FRACT_PART"
+        // is done on decrease Math64x61.FRACT_PART
+        // so the total does not go above 2**125
+        let sixty_four_plus_dec = 64 + decimal;
+        let (increased_INT_PART) = pow2(sixty_four_plus_dec);
+        assert_le(x_low, increased_INT_PART);
+        assert_le(-increased_INT_PART, x_low);
+
+        let sixty_one_minus_dec = 61 - decimal;
+        let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
+        let x_ = x_low * decreased_FRACT_PART;
+
         // let x__ = Math64x61.div(x_, dec);
         // Equivalent to Math64x61.div
 
@@ -395,7 +415,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // no need to get sign of y, sin dec_ is positiove
         // tempvar product = x * FRACT_PART;
         // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
-        let (x__, _) = unsigned_div_rem(x_, dec_);
+        let (x__, _) = unsigned_div_rem(x_, five_to_dec);
         Math64x61.assert64x61(x__);
     }
     return x__;
