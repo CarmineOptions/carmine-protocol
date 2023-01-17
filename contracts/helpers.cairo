@@ -36,7 +36,7 @@ from starkware.starknet.common.syscalls import get_block_timestamp
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
-from lib.pow import pow10
+from lib.pow import pow10, pow5, pow2
 
 
 
@@ -337,7 +337,8 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     with_attr error_message("Failed toUint256_balance with input {x}, {currency_address}"){
         // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
         let (decimal) = get_decimal(currency_address);
-        let (dec_) = pow10(decimal);
+        // let (dec_) = pow10(decimal);
+        let (five_to_dec) = pow5(decimal);
         // with_attr error_message("dec to Math64x61 Failed in toUint256_balance"){
         //     let dec = Math64x61.fromFelt(dec_);
         // }
@@ -347,14 +348,24 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         // Math64x61.mul takes two Math64x61 and multiplies them and divides them by 2**61
         // (x*2**61) * (y*2**61) / 2**61
         // Instead we skip the "*2**61" near "y" and the "/ 2**61"
-        let x_ = x * dec_;
+        // let x_ = x * dec_;
+        let x_5 = x * five_to_dec;
 
-        with_attr error_message("x_ out of bounds in toUint256_balance"){
-            assert_le(x_, Math64x61.BOUND);
-            assert_nn(x_);
+        with_attr error_message("x_5 out of bounds in toUint256_balance"){
+            assert_le(x_5, Math64x61.BOUND);
+            assert_nn(x_5);
         }
 
-        let amount_felt = Math64x61.toFelt(x_);
+        // To convert x_ to felt we could do the line below (x_ is commented)
+        // let amount_felt = Math64x61.toFelt(x_);
+        // or we could call directly what the toFelt does "signed_div_rem(x, FRACT_PART, BOUND);"
+        // since x_ is just x * dec_ = x * 10**decimal = x * 2**decimal * 5**decimal
+        // we can calculate x_5 = x * 5**decimal
+        // and then divide by 2**(61-decimal) instead of Math64x61.FRACT_PART of the original number
+        let sixty_one_minus_dec = 61 - decimal;
+        let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
+        let (amount_felt, _) = signed_div_rem(x_5, decreased_FRACT_PART, Math64x61.BOUND);
+
         let res = Uint256(low = amount_felt, high = 0);
     }
 
@@ -401,7 +412,7 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     let (dec_) = pow10(decimal);
     let x_ = x * dec_;
 
-    with_attr error_message("x_ out of bounds in toUint256_balance"){
+    with_attr error_message("x_ out of bounds in toInt_balance"){
         assert_le(x_, Math64x61.BOUND);
         assert_nn(x_);
     }
@@ -410,6 +421,7 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     return amount_felt;
 }
+
 
 func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: Int,
@@ -428,6 +440,7 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     }
     return x__;
 }
+
 
 func intToUint256{range_check_ptr}(
     x: Int
