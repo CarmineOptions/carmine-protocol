@@ -215,15 +215,6 @@ func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 
-func set_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, balance: Uint256
-) -> () {
-    assert_uint256_le(Uint256(0, 0), balance);
-    pool_locked_capital_.write(lptoken_address, balance);
-    return ();
-}
-
-
 @view
 func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, order_i: Int
