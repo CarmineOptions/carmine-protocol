@@ -6,7 +6,7 @@
 
 from starkware.cairo.common.uint256 import Uint256
 from types import (
-    Address, OptionType, Math64x61_, OptionSide, Int, OptionWithPremia, Option, PoolInfo,
+    Address, OptionType, Math64x61_, OptionSide, Int, Option, PoolInfo, OptionWithPremia,
     UserPoolInfo, Bool
 )
 
@@ -71,7 +71,8 @@ namespace ILiquidityPool {
 
 
     func get_all_non_expired_options_with_premia(lptoken_address: Address) -> (
-        array_len : felt, array : felt*
+        option_with_premia_len : felt,
+        option_with_premia : OptionWithPremia*
     ) {
     }
 
