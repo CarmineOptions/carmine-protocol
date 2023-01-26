@@ -203,19 +203,21 @@ func _get_value_of_position{
     let (current_block_time) = get_block_timestamp();
     let maturity = option.maturity;
     let is_ripe = is_le(maturity, current_block_time);
-    if (is_ripe == TRUE) {
-        let quote_token_address = option.quote_token_address;
-        let base_token_address = option.base_token_address;
-        let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+    with_attr error_message("helpers._get_value_of_position failed on ripe option: maturity: {maturity}, current_block_time: {current_block_time}") {
+        if (is_ripe == TRUE) {
+            let quote_token_address = option.quote_token_address;
+            let base_token_address = option.base_token_address;
+            let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
+            let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
 
-        let (long_value, short_value) = split_option_locked_capital(
-            option.option_type, option.option_side, position_size, option.strike_price, terminal_price
-        );
-        if (option.option_side == TRADE_SIDE_LONG) {
-            return (long_value,);
+            let (long_value, short_value) = split_option_locked_capital(
+                option.option_type, option.option_side, position_size, option.strike_price, terminal_price
+            );
+            if (option.option_side == TRADE_SIDE_LONG) {
+                return (long_value,);
+            }
+            return (short_value,);
         }
-        return (short_value,);
     }
 
     // Fail if the value of option that matures in 2 hours or less (can't price the option)
