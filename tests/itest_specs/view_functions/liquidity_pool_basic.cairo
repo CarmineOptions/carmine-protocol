@@ -332,15 +332,14 @@ namespace LPBasicViewFunctions {
             lptoken_address=lpt_put_addr
         );
 
-        // *7 because the OptionWithPremia struct has 7 elements
-        assert option_call_len = 2*7;
-        assert option_put_len = 2*7;
+        assert option_call_len = 2;
+        assert option_put_len = 2;
         
         // Calls
-        let option_call_side_0 = get_array_element(0, option_call_len, option_call_array);
-        let option_call_maturity_0 = get_array_element(1, option_call_len, option_call_array);
-        let option_call_strike_0 = get_array_element(2, option_call_len, option_call_array);
-        let option_call_premia_0 = get_array_element(6, option_call_len, option_call_array);
+        let option_call_side_0 = option_call_array[0].option.option_side;
+        let option_call_maturity_0 = option_call_array[0].option.maturity;
+        let option_call_strike_0 = option_call_array[0].option.strike_price;
+        let option_call_premia_0 = option_call_array[0].premia;
 
         assert option_call_premia_0 = 2081174898976881;
 
@@ -353,10 +352,10 @@ namespace LPBasicViewFunctions {
         );
         assert call_option_token_address_0 = opt_long_call_addr;
 
-        let option_call_side_1 = get_array_element(7, option_call_len, option_call_array);
-        let option_call_maturity_1 = get_array_element(8, option_call_len, option_call_array);
-        let option_call_strike_1 = get_array_element(9, option_call_len, option_call_array);
-        let option_call_premia_1 = get_array_element(13, option_call_len, option_call_array);
+        let option_call_side_1 = option_call_array[1].option.option_side;
+        let option_call_maturity_1 = option_call_array[1].option.maturity;
+        let option_call_strike_1 = option_call_array[1].option.strike_price;
+        let option_call_premia_1 = option_call_array[1].premia;
 
         assert option_call_premia_1 = 608622173767232;
 
@@ -371,10 +370,10 @@ namespace LPBasicViewFunctions {
         assert call_option_token_address_1 = opt_short_call_addr;
 
         // Puts
-        let option_put_side_0 = get_array_element(0, option_put_len, option_put_array);
-        let option_put_maturity_0 = get_array_element(1, option_put_len, option_put_array);
-        let option_put_strike_0 = get_array_element(2, option_put_len, option_put_array);
-        let option_put_premia_0 = get_array_element(6, option_put_len, option_put_array);
+        let option_put_side_0 = option_put_array[0].option.option_side;
+        let option_put_maturity_0 = option_put_array[0].option.maturity;
+        let option_put_strike_0 = option_put_array[0].option.strike_price;
+        let option_put_premia_0 = option_put_array[0].premia;
 
         assert option_put_premia_0 = 241695010576185446327;
         
@@ -387,10 +386,10 @@ namespace LPBasicViewFunctions {
         );
         assert put_option_token_address_0 = opt_long_put_addr;
 
-        let option_put_side_1 = get_array_element(7, option_put_len, option_put_array);
-        let option_put_maturity_1 = get_array_element(8, option_put_len, option_put_array);
-        let option_put_strike_1 = get_array_element(9, option_put_len, option_put_array);
-        let option_put_premia_1 = get_array_element(13, option_put_len, option_put_array);
+        let option_put_side_1 = option_put_array[1].option.option_side;
+        let option_put_maturity_1 = option_put_array[1].option.maturity;
+        let option_put_strike_1 = option_put_array[1].option.strike_price;
+        let option_put_premia_1 = option_put_array[1].premia;
 
         assert option_put_premia_1 = 224338456389442822640;     
 

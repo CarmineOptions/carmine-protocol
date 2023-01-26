@@ -34,18 +34,19 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
 }
 
+
 @view
 func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (
-    array_len : felt,
-    array : felt*
+    option_with_premia_len : felt,
+    option_with_premia : OptionWithPremia*
 ) {
     alloc_locals;
-    let (array : OptionWithPremia*) = alloc();
-    let array_len = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, array, 0);
+    let (option_with_premia : OptionWithPremia*) = alloc();
+    let option_with_premia_len = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, option_with_premia, 0);
 
-    return (array_len, array);
+    return (option_with_premia_len, option_with_premia);
 }
 
 
@@ -93,7 +94,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
 
         return save_all_non_expired_options_with_premia_to_array(
             lptoken_address,
-            array_len_so_far + OptionWithPremia.SIZE,
+            array_len_so_far + 1,
             array + OptionWithPremia.SIZE,
             option_index + 1
         );
