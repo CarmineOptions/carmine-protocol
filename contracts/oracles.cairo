@@ -22,7 +22,7 @@ namespace IEmpiricOracle {
     ) {
     }
     
-    func get_last_checkpoint_before(key: felt, timestamp: felt) -> (
+    func get_last_spot_checkpoint_before(key: felt, timestamp: felt) -> (
         checkpoint: Checkpoint, idx: felt
     ) {
     }
@@ -97,7 +97,7 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
     alloc_locals;
 
     with_attr error_message("Failed when getting terminal price from Empiric Oracle") {
-        let (last_checkpoint,_) = IEmpiricOracle.get_last_checkpoint_before(
+        let (last_checkpoint,_) = IEmpiricOracle.get_last_spot_checkpoint_before(
             EMPIRIC_ORACLE_ADDRESS,
             key, 
             maturity
