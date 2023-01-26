@@ -720,7 +720,7 @@ namespace LongCallRoundTrip {
 
             # Mock the terminal price
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0, 155000000000, 0, 0, 0]  # mock terminal ETH price at 1550
+                ids.tmp_address, "get_last_spot_checkpoint_before", [0, 155000000000, 0, 0, 0]  # mock terminal ETH price at 1550
             )
         %}
 
