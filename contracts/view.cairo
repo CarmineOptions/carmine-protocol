@@ -43,10 +43,10 @@ func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: H
     option_with_premia : OptionWithPremia*
 ) {
     alloc_locals;
-    let (option_with_premia_ : OptionWithPremia*) = alloc();
-    let option_with_premia_len_ = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, option_with_premia_, 0);
+    let (option_with_premia : OptionWithPremia*) = alloc();
+    let option_with_premia_len = save_all_non_expired_options_with_premia_to_array(lptoken_address, 0, option_with_premia, 0);
 
-    return (option_with_premia_len_, option_with_premia_);
+    return (option_with_premia_len, option_with_premia);
 }
 
 
