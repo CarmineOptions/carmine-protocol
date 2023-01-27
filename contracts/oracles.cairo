@@ -103,6 +103,11 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
             maturity
         );
     }
+
+    // This is hotfix before the Chronos is up and running and is needed because empiric checkpoint is not working
+    if (maturity == 1674777599) {
+        return (3693960500760337711104,);
+    }
     
     with_attr error_message("Received zero terminal price from Empiric Oracle"){
         assert_not_zero(last_checkpoint.value);
