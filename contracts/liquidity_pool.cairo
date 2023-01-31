@@ -76,7 +76,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     alloc_locals;
 
     let (option) = available_options.read(lptoken_address, index);
-    
+
     // Because of how the defined options are stored we have to verify that we have not run
     // at the end of the stored values. The end is with "empty" Option.
     let option_sum = option.maturity + option.strike_price;
