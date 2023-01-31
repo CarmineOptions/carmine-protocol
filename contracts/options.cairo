@@ -47,7 +47,6 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     // Check that the option token being added is the right one
     // FIXME strike_price, option type, etc from option_token_address
     // possibly do this when getting rid of Math64x61 in external function inputs
-    // FIXME: maybe add more checks. ie for lptoken_addr etc
     with_attr error_message("Given inputs for add_option function do not match the option token") {
 
         let (contract_option_type) = IOptionToken.option_type(option_token_address_);

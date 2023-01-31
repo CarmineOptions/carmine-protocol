@@ -256,7 +256,6 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     lptoken_address: Address
 ){
     // This function initializes the pool.
-    // FIXME: Add more checks for this function
     alloc_locals;
 
     with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
