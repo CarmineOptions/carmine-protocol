@@ -14,18 +14,47 @@ from tests.itest_specs.setup import deploy_setup
 
 //     return ();
 // }
-
 @external
-func test_get_new_volatility_basic{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+func setup_get_new_volatility_basic{syscall_ptr: felt*, range_check_ptr}(){
+
+    %{
+        given(
+            option_type = strategy.integers(0, 1),
+            trade_side = strategy.integers(0, 1),
+            option_size = strategy.integers(1, 100).map(lambda x: int(((x / 10) * 10**18))),
+           _pool_balance = strategy.integers(200, 1000).map(lambda x: int((x / 10) * 2**61)),
+            volatility = strategy.integers(1, 100).map(lambda x: int((x / 10) * 2**61))
+        )
+        max_examples(100)
+    %}
+
+    return ();
+}
+@external
+func test_get_new_volatility_basic{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    option_type: felt,
+    trade_side: felt,
+    option_size: felt,
+    _pool_balance: felt,
+    volatility: felt
+) {
     alloc_locals;
 
-    let hundred_64 = Math64x61.fromFelt(100);
-    let one_64 = Math64x61.fromFelt(1);
-    let two_64 = Math64x61.fromFelt(2);
-    let half_64 = Math64x61.div(one_64, two_64);
-
+    local half_size;
+    local pool_balance;
     let strike = Math64x61.fromFelt(1000);
-    let pool_bal_call = Math64x61.fromFelt(5);
+
+    %{
+        ids.half_size = int(ids.option_size / 2)
+        ids.option_size = ids.half_size * 2 # To prevent rounding errors I guess
+
+        if ids.option_type == 0: 
+            ids.pool_balance = ids._pool_balance
+        elif ids.option_type == 1: 
+            ids.pool_balance = int(ids._pool_balance * (ids.strike / 2**61))
+        else:
+            raise ValueError(f"Unknown option type: {ids.option_type}")
+   %}
 
     //////////////////////////////////////
     // Volatility update formula
@@ -35,73 +64,76 @@ func test_get_new_volatility_basic{syscall_ptr: felt*, pedersen_ptr: HashBuiltin
     // vol_denom = 1 - (Q_{t} / PS_{t}) ^ alpha
     // sigma_{t} = sigma_{t-1} * 1 / vol_denom
     //
-    // Note: alpha is currently 1
+    // Note: alpha is 1
     //////////////////////////////////////
 
-    // Basic updates
-    let (vol_call_long_1, trade_vol_call_long_1) = get_new_volatility(
-        current_volatility = one_64,
-        option_size = one_64,
-        option_type = 0,
-        side = 0,
+    // Basic update
+    let (desired_vol, _) = get_new_volatility(
+        current_volatility = volatility,
+        option_size = option_size,
+        option_type = option_type,
+        side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_bal_call
+        current_pool_balance = pool_balance
     );
 
-    assert vol_call_long_1 = 2882303761517117439; // 1.25
-    assert trade_vol_call_long_1 = 2594073385365405695; // 1.125
+    %{
+        # Save the value as the reference gets revoked
+        context.desired_vol = ids.desired_vol
+    %}
 
-    let (vol_call_short_1, trade_vol_call_short_1) = get_new_volatility(
-        current_volatility = one_64,
-        option_size = one_64,
-        option_type = 0,
-        side = 1,
+    // Same update, but divided into two parts  
+    let (vol_1, _) = get_new_volatility(
+        current_volatility = volatility,
+        option_size = half_size,
+        option_type = option_type,
+        side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_bal_call
+        current_pool_balance = pool_balance
     );
 
-    assert vol_call_short_1 = 1921535841011411626; // 0.833
-    assert trade_vol_call_short_1 = 2113689425112552789; // 0.916
+    // Adjust pool balance 
+    local pool_balance_2;
+    %{  
+        if ids.trade_side == 0:
+            if ids.option_type == 0:
+                ids.pool_balance_2 = ids.pool_balance - ids.half_size
+            elif ids.option_type == 1:
+                ids.pool_balance_2 = ids.pool_balance - int(ids.half_size * (ids.strike / 2**61))
+        elif ids.trade_side == 1:
+            ids.pool_balance_2 = ids.pool_balance
+        else:
+            raise ValueError(f"Unknown trade side: {ids.trade_side}")
+    %}
 
-    // Same updates, but divided into two parts  
-    let (vol_call_long_2, trade_vol_call_long_2) = get_new_volatility(
-        current_volatility = one_64,
-        option_size = half_64,
-        option_type = 0,
-        side = 0,
+    let (vol_2, _) = get_new_volatility(
+        current_volatility = vol_1, // Use previous vol
+        option_size = half_size,
+        option_type = option_type,
+        side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_bal_call
-    );
+        current_pool_balance = pool_balance_2
+    );  
 
-    assert vol_call_long_2 = 2562047788015215501; // 1.11
-    assert trade_vol_call_long_2 = 2433945398614454726; // 1.05
-    
+    %{
+        from math import isclose
+        error_string = f"""
+            Test vol updates basic failed for:
+            option_type = {ids.option_type}, 
+            side = {ids.trade_side} ,
+            pool_balance = {ids.pool_balance}, 
+            size = {ids.option_size}, 
+            init_vol = {ids.volatility}, 
+            desired_vol = {context.desired_vol},
+            final_vol = {ids.vol_2}
+        """
 
-    let pool_bal_call_2 = 10376293541461622784; // 4.5 * 2**61
-    let (vol_call_long_3, trade_vol_call_long_3) = get_new_volatility(
-        current_volatility = vol_call_long_2,
-        option_size = half_64,
-        option_type = 0,
-        side = 0,
-        strike_price = strike,
-        current_pool_balance = pool_bal_call_2
-    );
-    
-    assert vol_call_long_3 = 2882303761517117437; // 1.25 -> same as in basic
-    assert trade_vol_call_long_3 = 2722175774766166469; // 1.18 
+        assert isclose(context.desired_vol, ids.vol_2, rel_tol = 0.01), error_string
+    %}
 
-    // Same updates, but divided into two parts  
-    let (vol_call_short_2, trade_vol_call_short_2) = get_new_volatility(
-        current_volatility = one_64,
-        option_size = half_64,
-        option_type = 0,
-        side = 1,
-        strike_price = strike,
-        current_pool_balance = pool_bal_call
-    );
+    return();
+}
 
-    assert vol_call_short_2 = 2096220917466994501; // 0.909
-    assert trade_vol_call_short_2 = 2201031963340344226; // 0.954
 
     let pool_bal_call_3 = 12682136550675316736; // 5.5 * 2**61
     let (vol_call_short_3, trade_vol_call_short_3) = get_new_volatility(
