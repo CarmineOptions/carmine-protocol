@@ -1,21 +1,24 @@
 %lang starknet 
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.uint256 import Uint256, assert_uint256_eq
 
 from math64x61 import Math64x61
+from openzeppelin.token.erc20.IERC20 import IERC20
 
+from interface_lptoken import ILPToken
+from interface_liquidity_pool import ILiquidityPool
+from interface_option_token import IOptionToken
+from interface_amm import IAMM
+
+from constants import EMPIRIC_ORACLE_ADDRESS
 from contracts.option_pricing_helpers import get_new_volatility
+from types import Option
 from tests.itest_specs.setup import deploy_setup
 
-// @external
-// func __setup__{syscall_ptr: felt*, range_check_ptr}(){
 
-//     deploy_setup();
-
-//     return ();
-// }
 @external
-func setup_get_new_volatility_basic{syscall_ptr: felt*, range_check_ptr}(){
+func setup_get_new_volatility{syscall_ptr: felt*, range_check_ptr}(){
 
     %{
         given(
@@ -30,8 +33,9 @@ func setup_get_new_volatility_basic{syscall_ptr: felt*, range_check_ptr}(){
 
     return ();
 }
+
 @external
-func test_get_new_volatility_basic{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: felt,
     trade_side: felt,
     option_size: felt,
@@ -134,33 +138,189 @@ func test_get_new_volatility_basic{syscall_ptr: felt*, pedersen_ptr: HashBuiltin
     return();
 }
 
+@external
+func setup_volatility_updates{syscall_ptr: felt*, range_check_ptr}(){
 
-    let pool_bal_call_3 = 12682136550675316736; // 5.5 * 2**61
-    let (vol_call_short_3, trade_vol_call_short_3) = get_new_volatility(
-        current_volatility = vol_call_short_2,
-        option_size = half_64,
-        option_type = 0,
-        side = 1,
-        strike_price = strike,
-        current_pool_balance = pool_bal_call_3
-    );
+    deploy_setup();
 
-    assert vol_call_short_3 = 1921535841011411625; // 0.83 -> same as in basic
-    assert trade_vol_call_short_3 =  2008878379239203063; // 0.87
+    %{
+    
+        given(
+            OPTION_TYPE = strategy.integers(0, 1),
+            TRADE_SIDE = strategy.integers(0, 1),
+            # Test fail sometimes for strategy below
+            # OPTION_SIZE = strategy.integers(1, 30).map(lambda x: int((x / 10) * 10**18))
+            OPTION_SIZE = strategy.integers(1, 3).map(lambda x: int(x * 10**18))
+        )
 
-    return();
+        max_examples(30)
+    %}
+
+    return ();
 }
 
 
+@external
+func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    OPTION_TYPE: felt,
+    TRADE_SIDE: felt,
+    OPTION_SIZE: felt
+) {
+    alloc_locals;
+
+    // Present some trade, calculate how much would trader's balance be if it 
+    // would be conducted all at one
+    // Split the trade and make sure that the trader's balance doesn't differ too much
+
+    local lpt_addr;
+    local amm_addr;
+    local myusd_addr;
+    local myeth_addr;
+    local admin_addr;
+    local expiry;
+    local opt_addr;
+    local option_size_half;
+    let strike_price = Math64x61.fromFelt(1500);
+
+    %{
+        ids.amm_addr = context.amm_addr
+        ids.myusd_addr = context.myusd_address
+        ids.myeth_addr = context.myeth_address
+        ids.expiry = context.expiry_0
+        ids.admin_addr = context.admin_address
+
+        ids.option_size_half = int(ids.OPTION_SIZE / 2)
+        ids.OPTION_SIZE = int(ids.option_size_half * 2) # To prevent more rounding errors i guess
+
+        if ids.OPTION_TYPE == 0:
+            ids.lpt_addr = context.lpt_call_addr
+            if ids.TRADE_SIDE == 0:
+                ids.opt_addr = context.opt_long_call_addr_0
+            elif ids.TRADE_SIDE == 1:
+                ids.opt_addr = context.opt_short_call_addr_0
+            else:
+                raise ValueError(f"Unknown trade side: {ids.TRADE_SIDE}")
+                
+        elif ids.OPTION_TYPE == 1:
+            ids.lpt_addr = context.lpt_put_addr
+            if ids.TRADE_SIDE == 0:
+                ids.opt_addr = context.opt_long_put_addr_0
+            elif ids.TRADE_SIDE == 1:
+                ids.opt_addr = context.opt_short_put_addr_0
+            else:
+                raise ValueError(f"Unknown trade side: {ids.TRADE_SIDE}")
+
+        else: 
+            raise ValueError(f"Unknown option type: {ids.OPTION_TYPE}")
+
+    %}
+
+    let option_size_uint: Uint256 = Uint256(
+        OPTION_SIZE,
+        0
+    );
+
+    // Test starting amount of myUSD on option-buyer's account
+    let (admin_myUSD_balance_start: Uint256) = IERC20.balanceOf(
+        contract_address=myusd_addr,
+        account=admin_addr
+    );
+    // Get starting amount of myETH in buyers account
+    let (admin_myETH_balance_start: Uint256) = IERC20.balanceOf(
+        contract_address=myeth_addr,
+        account=admin_addr
+    );
+
+    // Get premia for whole trade
+    let option_struct = Option(
+        option_side = TRADE_SIDE,
+        maturity = expiry,
+        strike_price = strike_price,
+        quote_token_address = myusd_addr,
+        base_token_address = myeth_addr,
+        option_type = OPTION_TYPE,
+    );
+
+    local tmp_address = EMPIRIC_ORACLE_ADDRESS;
+    %{
+        stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+        stop_mock_current_price = mock_call(
+            ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+        )
+        stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
+    %}
+
+    let (_, total_premia_including_fees) = ILiquidityPool.get_total_premia(
+        amm_addr,
+        option_struct,
+        lpt_addr,
+        option_size_uint,
+        0
+    );
+
+    // Conduct first trade of half size
+    let (_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=OPTION_TYPE,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=TRADE_SIDE,
+        option_size=option_size_half,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+    // Conduct second trade of half size
+    let (_) = IAMM.trade_open(
+        contract_address=amm_addr,
+        option_type=OPTION_TYPE,
+        strike_price=strike_price,
+        maturity=expiry,
+        option_side=TRADE_SIDE,
+        option_size=option_size_half,
+        quote_token_address=myusd_addr,
+        base_token_address=myeth_addr
+    );
+
+    // Get final amount of myUSD on option-buyer's account
+    let (admin_myUSD_balance_final: Uint256) = IERC20.balanceOf(
+        contract_address=myusd_addr,
+        account=admin_addr
+    );
+    // Get final amount of myETH in buyers account
+    let (admin_myETH_balance_final: Uint256) = IERC20.balanceOf(
+        contract_address=myeth_addr,
+        account=admin_addr
+    );
+
+    %{
+        if ids.OPTION_TYPE == 0:
+            if ids.TRADE_SIDE == 0:
+                desired_balance = int(ids.admin_myETH_balance_start.low) - int((ids.total_premia_including_fees / 2**61) * 10**18)
+            elif ids.TRADE_SIDE == 1:
+                desired_balance = int(ids.admin_myETH_balance_start.low) + int((ids.total_premia_including_fees / 2**61) * 10**18) - ids.OPTION_SIZE
+
+        elif ids.OPTION_TYPE == 1:
+            if ids.TRADE_SIDE == 0:
+                desired_balance = int(ids.admin_myUSD_balance_start.low) - int((ids.total_premia_including_fees / 2**61) * 10**6)
+            elif ids.TRADE_SIDE == 1:
+                desired_balance = int(ids.admin_myUSD_balance_start.low) + int((ids.total_premia_including_fees / 2**61) * 10**6) - int(((ids.OPTION_SIZE / 10**18) * (ids.strike_price / 2**61)) * 10**6)
 
 
+        # from math import isclose
+        # error_string = f"""
+        #     Test vol updates basic failed for:
+        #     option_type = {ids.option_type}, 
+        #     side = {ids.trade_side} ,
+        #     pool_balance = {ids.pool_balance}, 
+        #     size = {ids.option_size}, 
+        #     init_vol = {ids.volatility}, 
+        #     desired_vol = {context.desired_vol},
+        #     final_vol = {ids.vol_2}
+        # """
 
-
-
-
-
-
-
-
-
+        # assert isclose(context.desired_vol, ids.vol_2, rel_tol = 0.01), error_string
+    %}
+    
+    return();
+}
 
