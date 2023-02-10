@@ -430,18 +430,12 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     x: Math64x61_,
     currency_address: Address
 ) -> Int {
-    let (decimal) = get_decimal(currency_address);
-    let (dec_) = pow10(decimal);
-    let x_ = x * dec_;
+    alloc_locals;
 
-    with_attr error_message("x_ out of bounds in toInt_balance"){
-        assert_le(x_, Math64x61.BOUND);
-        assert_nn(x_);
-    }
-    let amount_felt = Math64x61.toFelt(x_);
-    assert_nn(amount_felt);
+    let x_ = toUint256_balance(x, currency_address);
+    let x__ = x_.low;
 
-    return amount_felt;
+    return x__;
 }
 
 
@@ -449,16 +443,12 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     x: Int,
     currency_address: Address
 ) -> Math64x61_ {
-    assert_nn(x);
-    let (decimal) = get_decimal(currency_address);
-    let (dec_) = pow10(decimal);
+    alloc_locals;
 
-    with_attr error_message("unable to convert {x} to math64x61 number"){
-        let x_ = Math64x61.fromFelt(x);
-        with_attr error_message("fromInt_balance failed unsigned_div_rem( {dec_} {x_} )") {
-            let (x__, _) = unsigned_div_rem(x_, dec_);
-        }
-        Math64x61.assert64x61(x__);
+    assert_nn(x);
+    let x_ = Uint256(low=x, high=0);
+    with_attr error_message("Failed fromInt_balance with input {x}, {currency_address}"){
+        let x__ = fromUint256_balance(x_, currency_address);
     }
     return x__;
 }
