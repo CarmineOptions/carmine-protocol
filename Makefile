@@ -2,7 +2,7 @@ build: contracts/*
 	protostar build
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
-	~/.protostar/dist/protostar/protostar test ./tests/
+	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests/
 
 #testpy: tests/*.py
 #	pytest tests/  # TODO FIXME, is broken
