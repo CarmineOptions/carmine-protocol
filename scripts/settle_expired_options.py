@@ -15,7 +15,8 @@ contract_address = (
     # 0x05cade694670f80dca1195c77766b643dce01f511eca2b7250ef113b57b994ec  # testnet "testdev" contract - staging
 )
 testnet = "testnet"
-MATURITY_TO_BE_SETTLED = 1674777599
+MATURITY_TO_BE_SETTLED = 1675987199
+# MATURITY_TO_BE_SETTLED = 1674777599
 
 
 async def main():

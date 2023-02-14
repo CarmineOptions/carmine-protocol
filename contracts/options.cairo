@@ -346,8 +346,9 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
         let (to_be_paid_by_user) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
 
+        let to_be_paid_by_user_low = to_be_paid_by_user.low;
         // Move (option_size minus (premia minus fees)) from user to the pool
-        with_attr error_message("Failed to lock up enough capital, tried to transfer {to_be_paid_by_user} of {currency_address}") {
+        with_attr error_message("Failed to lock up enough capital, tried to transfer {to_be_paid_by_user_low} of {currency_address}") {
             IERC20.transferFrom(
                 contract_address=currency_address,
                 sender=user_address,

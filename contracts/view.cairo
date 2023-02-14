@@ -173,7 +173,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     if (lptoken_address == 0) {
         return array_len_so_far;
     }
-    
+
     // Jump to next pool when current pool's options were iterated.
     let (option) = get_available_options(lptoken_address, option_index);
     if (option.quote_token_address == 0 and option.base_token_address == 0) {
