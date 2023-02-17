@@ -200,9 +200,11 @@ func _get_value_of_position{
     alloc_locals;
 
     // If the value of expired has to be calculated use the below
-    let (current_block_time) = get_block_timestamp();
-    let maturity = option.maturity;
-    let is_ripe = is_le(maturity, current_block_time);
+    with_attr error_message("helpers._get_value_of_position failed on initial statements") {
+        let (current_block_time) = get_block_timestamp();
+        let maturity = option.maturity;
+        let is_ripe = is_le(maturity, current_block_time);
+    }
     with_attr error_message("helpers._get_value_of_position failed on ripe option: maturity: {maturity}, current_block_time: {current_block_time}") {
         if (is_ripe == TRUE) {
             let quote_token_address = option.quote_token_address;
@@ -225,22 +227,30 @@ func _get_value_of_position{
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
 
-    let side = option.option_side;
-    let strike_price = option.strike_price;
+    with_attr error_message("helpers._get_value_of_position failed on getting option size") {
+        let side = option.option_side;
+        let strike_price = option.strike_price;
 
-    let option_size_m64x61_ = Math64x61.fromFelt(position_size);
-    let (base_decimals: felt) = IERC20.decimals(contract_address=option.base_token_address);
-    let (base_div) = pow10(base_decimals);
-    let base_div_m64x61 = Math64x61.fromFelt(base_div);
-    let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+        // let option_size_m64x61_ = Math64x61.fromFelt(position_size);
+        // let (base_decimals: felt) = IERC20.decimals(contract_address=option.base_token_address);
+        // let (base_div) = pow10(base_decimals);
+        // let base_div_m64x61 = Math64x61.fromFelt(base_div);
+        // let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
+        let option_size_m64x61 = fromInt_balance(
+            x=position_size,
+            currency_address=option.base_token_address
+        );
+    }
 
-    let (total_premia_before_fees) = _get_premia_before_fees(
-        option=option,
-        position_size=option_size_m64x61,
-        option_type=option_type,
-        current_volatility=current_volatility,
-        current_pool_balance=current_pool_balance
-    );
+    with_attr error_message("helpers._get_value_of_position failed on getting premium") {
+        let (total_premia_before_fees) = _get_premia_before_fees(
+            option=option,
+            position_size=option_size_m64x61,
+            option_type=option_type,
+            current_volatility=current_volatility,
+            current_pool_balance=current_pool_balance
+        );
+    }
 
     // Get fees and total premia
     with_attr error_message("helpers._get_value_of_position getting fees FAILED"){
@@ -265,7 +275,10 @@ func _get_value_of_position{
     }
 
     if (option_type == OPTION_CALL) {
-        let locked_and_premia_with_fees = Math64x61.sub(option_size_m64x61, premia_with_fees);
+
+        with_attr error_message("helpers._get_value_of_position failed on last calculation 1") {
+            let locked_and_premia_with_fees = Math64x61.sub(option_size_m64x61, premia_with_fees);
+        }
 
         with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 1 is negative FAILED"){
             assert_nn(locked_and_premia_with_fees);
@@ -273,8 +286,10 @@ func _get_value_of_position{
         return (position_value = locked_and_premia_with_fees);
     } else {
 
-        let locked_capital = Math64x61.mul(option_size_m64x61, strike_price);
-        let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
+        with_attr error_message("helpers._get_value_of_position failed on last calculation 2") {
+            let locked_capital = Math64x61.mul(option_size_m64x61, strike_price);
+            let locked_and_premia_with_fees = Math64x61.sub(locked_capital, premia_with_fees);
+        }
 
         with_attr error_message("helpers._get_value_of_position locked_and_premia_with_fees 2 is negative FAILED"){
             assert_nn(locked_and_premia_with_fees);
