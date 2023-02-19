@@ -200,29 +200,15 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             assert_not_zero(base_address);
         }
 
-        // Mint tokens
-        with_attr error_message("Failed to mint option token in _mint_option_token_long") {
-            let option_size_uint256 = intToUint256(option_size);
-            IOptionToken.mint(option_token_address, user_address, option_size_uint256);
-        }
-
         // Move premia and fees from user to the pool
         with_attr error_message("Failed to convert premia_including_fees to Uint256 _mint_option_token_long") {
             let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
         }
-
+        with_attr error_message("Failed to convert option size to u256") {
+            let option_size_uint256 = intToUint256(option_size);
+        }
         local premia_including_fees_uint256_low = premia_including_fees_uint256.low;
         local option_size_in_pool_currency_low = option_size_in_pool_currency.low;
-        with_attr error_message(
-            "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}, {premia_including_fees_uint256_low}, {option_size}, {option_size_in_pool_currency_low}"
-        ) {
-            IERC20.transferFrom(
-                contract_address=currency_address,
-                sender=user_address,
-                recipient=current_contract_address,
-                amount=premia_including_fees_uint256,
-            );  // Transaction will fail if there is not enough fund on users account
-        }
 
         TradeOpen.emit(
             caller=user_address,
@@ -290,6 +276,22 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             assert carry = 0;
             set_pool_locked_capital(lptoken_address, new_locked_capital);
         }
+
+        // Mint tokens
+        with_attr error_message("Failed to mint option token in _mint_option_token_long") {
+            IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+        }
+
+        with_attr error_message(
+            "Failed to transfer premia and fees _mint_option_token_long {currency_address}, {user_address}, {current_contract_address}, {premia_including_fees_uint256_low}, {option_size}, {option_size_in_pool_currency_low}"
+        ) {
+            IERC20.transferFrom(
+                contract_address=currency_address,
+                sender=user_address,
+                recipient=current_contract_address,
+                amount=premia_including_fees_uint256,
+            );  // Whole tx will fail if there is not enough funds on users account
+        }
     }
 
     return ();
@@ -339,23 +341,11 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             assert_not_zero(base_address);
         }
 
-        // Mint tokens
         let option_size_uint256 = intToUint256(option_size);
-        IOptionToken.mint(option_token_address, user_address, option_size_uint256);
-
         let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
         let (to_be_paid_by_user) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
 
         let to_be_paid_by_user_low = to_be_paid_by_user.low;
-        // Move (option_size minus (premia minus fees)) from user to the pool
-        with_attr error_message("Failed to lock up enough capital, tried to transfer {to_be_paid_by_user_low} of {currency_address}") {
-            IERC20.transferFrom(
-                contract_address=currency_address,
-                sender=user_address,
-                recipient=current_contract_address,
-                amount=to_be_paid_by_user,
-            );
-        }
 
         TradeOpen.emit(
             caller=user_address,
@@ -414,6 +404,19 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         }
 
         set_pool_locked_capital(lptoken_address, new_locked_balance);
+
+        // Mint tokens
+        IOptionToken.mint(option_token_address, user_address, option_size_uint256);
+
+        // Move (option_size minus (premia minus fees)) from user to the pool
+        with_attr error_message("Failed to lock up enough capital, tried to transfer {to_be_paid_by_user_low} of {currency_address}") {
+            IERC20.transferFrom(
+                contract_address=currency_address,
+                sender=user_address,
+                recipient=current_contract_address,
+                amount=to_be_paid_by_user,
+            );
+        }
     }
 
     return ();
@@ -517,16 +520,8 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     let base_address = pool_definition.base_token_address;
     let quote_address = pool_definition.quote_token_address;
 
-    // Burn the tokens
     let option_size_uint256 = intToUint256(option_size);
-    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
-
     let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
-    IERC20.transfer(
-        contract_address=currency_address,
-        recipient=user_address,
-        amount=premia_including_fees_uint256,
-    );
 
     TradeClose.emit(
         caller=user_address,
@@ -603,6 +598,16 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
         );
     }
+
+    // Burn the tokens
+    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
+    
+    IERC20.transfer(
+        contract_address=currency_address,
+        recipient=user_address,
+        amount=premia_including_fees_uint256,
+    );
+
     return ();
 }
 
@@ -630,19 +635,9 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     let quote_address = pool_definition.quote_token_address;
 
     let premia_including_fees_uint256 = toUint256_balance(premia_including_fees, currency_address);
-
-    // Burn the tokens
     let option_size_uint256 = intToUint256(option_size);
-    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
 
-    // User receives back its locked capital, pays premia and fees
-    
     let (total_user_payment) = uint256_sub(option_size_in_pool_currency, premia_including_fees_uint256);
-    IERC20.transfer(
-        contract_address=currency_address,
-        recipient=user_address,
-        amount=total_user_payment,
-    );
 
     TradeClose.emit(
         caller=user_address,
@@ -761,6 +756,16 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         tempvar syscall_ptr: felt* = syscall_ptr;
         tempvar pedersen_ptr: HashBuiltin* = pedersen_ptr;
     }
+
+    // Burn the tokens
+    IOptionToken.burn(option_token_address, user_address, option_size_uint256);
+
+    // User receives back its locked capital, pays premia and fees
+    IERC20.transfer(
+        contract_address=currency_address,
+        recipient=user_address,
+        amount=total_user_payment,
+    );
 
     return ();
 }
