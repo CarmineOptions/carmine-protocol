@@ -1,7 +1,6 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
 from interface_option_token import IOptionToken
 from interface_amm import IAMM
 from types import Math64x61_

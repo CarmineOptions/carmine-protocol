@@ -2,7 +2,6 @@
 
 from constants import EMPIRIC_ORACLE_ADDRESS
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
 from interface_amm import IAMM
 from types import Option
 
@@ -45,7 +44,7 @@ namespace LPBasicViewFunctions {
             ids.amm_addr = context.amm_addr
         %}
 
-        let (lptoken_addresses_len, lptoken_addresses) = ILiquidityPool.get_all_lptoken_addresses(
+        let (lptoken_addresses_len, lptoken_addresses) = IAMM.get_all_lptoken_addresses(
             contract_address=amm_addr,
         );
         assert lptoken_addresses_len = 2;
@@ -72,19 +71,19 @@ namespace LPBasicViewFunctions {
             ids.amm_addr = context.amm_addr
         %}
 
-        let (lptoken_address_0) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_0) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=0
         );
         assert lptoken_address_0 = lpt_call_addr;
 
-        let (lptoken_address_1) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_1) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=1
         );
         assert lptoken_address_1 = lpt_put_addr;
 
-        let (lptoken_address_2) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_2) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=2
         );
@@ -142,7 +141,7 @@ namespace LPBasicViewFunctions {
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
         %}
 
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=side_long,
             maturity=expiry,
@@ -197,12 +196,12 @@ namespace LPBasicViewFunctions {
             stop_warp = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
         %}
 
-        let (option_call_len, option_call_array) = ILiquidityPool.get_all_options(
+        let (option_call_len, option_call_array) = IAMM.get_all_options(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
 
-        let (option_put_len, option_put_array) = ILiquidityPool.get_all_options(
+        let (option_put_len, option_put_array) = IAMM.get_all_options(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
@@ -216,7 +215,7 @@ namespace LPBasicViewFunctions {
         let option_call_maturity_0 = get_array_element(1, option_call_len, option_call_array);
         let option_call_strike_0 = get_array_element(2, option_call_len, option_call_array);
 
-        let (call_option_token_address_0) = ILiquidityPool.get_option_token_address(
+        let (call_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_call_side_0,
@@ -228,7 +227,7 @@ namespace LPBasicViewFunctions {
         let option_call_side_1 = get_array_element(6, option_call_len, option_call_array);
         let option_call_maturity_1 = get_array_element(7, option_call_len, option_call_array);
         let option_call_strike_1 = get_array_element(8, option_call_len, option_call_array);
-        let (call_option_token_address_1) = ILiquidityPool.get_option_token_address(
+        let (call_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_call_side_1,
@@ -240,7 +239,7 @@ namespace LPBasicViewFunctions {
         let option_call_side_2 = get_array_element(12, option_call_len, option_call_array);
         let option_call_maturity_2 = get_array_element(13, option_call_len, option_call_array);
         let option_call_strike_2 = get_array_element(14, option_call_len, option_call_array);
-        let (call_option_token_address_2) = ILiquidityPool.get_option_token_address(
+        let (call_option_token_address_2) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_call_side_2,
@@ -253,7 +252,7 @@ namespace LPBasicViewFunctions {
         let option_put_side_0 = get_array_element(0, option_put_len, option_put_array);
         let option_put_maturity_0 = get_array_element(1, option_put_len, option_put_array);
         let option_put_strike_0 = get_array_element(2, option_put_len, option_put_array);
-        let (put_option_token_address_0) = ILiquidityPool.get_option_token_address(
+        let (put_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=option_put_side_0,
@@ -265,7 +264,7 @@ namespace LPBasicViewFunctions {
         let option_put_side_1 = get_array_element(6, option_put_len, option_put_array);
         let option_put_maturity_1 = get_array_element(7, option_put_len, option_put_array);
         let option_put_strike_1 = get_array_element(8, option_put_len, option_put_array);
-        let (put_option_token_address_1) = ILiquidityPool.get_option_token_address(
+        let (put_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=option_put_side_1,
@@ -322,12 +321,12 @@ namespace LPBasicViewFunctions {
             )
         %}
 
-        let (option_call_len, option_call_array) = ILiquidityPool.get_all_non_expired_options_with_premia(
+        let (option_call_len, option_call_array) = IAMM.get_all_non_expired_options_with_premia(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
 
-        let (option_put_len, option_put_array) = ILiquidityPool.get_all_non_expired_options_with_premia(
+        let (option_put_len, option_put_array) = IAMM.get_all_non_expired_options_with_premia(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
@@ -344,7 +343,7 @@ namespace LPBasicViewFunctions {
 
         assert option_call_premia_0 = 2081174898976881;
 
-        let (call_option_token_address_0) = ILiquidityPool.get_option_token_address(
+        let (call_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_call_side_0,
@@ -361,7 +360,7 @@ namespace LPBasicViewFunctions {
         assert option_call_premia_1 = 608622173767232;
 
         
-        let (call_option_token_address_1) = ILiquidityPool.get_option_token_address(
+        let (call_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_call_side_1,
@@ -378,7 +377,7 @@ namespace LPBasicViewFunctions {
 
         assert option_put_premia_0 = 241695010576185446327;
         
-        let (put_option_token_address_0) = ILiquidityPool.get_option_token_address(
+        let (put_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=option_put_side_0,
@@ -394,7 +393,7 @@ namespace LPBasicViewFunctions {
 
         assert option_put_premia_1 = 224338456389442822640;     
 
-        let (put_option_token_address_1) = ILiquidityPool.get_option_token_address(
+        let (put_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=option_put_side_1,
@@ -546,7 +545,7 @@ namespace LPBasicViewFunctions {
             )
         %}
 
-        let (options_with_position_len, options_with_position) = ILiquidityPool.get_option_with_position_of_user(
+        let (options_with_position_len, options_with_position) = IAMM.get_option_with_position_of_user(
             contract_address=amm_addr,
             user_address=admin_address
         );
@@ -558,7 +557,7 @@ namespace LPBasicViewFunctions {
         let option_side_0 = get_array_element(0, options_with_position_len, options_with_position);
         let option_maturity_0 = get_array_element(1, options_with_position_len, options_with_position);
         let option_strike_0 = get_array_element(2, options_with_position_len, options_with_position);
-        let (option_token_address_0) = ILiquidityPool.get_option_token_address(
+        let (option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=option_side_0,
@@ -570,7 +569,7 @@ namespace LPBasicViewFunctions {
         let option_side_1 = get_array_element(9, options_with_position_len, options_with_position);
         let option_maturity_1 = get_array_element(10, options_with_position_len, options_with_position);
         let option_strike_1 = get_array_element(11, options_with_position_len, options_with_position);
-        let (option_token_address_1) = ILiquidityPool.get_option_token_address(
+        let (option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=option_side_1,
@@ -663,7 +662,7 @@ namespace LPBasicViewFunctions {
         let (
             total_premia_before_fees_long_call,
             total_premia_including_fees_long_call
-        ) = ILiquidityPool.get_total_premia(
+        ) = IAMM.get_total_premia(
             amm_addr,
             option_long_call,
             lpt_call_addr,
@@ -674,7 +673,7 @@ namespace LPBasicViewFunctions {
         let (
             total_premia_before_fees_short_call,
             total_premia_including_fees_short_call
-        ) = ILiquidityPool.get_total_premia(
+        ) = IAMM.get_total_premia(
             amm_addr,
             option_short_call,
             lpt_call_addr,
@@ -685,7 +684,7 @@ namespace LPBasicViewFunctions {
         let (
             total_premia_before_fees_long_put,
             total_premia_including_fees_long_put
-        ) = ILiquidityPool.get_total_premia(
+        ) = IAMM.get_total_premia(
             amm_addr,
             option_long_put,
             lpt_put_addr,
@@ -696,7 +695,7 @@ namespace LPBasicViewFunctions {
         let (
             total_premia_before_fees_short_put,
             total_premia_including_fees_short_put
-        ) = ILiquidityPool.get_total_premia(
+        ) = IAMM.get_total_premia(
             amm_addr,
             option_short_put,
             lpt_put_addr,

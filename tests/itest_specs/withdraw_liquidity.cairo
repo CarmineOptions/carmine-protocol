@@ -1,7 +1,7 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
+from interface_amm import IAMM
 
 from starkware.cairo.common.uint256 import Uint256, assert_uint256_eq
 
@@ -48,20 +48,20 @@ namespace WithdrawLiquidity {
         );
         assert bal_usd_lpt.low = 5000000000;
 
-        let (call_pool_unlocked_capital) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
         assert_uint256_eq(call_pool_unlocked_capital, Uint256(5000000000000000000, 0));
 
-        let (put_pool_unlocked_capital) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
         assert_uint256_eq(put_pool_unlocked_capital, Uint256(5000000000, 0));
 
         let two_and_half_eth = Uint256(low = 2500000000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
@@ -71,7 +71,7 @@ namespace WithdrawLiquidity {
         );
 
         let two_and_half_thousand_usd = Uint256(low = 2500000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
@@ -92,13 +92,13 @@ namespace WithdrawLiquidity {
         );
         assert bal_usd_lpt_after.low = 2500000000;
 
-        let (call_pool_unlocked_capital_after) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital_after) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
         assert_uint256_eq(call_pool_unlocked_capital_after, Uint256(2500000000000000000, 0));
 
-        let (put_pool_unlocked_capital_after) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_after) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );

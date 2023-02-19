@@ -33,7 +33,6 @@ from contracts.events import (
     ExpireOptionTokenForPool
 )
 from contracts.fees import get_fees
-from contracts.interface_liquidity_pool import ILiquidityPool
 from contracts.option_pricing import black_scholes
 from contracts.oracles import empiric_median_price, get_terminal_price
 from contracts.types import (

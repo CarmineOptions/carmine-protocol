@@ -1,7 +1,7 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
+from interface_amm import IAMM
 from types import PoolInfo, Pool
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -29,7 +29,7 @@ namespace LPAggregateViewFunctions {
             ids.lpt_put_addr = context.lpt_put_addr
         %}
 
-        let (poolinfo_len, poolinfo) = ILiquidityPool.get_all_poolinfo(
+        let (poolinfo_len, poolinfo) = IAMM.get_all_poolinfo(
             contract_address=amm_addr,
         );
 
@@ -77,7 +77,7 @@ namespace LPAggregateViewFunctions {
             ids.lpt_put_addr = context.lpt_put_addr
         %}
 
-        let (user_pool_infos_len, user_pools_info) = ILiquidityPool.get_user_pool_infos(
+        let (user_pool_infos_len, user_pools_info) = IAMM.get_user_pool_infos(
             contract_address=amm_addr,
             user=admin_address
         );

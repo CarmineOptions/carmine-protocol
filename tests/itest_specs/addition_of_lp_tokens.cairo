@@ -1,7 +1,7 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
+from interface_amm import IAMM
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
@@ -33,19 +33,19 @@ namespace AdditionOfLPTokens {
         let (name_put) = ILPToken.name(contract_address=lpt_put_addr);
         assert name_put = 112;
 
-        let (lptoken_address_0) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_0) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=0
         );
         assert lptoken_address_0 = lpt_call_addr;
 
-        let (lptoken_address_1) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_1) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=1
         );
         assert lptoken_address_1 = lpt_put_addr;
 
-        let (lptoken_address_2) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_2) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=2
         );

@@ -1,7 +1,7 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
+from interface_amm import IAMM
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
@@ -101,8 +101,8 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
 
     // Add LPToken
 
-    ILiquidityPool.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, lptoken_address=lpt_call_addr);
-    ILiquidityPool.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, lptoken_address=lpt_put_addr);
+    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, lptoken_address=lpt_call_addr);
+    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, lptoken_address=lpt_put_addr);
 
     // Approve myUSD and myETH for use by amm
 
@@ -128,21 +128,21 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
     %}
     let five_eth = Uint256(low = 5000000000000000000, high = 0);
-    ILiquidityPool.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=myeth_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, amount=five_eth);
+    IAMM.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=myeth_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, amount=five_eth);
     let (bal_eth_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_call_addr, account=admin_addr);
     assert bal_eth_lpt.low = 5000000000000000000;
 
     // Deposit 5_000 USD liquidity
 
     let five_thousand_usd = Uint256(low = 5000000000, high = 0);
-    ILiquidityPool.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=myusd_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, amount=five_thousand_usd);
+    IAMM.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=myusd_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, amount=five_thousand_usd);
     // FIXME lpt_call_addr should be lpt_put_addr
     let (bal_usd_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_put_addr, account=admin_addr);
     assert bal_usd_lpt.low = 5000000000;
 
     let hundred_m64x61 = Math64x61.fromFelt(100);
     // Add long call option
-    ILiquidityPool.add_option(
+    IAMM.add_option(
         contract_address=amm_addr,
         option_side=side_long,
         maturity=expiry,
@@ -155,7 +155,7 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         initial_volatility=hundred_m64x61
     );
     // Add short call option
-    ILiquidityPool.add_option(
+    IAMM.add_option(
         contract_address=amm_addr,
         option_side=side_short,
         maturity=expiry,
@@ -168,7 +168,7 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         initial_volatility=hundred_m64x61
     );
     // Add long put option
-    ILiquidityPool.add_option(
+    IAMM.add_option(
         contract_address=amm_addr,
         option_side=side_long,
         maturity=expiry,
@@ -181,7 +181,7 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         initial_volatility=hundred_m64x61
     );
     // Add short put option
-    ILiquidityPool.add_option(
+    IAMM.add_option(
         contract_address=amm_addr,
         option_side=side_short,
         maturity=expiry,
