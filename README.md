@@ -1,16 +1,12 @@
 # Carmine Protocol
 
-Carmine options protocol
+This repository contains the smart contracts for the Carmine Protocol, developed by Carmine Finance s.r.o.
 
-Options AMM that allows any user to buy and sell options at a fair price.
-
-For crypto funds, traders and investors who need to hedge their portfolios or trade options, this
-options AMM will provide a possibility to do so. Different from competitors, this AMM allows for
-selling specific options directly.
+The Protocol allows any user to buy and sell options at a fair price.
 
 ## Current State
 
-We have an early alpha up and running on testnet, see below for addresses. We don't have a working frontend yet.
+We are live on [testnet](https://app.carmine.finance)!
 
 ## Documentation
 
@@ -54,6 +50,11 @@ Available options (including expired ones)
 | Long  | 1669849199 | 1200    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x03bd577d4318c2bd56dc2fbf708f04bd83d6b48c6a03f3eb2d1361b750bdeb9e |
 | Short | 1669849199 | 1200    | $USD_ADDRESS         | $ETH_ADDRESS        | Put       | 0x02a81464464510c50b7c614a29088d7b5620d9cb36db1b9feb6a093beb545afd |
 
+## Oracles
+
+Currently using only [Empiric](https://empiric.network/) oracle, which returns the median price (aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
+
+We're working on our own solution to make arbitrary timestamped data available on the blockchain, the [Chronos oracle](https://github.com/CarmineOptions/Chronos-Oracle).
 
 # Development
 
@@ -282,18 +283,6 @@ starknet invoke --address $MAIN_CONTRACT_ADDRESS --abi ./build/amm_abi.json --fu
 ```
 
 
-## Oracles
-
-Currently using only Empiric oracle, which returns the median price (aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
-
-Website: https://empiric.network/
-
-More oracles coming in the future (Stork, https://github.com/smartcontractkit/chainlink-starknet, etc.)
-
-
-For calculating settlement price of the options we are waiting for Empiric to put historical data on-chain. At the moment we are using constant "1500" price.
-
-
 ## Proxy Contracts 
 
 For proxy pattern, we decided to utilize OpenZeppelin library. Detailed explanation can be found here:
@@ -417,15 +406,8 @@ end
 ```
 
 
-### License
+## License
 
-Shield: [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+Everything contained in this repository is licensed under the MIT license, see [`LICENSE`](./LICENSE).  
 
-This work is licensed under a [Creative Commons Attribution-NonCommercial-ShareAlike 4.0
-International License][cc-by-nc-sa].
-
-[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
-
-[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
-[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
-[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
+(c) Carmine Finance s.r.o. 2023
