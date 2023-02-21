@@ -7,7 +7,6 @@ from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
 from interface_option_token import IOptionToken
 from interface_amm import IAMM
 
@@ -250,7 +249,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
     %}
 
-    let (_, total_premia_including_fees) = ILiquidityPool.get_total_premia(
+    let (_, total_premia_including_fees) = IAMM.get_total_premia(
         amm_addr,
         option_struct,
         lpt_addr,
