@@ -345,22 +345,9 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         assert underlying_token_address = pooled_token_addr;
     }
 
-    with_attr error_message("Failed to transfer token from account to pool"){
-        // Transfer tokens to pool.
-        // We can do this optimistically;
-        // any later exceptions revert the transaction anyway. saves some sanity checks
-        IERC20.transferFrom(
-            contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount
-        );
-    }
-
     with_attr error_message("Failed to calculate lp tokens to be minted"){
         // Calculates how many lp tokens will be minted for given amount of provided capital.
         let (mint_amount) = get_lptokens_for_underlying(lptoken_address, amount);
-    }
-    with_attr error_message("Failed to mint lp tokens"){
-        // Mint LP tokens
-        ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
     }
 
     DepositLiquidity.emit(
@@ -377,6 +364,18 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         let (new_pb: Uint256, carry: felt) = uint256_add(current_balance, amount);
         assert carry = 0;
         set_lpool_balance(lptoken_address, new_pb);
+    }
+
+    with_attr error_message("Failed to mint lp tokens"){
+        // Mint LP tokens
+        ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
+    }
+
+    with_attr error_message("Failed to transfer token from account to pool"){
+        // Transfer tokens to pool.
+        IERC20.transferFrom(
+            contract_address=pooled_token_addr, sender=caller_addr, recipient=own_addr, amount=amount
+        );
     }
 
     return ();
@@ -437,22 +436,6 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         assert_uint256_le(ZERO, assert_res);
     }
 
-    with_attr error_message("Failed to transfer token from pool to account in withdraw_liquidity"){
-        // Transfer underlying (base or quote depending on call/put)
-        // We can do this transfer optimistically;
-        // any later exceptions revert the transaction anyway. saves some sanity checks
-        IERC20.transfer(
-            contract_address=pooled_token_addr,
-            recipient=caller_addr,
-            amount=underlying_amount_uint256
-        );
-    }
-
-    with_attr error_message("Failed to burn lp token in withdraw_liquidity"){
-        // Burn LP tokens
-        ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
-    }
-
     WithdrawLiquidity.emit(
         caller=caller_addr,
         lp_token=lptoken_address,
@@ -467,6 +450,20 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
         // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
         set_lpool_balance(lptoken_address, new_pb);
+    }
+
+    with_attr error_message("Failed to transfer token from pool to account in withdraw_liquidity"){
+        // Transfer underlying (base or quote depending on call/put)
+        IERC20.transfer(
+            contract_address=pooled_token_addr,
+            recipient=caller_addr,
+            amount=underlying_amount_uint256
+        );
+    }
+
+    with_attr error_message("Failed to burn lp token in withdraw_liquidity"){
+        // Burn LP tokens
+        ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
     }
 
     return ();
