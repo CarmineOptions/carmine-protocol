@@ -1,5 +1,7 @@
 %lang starknet
 
+from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
+
 // Functions related to option token minting, option accouting, ...
 
 // FIXME: remove this external before going to mainnet
@@ -785,6 +787,8 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
     alloc_locals;
 
+    ReentrancyGuard.start();
+
     with_attr error_message("expire_option_token failed when getting option token address") {
         let (option_token_address) = get_option_token_address(
             lptoken_address=lptoken_address,
@@ -908,5 +912,6 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
             );
         }
     }
+    ReentrancyGuard.end();
     return ();
 }
