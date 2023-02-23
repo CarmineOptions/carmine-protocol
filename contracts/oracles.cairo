@@ -27,14 +27,39 @@ namespace IEmpiricOracle {
     ) {
     }
 
+    func get_spot(pair_id: felt, aggregation_mode: felt) -> (
+        price: felt, decimals: felt, last_updated_timestamp: felt, num_sources_aggregated: felt
+    ) {
+    }
 }
 
-// Struct for terminal price
+@contract_interface
+namespace IChainlinkOracle {
+    func latest_round_data() -> (round: Round) {
+    }
+
+    func round_data(round_id: felt) -> (round: Round) {
+    }
+
+    func decimals() -> (decimals: felt) {
+    }
+}
+
+// Struct for terminal EMPIRIC price
 struct Checkpoint {
     timestamp: felt,
     value: felt,
     aggregation_mode: felt,
     num_sources_aggregated: felt,
+}
+
+// Struct for Chainlink current price
+struct Round {
+    round_id: felt,
+    answer: felt,
+    block_num: felt,
+    started_at: felt,
+    updated_at: felt,
 }
 
 // Function to convert base 10**decimals number from oracle to base 2**61
@@ -89,6 +114,29 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
     return (res,);
 }
 
+@view
+func chainlink_current_price{syscall_ptr: felt*, range_check_ptr}(token_address: felt) -> (price: Math64x61_) {
+    alloc_locals;
+
+    with_attr error_message("Failed when getting current price from Chainlink Oracle") {
+        let (current_round) = IChainlinkOracle.latest_round_data(token_address);
+    }
+
+    with_attr error_message("Failed when getting decimals from Chainlink Oracle") {
+        let (decimals) = IChainlinkOracle.decimals(token_address);
+    }
+
+    with_attr error_message("Received zero current price from Chainlink Oracle") {
+        assert_not_zero(current_round.answer);
+    }
+
+    with_attr error_message("Failed when converting Chainlink Oracle median price to Math64x61 format") {
+        let (res) = convert_price(current_round.answer, decimals);
+        assert_not_zero(res);
+    }
+
+    return (res,);
+}
 
 @view
 func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (

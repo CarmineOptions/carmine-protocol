@@ -91,7 +91,6 @@ const EMPIRIC_ADA_USD_KEY = 18370920243876676;
 const EMPIRIC_XRP_USD_KEY = 24860302295520068;
 const EMPIRIC_MATIC_USD_KEY = 1425106761739050242884;
 
-
 func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_addr: Address,
     base_token_addr: Address,
@@ -107,6 +106,38 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     if (base_token_addr == TOKEN_BTC_ADDRESS) {
         if (quote_token_addr == TOKEN_USD_ADDRESS) {
             return (EMPIRIC_BTC_USD_KEY,);
+        }
+    }
+    return (0,);
+}
+
+// ############################
+// Constants for Chainlink oracle
+// ############################
+
+const CHAINLINK_AAVE_USD_ADDRESS = 0x6c84b8c59dd8be2cfb39c9928d38564420ca0443602a4d076eed1c53b94c583;
+const CHAINLINK_BTC_USD_ADDRESS = 0x2430c441b19a8ebe1df657ad9447f056e04a90e052a62c529909d94a70e65cf;
+const CHAINLINK_DAI_USD_ADDRESS = 0x1bdbbf9cabb39ede5186482cb2570c6644602ebe4a995bd8bd22b97252b133c;
+const CHAINLINK_ETH_USD_ADDRESS = 0x4cbab9f923b368ec7b0551c107e650ad790170851a4daa4ed780c636c6999de;
+const CHAINLINK_LINK_USD_ADDRESS = 0x5de7dbb23203290e589b743ea1a301639be3fa82247ffd6adaa23777be8c01f;
+const CHAINLINK_USDC_USD_ADDRESS = 0x67be59517411ac1ee3cfd5328b24a8fb8b181eedfa888a0ae91fb57d178c309;
+const CHAINLINK_USDT_USD_ADDRESS = 0x3c528d298e9b386e95fcc125add5f610db7ab7d1bdceed95fddf81856378eee;
+
+func get_chainlink_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    quote_token_addr: Address,
+    base_token_addr: Address,
+) -> (chainlink_address: Address) {
+    // Where quote is USDC in case of ETH/USDC, base token is ETH in case of ETH/USDC
+    // and option_type is either CALL or PUT (constants.OPTION_CALL or constants.OPTION_PUT).
+
+    if (base_token_addr == TOKEN_ETH_ADDRESS) {
+        if (quote_token_addr == TOKEN_USD_ADDRESS) {
+            return (CHAINLINK_ETH_USD_ADDRESS,);
+        }
+    }
+    if (base_token_addr == TOKEN_BTC_ADDRESS) {
+        if (quote_token_addr == TOKEN_USD_ADDRESS) {
+            return (CHAINLINK_BTC_USD_ADDRESS,);
         }
     }
     return (0,);
