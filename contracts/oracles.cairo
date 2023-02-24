@@ -111,6 +111,9 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
     if (maturity == 1675987199) {
         return (3564833292244370849792,);
     }
+    if (maturity == 1677196799) {
+        return (3804710140492871368704,);
+    }
     
     with_attr error_message("Received zero terminal price from Empiric Oracle"){
         assert_not_zero(last_checkpoint.value);
