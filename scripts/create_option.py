@@ -40,18 +40,28 @@ strike_1500 = 3458764513820540928000
 strike_1600 = 3689348814741910323200
 strike_1700 = 3919933115663279718400
 strike_1800 = 4150517416584649113600
+strike_1900 = 4381101717506018508800
+strike_2000 = 4611686018427387904000
 # maturity = 1675987199
-maturity = 1677196799
+# maturity = 1677196799
+maturity = 1678406399
 options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
+
     # {'option_type': 0, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
+    # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
+    # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
+    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
+    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
 
+    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
     # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
