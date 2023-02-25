@@ -87,7 +87,9 @@ func convert_amount_to_option_currency_from_base_uint256{
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
-    if (option_type == OPTION_PUT and amount.low != 0) {
+    let sum = amount.low + amount.high;
+    assert_nn(sum);
+    if (option_type == OPTION_PUT and sum != 0) {
         let (base_token_decimals) = get_decimal(base_token_address);
         let (dec) = pow10(base_token_decimals);
         let dec_ = Uint256(dec, 0);
@@ -96,7 +98,7 @@ func convert_amount_to_option_currency_from_base_uint256{
         assert adjusted_amount_high.high = 0;
         let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
         local quotlow = quot.low;
-        with_attr error_message("Option size too low, quot {quotlow}, amt {amtlow}"){
+        with_attr error_message("Option size too low, quot {quotlow}"){
             assert_uint256_lt(Uint256(0,0), quot);
         }
         let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0); // one cent in case of ETH/USDC
