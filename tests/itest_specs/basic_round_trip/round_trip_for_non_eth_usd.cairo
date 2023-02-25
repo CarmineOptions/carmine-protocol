@@ -698,19 +698,6 @@ namespace NonEthRoundTrip {
             account=admin_addr
         );
         assert admin_myusd_balance_4.low = 5000000000;
-        
-        // %{
-        //     print(f"{ids.admin_mydoge_balance_4.low}")
-        //     print(f"{ids.admin_mybtc_balance_4.low}")
-        //     print(f"{ids.admin_myusd_balance_4.low}")
-        //     print(f"{ids.btc_long_premia_3}")
-        //     print(f"{ids.doge_long_premia_3}")
-        // %}
-        
-        // print_stats(res_long_btc_4);
-        // print_stats(res_short_btc_4);
-        // print_stats(res_long_doge_4);
-        // print_stats(res_short_doge_4);
 
         // Test unlocked capital in the pools 
         assert res_long_btc_4.pool_unlocked_capital = 35172981;
@@ -853,20 +840,6 @@ namespace NonEthRoundTrip {
         );
         assert admin_myusd_balance_5.low = 5000000000;
 
-
-        // %{
-        //     print(f"{ids.admin_mydoge_balance_5.low}")
-        //     print(f"{ids.admin_mybtc_balance_5.low}")
-        //     print(f"{ids.admin_myusd_balance_5.low}")
-        //     print(f"{ids.btc_long_premia_4}")
-        //     print(f"{ids.doge_long_premia_4}")
-        // %}
-        
-        // print_stats(res_long_btc_5);
-        // print_stats(res_short_btc_5);
-        // print_stats(res_long_doge_5);
-        // print_stats(res_short_doge_5);
-
         // // Test balance of lp tokens
         assert res_long_btc_5.bal_lpt = 40000000;
         assert res_long_doge_5.bal_lpt = 4000000000000;
@@ -1003,17 +976,6 @@ namespace NonEthRoundTrip {
         );
         assert admin_myusd_balance_6.low = 5000000000;
 
-        // %{
-        //     print(f"{ids.admin_mydoge_balance_6.low}")
-        //     print(f"{ids.admin_mybtc_balance_6.low}")
-        //     print(f"{ids.admin_myusd_balance_6.low}")
-        // %}
-        
-        // print_stats(res_long_btc_6);
-        // print_stats(res_short_btc_6);
-        // print_stats(res_long_doge_6);
-        // print_stats(res_short_doge_6);
-
         // Test unlocked capital in the pools 
         assert res_long_btc_6.pool_unlocked_capital = 29764304;
         assert res_long_doge_6.pool_unlocked_capital = 2983907909286;
@@ -1116,19 +1078,6 @@ namespace NonEthRoundTrip {
         );
         assert admin_myusd_balance_7.low = 5000000000;
         
-        // %{
-        //     print(f"{ids.admin_mydoge_balance_7.low}")
-        //     print(f"{ids.admin_mybtc_balance_7.low}")
-        //     print(f"{ids.admin_myusd_balance_7.low}")
-        //     print(f"{ids.btc_long_premia_5}")
-        //     print(f"{ids.doge_long_premia_5}")
-        // %}
-        
-        // print_stats(res_long_btc_7);
-        // print_stats(res_short_btc_7);
-        // print_stats(res_long_doge_7);
-        // print_stats(res_short_doge_7);
-
         // // Test unlocked capital in the pools 
         assert res_long_btc_7.pool_unlocked_capital = 30020090;
         assert res_long_doge_7.pool_unlocked_capital = 3030779566752;
@@ -1280,17 +1229,6 @@ namespace NonEthRoundTrip {
             account=admin_addr
         );
         assert admin_myusd_balance_8.low = 5000000000;
-        
-        %{
-            print(f"{ids.admin_mydoge_balance_8.low}")
-            print(f"{ids.admin_mybtc_balance_8.low}")
-            print(f"{ids.admin_myusd_balance_8.low}")
-        %}
-        
-        print_stats(res_long_btc_8);
-        print_stats(res_short_btc_8);
-        print_stats(res_long_doge_8);
-        print_stats(res_short_doge_8);
 
         // // Test unlocked capital in the pools 
         assert res_long_btc_8.pool_unlocked_capital = 30020090;

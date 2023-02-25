@@ -186,14 +186,14 @@ namespace WithdrawLiquidity {
         assert call_pool_unlocked_capital_1.low = 3012715374959942009;
         assert put_pool_unlocked_capital_1.low = 2241738692;
 
-        let four_eth = Uint256(low = 5000000000000000000, high = 0);
+        let four_lptokens = Uint256(low = 5000000000000000000, high = 0);
         ILiquidityPool.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=0,
-            lp_token_amount=four_eth
+            lp_token_amount=four_lptokens
         );
 
         let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -204,14 +204,14 @@ namespace WithdrawLiquidity {
         // FIXME: this returns 340282366920938463461387345960256197662 
         // assert call_pool_unlocked_capital_2.low = 3012715374959942009;
 
-        let four_thousand_usd = Uint256(low = 4000000000, high = 0);
+        let four_thousand_lptokens = Uint256(low = 4000000000, high = 0);
         ILiquidityPool.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=1,
-            lp_token_amount=four_thousand_usd
+            lp_token_amount=four_thousand_lptokens
         );
 
         let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
@@ -221,8 +221,6 @@ namespace WithdrawLiquidity {
 
         // FIXME: this returns 340282366920938463463374607430011254584
         // assert put_pool_unlocked_capital_2.low = 3012715374959942009;
-
-
 
         return ();
     }
@@ -243,14 +241,14 @@ namespace WithdrawLiquidity {
             expect_revert(error_message = 'Failed to transfer token from pool to account in withdraw_liquidity')
         %}
 
-        let six_eth = Uint256(low = 6000000000000000000, high = 0);
+        let six_lptokens = Uint256(low = 6000000000000000000, high = 0);
         ILiquidityPool.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=0,
-            lp_token_amount=six_eth
+            lp_token_amount=six_lptokens
         );
         return ();
     }
