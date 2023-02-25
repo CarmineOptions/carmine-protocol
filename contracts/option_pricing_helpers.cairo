@@ -3,7 +3,7 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import assert_nn_le, assert_nn
+from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_not_zero
 from starkware.starknet.common.syscalls import get_block_timestamp
 from starkware.cairo.common.uint256 import (
     Uint256,
@@ -87,7 +87,7 @@ func convert_amount_to_option_currency_from_base_uint256{
 
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
-    if (option_type == OPTION_PUT) {
+    if (option_type == OPTION_PUT and amount.low != 0) {
         let (base_token_decimals) = get_decimal(base_token_address);
         let (dec) = pow10(base_token_decimals);
         let dec_ = Uint256(dec, 0);
@@ -95,6 +95,10 @@ func convert_amount_to_option_currency_from_base_uint256{
         assert adjusted_amount_high.low = 0;
         assert adjusted_amount_high.high = 0;
         let (quot: Uint256, rem: Uint256) = uint256_unsigned_div_rem(adjusted_amount_low, dec_);
+        local quotlow = quot.low;
+        with_attr error_message("Option size too low, quot {quotlow}, amt {amtlow}"){
+            assert_uint256_lt(Uint256(0,0), quot);
+        }
         let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0); // one cent in case of ETH/USDC
         local remlow = rem.low;
         with_attr error_message("implied rounding higher than max allowed, rem {remlow}"){
