@@ -172,26 +172,36 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     if (option_type == OPTION_CALL) {
-        // User receives max(0, option_size * (terminal_price - strike_price) / terminal_price) in base token for long
-        // User receives (option_size - long_profit) for short
+        // User receives option_size * max(0,  (terminal_price - strike_price) / terminal_price) in base token for long
+        // User receives option_size * (1 - max(0,  (terminal_price - strike_price) / terminal_price)) for short
+        // Summing the two equals option_size
+        // In reality there is rounding that is happening and since we are not able to distribute
+        // tokens to buyers and sellers all at the same transaction and since users can split
+        // tokens we have to do it like this to ensure that
+        // locked capital >= to_be_paid_buyer + to_be_paid_seller
+        // and the equality cannot be guaranteed because of the reasons above
         let price_diff = Math64x61.sub(terminal_price, strike_price);
-        let to_be_paid_quote = Math64x61.mul(option_size, price_diff);
-        let to_be_paid_base = Math64x61.div(to_be_paid_quote, terminal_price);
-        let (to_be_paid_buyer) = max(0, to_be_paid_base);
+        let price_relative_diff = Math64x61.div(price_diff, terminal_price);
+        let (buyer_relative_profit) = max(0, price_relative_diff);
+        let one = Math64x61.fromFelt(1);
+        let seller_relative_profit = Math64x61.sub(one, buyer_relative_profit);
 
-        let to_be_paid_seller = Math64x61.sub(option_size, to_be_paid_buyer);
+        let to_be_paid_buyer = Math64x61.mul(option_size, buyer_relative_profit);
+        let to_be_paid_seller = Math64x61.mul(option_size, seller_relative_profit);
 
         return (to_be_paid_buyer, to_be_paid_seller);
     }
 
     // For Put option
-    // User receives  max(0, option_size * (strike_price - terminal_price)) in base token for long
-    // User receives (option_size * strike_price - long_profit) for short
+    // User receives option_size * max(0, (strike_price - terminal_price)) in base token for long
+    // User receives option_size * min(strike_price, terminal_price) for short
+    // Summing the two equals option_size * strike_price (=locked capital
     let price_diff = Math64x61.sub(strike_price, terminal_price);
-    let amount_x_diff_quote = Math64x61.mul(option_size, price_diff);
-    let (to_be_paid_buyer) = max(0, amount_x_diff_quote);
-    let to_be_paid_seller_ = Math64x61.mul(option_size, strike_price);
-    let to_be_paid_seller = Math64x61.sub(to_be_paid_seller_, to_be_paid_buyer);
+    let (buyer_relative_profit) = max(0, price_diff);
+    let (seller_relative_profit) = min(strike_price, terminal_price);
+
+    let to_be_paid_buyer = Math64x61.mul(option_size, buyer_relative_profit);
+    let to_be_paid_seller = Math64x61.mul(option_size, seller_relative_profit);
 
     return (to_be_paid_buyer, to_be_paid_seller);
 }
