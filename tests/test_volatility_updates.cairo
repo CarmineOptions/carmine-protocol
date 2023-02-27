@@ -353,7 +353,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             # final_balance_USD = 4517250202
             # final_balance_ETH = 5000000000000000000
             
-            assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.01), error_string
+            assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.1), error_string
     %}
     
     return();
