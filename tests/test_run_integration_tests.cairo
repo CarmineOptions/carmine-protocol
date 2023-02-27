@@ -6,6 +6,7 @@ from interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 from tests.itest_specs.setup import deploy_setup
+from tests.itest_specs.basic_round_trip.large_sizes import LargeSizes
 from tests.itest_specs.basic_round_trip.long_put import LongPutRoundTrip
 from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip
 from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
@@ -173,5 +174,11 @@ func test_get_user_pool_infos{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 @external
 func test_get_total_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
     LPBasicViewFunctions.get_total_premia();
+    return ();
+}
+
+@external
+func test_large_size{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LargeSizes.execute_large_trade();
     return ();
 }
