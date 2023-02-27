@@ -127,9 +127,6 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         let (current_pool_balance) = get_unlocked_capital(
             lptoken_address=lptoken_address
         );
-        with_attr error_message("Not enough assets in pool to fulfill requested trade") {
-            assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
-        }
 
         let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
         let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
@@ -247,9 +244,6 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (current_pool_balance) = get_unlocked_capital(
         lptoken_address=lptoken_address
     );
-    with_attr error_message("Not enough assets in pool to fulfill requested trade") {
-        assert_uint256_le(option_size_in_pool_currency, current_pool_balance);
-    }
 
     let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
     let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
