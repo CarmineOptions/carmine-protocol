@@ -194,7 +194,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     );
 
     // 10) Validate slippage
-    with_attr error_message("Current premia with fees is out of slippage bounds."){
+    with_attr error_message("Current premia with fees is out of slippage bounds (do_trade). side: {side}, limit_total_premia: {limit_total_premia}, total_premia: {total_premia}"){
         if (side == TRADE_SIDE_LONG) {
             assert_le(total_premia, limit_total_premia);
         } else {
@@ -314,7 +314,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     }
 
     // 10) Validate slippage
-    with_attr error_message("Current premia with fees is out of slippage bounds."){
+    with_attr error_message("Current premia with fees is out of slippage bounds (close_position). opposite_side: {opposite_side}, limit_total_premia: {limit_total_premia}, total_premia: {total_premia}"){
         if (opposite_side == TRADE_SIDE_LONG) {
             assert_le(total_premia, limit_total_premia);
         } else {
