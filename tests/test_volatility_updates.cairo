@@ -249,7 +249,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
     %}
 
-    let (_, total_premia_including_fees) = IAMM.get_total_premia(
+    let (prem_no_fee, total_premia_including_fees) = IAMM.get_total_premia(
         amm_addr,
         option_struct,
         lpt_addr,
@@ -258,7 +258,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     );
 
     // Conduct first trade of half size
-    let (_) = IAMM.trade_open(
+    let (prem_1) = IAMM.trade_open(
         contract_address=amm_addr,
         option_type=option_type,
         strike_price=strike_price,
@@ -269,7 +269,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         base_token_address=myeth_addr
     );
     // Conduct second trade of half size
-    let (_) = IAMM.trade_open(
+    let (prem_2) = IAMM.trade_open(
         contract_address=amm_addr,
         option_type=option_type,
         strike_price=strike_price,
@@ -294,15 +294,32 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     %{
         if ids.option_type == 0:
             if ids.trade_side == 0:
-                desired_balance = int(ids.admin_myETH_balance_start.low) - int((ids.total_premia_including_fees / 2**61) * 10**18)
+                desired_balance = (
+                    int(ids.admin_myETH_balance_start.low) - 
+                    int((ids.total_premia_including_fees / 2**61) * 10**18)
+                )
+
             elif ids.trade_side == 1:
-                desired_balance = int(ids.admin_myETH_balance_start.low) + int((ids.total_premia_including_fees / 2**61) * 10**18) - ids.option_size
+                desired_balance = (
+                    int(ids.admin_myETH_balance_start.low) + 
+                    int((ids.total_premia_including_fees / 2**61) * 10**18) - 
+                    ids.option_size
+                )
 
         elif ids.option_type == 1:
             if ids.trade_side == 0:
-                desired_balance = int(ids.admin_myUSD_balance_start.low) - int((ids.total_premia_including_fees / 2**61) * 10**6)
+                desired_balance = (
+                    int(ids.admin_myUSD_balance_start.low) - 
+                    int((ids.total_premia_including_fees / 2**61) * 10**6)
+                )
+
             elif ids.trade_side == 1:
-                desired_balance = int(ids.admin_myUSD_balance_start.low) + int((ids.total_premia_including_fees / 2**61) * 10**6) - int(((ids.option_size / 10**18) * (ids.strike_price / 2**61)) * 10**6)
+                desired_balance = (
+                    int(ids.admin_myUSD_balance_start.low) +
+                    int((ids.total_premia_including_fees / 2**61) * 10**6) -
+                    int(((ids.option_size / 10**18) * (ids.strike_price / 2**61)) * 10**6)
+                )
+
 
 
         from math import isclose
@@ -321,7 +338,22 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         if ids.option_type == 1:
             # rel_tol = 0.1 here is NOT needed for every case, it just failes for one or two specific numbers idk why yet
             # FIXME: Find out why it fails on rel_tol=0.01 and fix
-            assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.1), error_string
+            # @Marek
+
+            # Example of failing test(always fails for size 3eth)
+            # prem_1 = 253845901750340999400 
+            # prem_2 = 466636461010444770500 
+            # prem_no_fee = 1526513357895611292300 
+            # total_premia_including_fees = 1572308758632479630698
+            # option_type = 1,
+            # side = 0 ,
+            # size = 3000000000000000000,
+            # size_half = 1500000000000000000,
+            # desired_balance = 4318119772,
+            # final_balance_USD = 4517250202
+            # final_balance_ETH = 5000000000000000000
+            
+            assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.01), error_string
     %}
     
     return();
