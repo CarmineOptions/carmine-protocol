@@ -7,7 +7,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 from math64x61 import Math64x61
 
 from contracts.constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
-from contracts.types import Int, Math64x61_
+from contracts.types import Int, Math64x61_, Address
 from lib.math_64x61_extended import Math64x61_div_imprecise
 from lib.pow import pow10
 
@@ -92,6 +92,10 @@ func convert_price{range_check_ptr}(price: felt, decimals: felt) -> (price: Math
     return (res,);
 }
 
+////////////////////////////
+// Current Prices
+////////////////////////////
+
 @view
 func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (price: Math64x61_) {
     alloc_locals;
@@ -114,6 +118,7 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
     return (res,);
 }
 
+// Note: Chainlink not currently on Mainnet
 @view
 func chainlink_current_price{syscall_ptr: felt*, range_check_ptr}(token_address: felt) -> (price: Math64x61_) {
     alloc_locals;
@@ -138,35 +143,31 @@ func chainlink_current_price{syscall_ptr: felt*, range_check_ptr}(token_address:
     return (res,);
 }
 
+////////////////////////////
+// Historical Prices
+////////////////////////////
+
 @view
-func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (
+func get_empiric_historical_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity: Int) -> (
     price: Math64x61_
 ){
     alloc_locals;
 
-    with_attr error_message("Failed when getting terminal price from Empiric Oracle") {
-        let (last_checkpoint,_) = IEmpiricOracle.get_last_spot_checkpoint_before(
+    with_attr error_message("Failed when getting historical price from Empiric Oracle") {
+    let (last_checkpoint,_) = IEmpiricOracle.get_last_spot_checkpoint_before(
             EMPIRIC_ORACLE_ADDRESS,
             key, 
             maturity
         );
     }
 
-    // This is hotfix before the Chronos is up and running and is needed because empiric checkpoint is not working
-    if (maturity == 1674777599) {
-        return (3693960500760337711104,);
-    }
-    if (maturity == 1675987199) {
-        return (3564833292244370849792,);
-    }
-    
-    with_attr error_message("Received zero terminal price from Empiric Oracle"){
+    with_attr error_message("Received zero historical price from Empiric Oracle"){
         assert_not_zero(last_checkpoint.value);
     }
 
     with_attr error_message("Failed when converting Empiric Oracle terminal price to Math64x61 format"){
         // Taken from the Empiric Docs, since Checkpoint does not
-        // store this information, SHOULD not change in the future
+        // store this information, SHOULD NOT change in the future
         let decimals = 8;
 
         let (res)  = convert_price(
@@ -179,3 +180,69 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
 
     return (res,);
 }
+
+
+// Note: Chainlink not currently on Mainnet
+@view
+func get_chainlink_historical_price{syscall_ptr: felt*, range_check_ptr}(token_address: Address, maturity: Int) -> (
+    price: Math64x61_
+){
+    alloc_locals;
+
+    // TODO:
+    // let round_id = get_roundid_from_maturity(maturity);
+    let round_id = 1; // for compilation purposes
+ 
+    with_attr error_message("Failed when getting historical price from Chainlink Oracle") {
+        let (round) = IChainlinkOracle.round_data(
+            token_address,
+            round_id
+        );
+    }
+
+    with_attr error_message("Received zero historical price from Chainlink Oracle"){
+        assert_not_zero(round.answer);
+    }
+    
+    with_attr error_message("Failed when getting decimals from Chainlink Oracle") {
+        let (decimals) = IChainlinkOracle.decimals(token_address);
+    }
+
+    with_attr error_message("Failed when converting Chainlink Oracle historical price to Math64x61 format"){
+    
+        let (res)  = convert_price(
+            round.answer,
+            decimals
+        );
+
+        assert_not_zero(res);
+    }
+
+    return (res,);
+}
+
+
+@view
+func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(
+    empiric_key: felt, // There will be more keys/addresses down the road
+    maturity: Int
+) -> (
+    price: Math64x61_
+){
+    alloc_locals;
+
+    // This is hotfix before the Chronos is up and running and is needed because empiric checkpoint is not working
+    if (maturity == 1674777599) {
+        return (3693960500760337711104,);
+    }
+    if (maturity == 1675987199) {
+        return (3564833292244370849792,);
+    }
+
+    let (empiric_price) = get_empiric_historical_price(empiric_key, maturity);
+
+    return (empiric_price,);
+}
+
+
+
