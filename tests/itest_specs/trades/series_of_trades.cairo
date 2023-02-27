@@ -227,10 +227,10 @@ namespace SeriesOfTrades {
         %{
             # Following trade will fail
             expect_revert(
-                error_message = "Current premia with fees is out of slippage bounds."
+                error_message = "Current premia with fees is out of slippage bounds (do_trade). side: 1, limit_total_premia: 237069991219585712128, total_premia: 227681080676235785486"
             )
         %}
-        
+
         // Second trade, PUT SHORT, should NOT pass
         let (_) = IAMM.trade_open(
             contract_address=amm_addr,
