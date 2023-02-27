@@ -145,6 +145,11 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
 }
 
+@storage_var
+func pool_volatility_adjustment_speed(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
+
 //migration only, to convert m64x61 lpool_balance to Uint256
 @external
 func migrate_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
@@ -519,6 +524,29 @@ func set_trading_halt{
     assert_le(new_status, 1);
     Proxy.assert_only_admin();
     trading_halted.write(new_status);
+    return ();
+}
+
+
+@view
+func get_pool_volatility_adjustment_speed{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address
+) -> (res: Math64x61_) {
+    let (res) = pool_volatility_adjustment_speed.read(lptoken_address);
+    return (res,);
+}
+
+
+@external
+func set_pool_volatility_adjustment_speed{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address, new_speed: Math64x61_
+) -> () {
+    Proxy.assert_only_admin();
+    pool_volatility_adjustment_speed.write(lptoken_address, new_speed);
     return ();
 }
 

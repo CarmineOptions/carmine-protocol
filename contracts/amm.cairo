@@ -125,14 +125,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 3) Calculate new volatility, calculate trade volatility
         
-        let (current_pool_balance) = get_unlocked_capital(
+        let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(
             lptoken_address=lptoken_address
         );
 
-        let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
-        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
         let (new_volatility, trade_volatility) = get_new_volatility(
-            current_volatility, option_size_m64x61, option_type, side, strike_price, current_pool_balance_m64x61
+            current_volatility, option_size_m64x61, option_type, side, strike_price, pool_volatility_adjustment_speed
         );
 
         // 4) Update volatility
@@ -252,14 +250,11 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let (underlying_price) = empiric_median_price(empiric_key);
 
     // 3) Calculate new volatility, calculate trade volatility
-    let (current_pool_balance) = get_unlocked_capital(
+    let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(
         lptoken_address=lptoken_address
     );
-
-    let underlying_token = get_underlying_from_option_data(option_type, base_token_address, quote_token_address);
-    let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying_token);
     let (new_volatility, trade_volatility) = get_new_volatility(
-        current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, current_pool_balance_m64x61
+        current_volatility, option_size_m64x61, option_type, opposite_side, strike_price, pool_volatility_adjustment_speed
     );
 
     // 4) Update volatility
