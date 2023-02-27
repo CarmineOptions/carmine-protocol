@@ -351,23 +351,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         if ids.option_type == 0:
             assert isclose(desired_balance, ids.admin_myETH_balance_final.low, rel_tol = 0.01), error_string
         if ids.option_type == 1:
-            # rel_tol = 0.1 here is NOT needed for every case, it just failes for one or two specific numbers idk why yet
-            # FIXME: Find out why it fails on rel_tol=0.01 and fix
-            # @Marek
-
-            # Example of failing test(always fails for size 3eth)
-            # prem_1 = 253845901750340999400 
-            # prem_2 = 466636461010444770500 
-            # prem_no_fee = 1526513357895611292300 
-            # total_premia_including_fees = 1572308758632479630698
-            # option_type = 1,
-            # side = 0 ,
-            # size = 3000000000000000000,
-            # size_half = 1500000000000000000,
-            # desired_balance = 4318119772,
-            # final_balance_USD = 4517250202
-            # final_balance_ETH = 5000000000000000000
-            
+            # The higher rel_tol is caused by the extreme proportion of trade size to liquidity pool
             assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.1), error_string
     %}
     
