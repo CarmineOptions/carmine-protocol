@@ -66,7 +66,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
     let (current_block_time) = get_block_timestamp();
     if (is_le(current_block_time, option.maturity) == TRUE) {
         let one = Math64x61.fromFelt(1);
-        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+        let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
 
         let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
         let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
@@ -213,7 +213,7 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     }
 
     // Get value of users position
-    let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+    let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
     let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
     let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
     let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
@@ -506,7 +506,7 @@ func get_total_premia{
     with_attr error_message("Error in prep"){
         let (option) = _get_option_with_correct_side(_option, is_closing);
 
-        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+        let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
         let (current_pool_balance) = get_unlocked_capital(lptoken_address);
         let underlying = get_underlying_from_option_data(option.option_type, option.base_token_address, option.quote_token_address);
     }

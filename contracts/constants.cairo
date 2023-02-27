@@ -10,7 +10,7 @@ from math64x61 import Math64x61
 from interface_lptoken import ILPToken
 from types import Address
 
-
+const SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
 
 // The maximum amount of token in a pool.
 const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;

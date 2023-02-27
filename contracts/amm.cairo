@@ -12,6 +12,7 @@ from math64x61 import Math64x61
 from lib.pow import pow10
 
 from contracts.constants import (
+    SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES,
     VOLATILITY_LOWER_BOUND,
     VOLATILITY_UPPER_BOUND,
     OPTION_CALL,
@@ -44,7 +45,6 @@ from contracts.option_pricing_helpers import (
     get_time_till_maturity,
     add_premia_fees,
     get_new_volatility,
-    convert_amount_to_option_currency_from_base,
     convert_amount_to_option_currency_from_base_uint256,
 )
 from helpers import intToUint256, toUint256_balance, get_underlying_from_option_data
@@ -111,9 +111,10 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
         // 1) Get current volatility
-        let (current_volatility) = get_pool_volatility(
+        let (current_volatility) = get_pool_volatility_auto(
             lptoken_address=lptoken_address,
-            maturity=maturity
+            maturity=maturity,
+            strike_price=strike_price
         );
 
         // 2) Get price of underlying asset
@@ -135,11 +136,20 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         );
 
         // 4) Update volatility
-        set_pool_volatility(
-            lptoken_address=lptoken_address,
-            maturity=maturity,
-            volatility=new_volatility
-        );
+        if (SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES == 1){
+            set_pool_volatility_separate(
+                lptoken_address=lptoken_address,
+                maturity=maturity,
+                strike_price=strike_price,
+                volatility=new_volatility
+            );
+        }else{
+            set_pool_volatility(
+                lptoken_address=lptoken_address,
+                maturity=maturity,
+                volatility=new_volatility
+            );
+        }
 
         // 5) Get time till maturity
         let (time_till_maturity) = get_time_till_maturity(maturity);
@@ -231,9 +241,10 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
 
     // 1) Get current volatility
-    let (current_volatility) = get_pool_volatility(
+    let (current_volatility) = get_pool_volatility_auto(
         lptoken_address=lptoken_address,
-        maturity=maturity
+        maturity=maturity,
+        strike_price=strike_price
     );
 
     // 2) Get price of underlying asset
