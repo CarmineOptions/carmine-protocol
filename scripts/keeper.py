@@ -53,7 +53,7 @@ def setup_parser() -> argparse.ArgumentParser:
         '--function_name', '-f', type = str
     )
     parser.add_argument(
-        '--function_arguments', '-fa', action='append'
+        '--function_arguments', '-fa', action='append', default = []
     )
     return parser
 
