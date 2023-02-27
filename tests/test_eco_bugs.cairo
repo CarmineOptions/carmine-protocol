@@ -10,7 +10,7 @@ from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 from interface_amm import IAMM
 
-from constants import EMPIRIC_ORACLE_ADDRESS
+from constants import EMPIRIC_ORACLE_ADDRESS, TRADE_SIDE_LONG
 from contracts.constants import get_opposite_side
 from tests.itest_specs.setup import deploy_setup
 
@@ -84,6 +84,17 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
     %}
 
+    // Effectively switching off the slippage
+    local limit_total_premia;
+    local opposite_limit_total_premia;
+    if (trade_side == TRADE_SIDE_LONG) {
+        tempvar limit_total_premia=230584300921369400000000000000000000;
+        tempvar opposite_limit_total_premia=1;
+    } else {
+        tempvar limit_total_premia=1;
+        tempvar opposite_limit_total_premia=230584300921369400000000000000000;
+    }
+
     // Conduct first trade 
     let (_) = IAMM.trade_open(
         contract_address=amm_addr,
@@ -93,7 +104,9 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         option_side=trade_side,
         option_size=option_size,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=limit_total_premia,
+        tx_deadline=1000000001
     );
 
     // Conduct second trade with opposite side
@@ -105,7 +118,9 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         option_side=opposite_trade_side,
         option_size=option_size,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=opposite_limit_total_premia,
+        tx_deadline=1000000001
     );
 
     // Get intermediate amount of myUSD on option-buyer's account
@@ -132,7 +147,9 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         option_side=trade_side,
         option_size=option_size,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=opposite_limit_total_premia,
+        tx_deadline=1000000001
     );
 
     // Close second trade with opposite side
@@ -144,7 +161,9 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         option_side=opposite_trade_side,
         option_size=option_size,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=limit_total_premia,
+        tx_deadline=1000000001
     );
 
     // Get final amount of myUSD on option-buyer's account
