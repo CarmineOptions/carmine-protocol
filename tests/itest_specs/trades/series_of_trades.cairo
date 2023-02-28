@@ -1,6 +1,6 @@
 %lang starknet
 
-from interface_amm import IAMM
+from interfaces.interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 

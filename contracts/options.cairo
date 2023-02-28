@@ -222,7 +222,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             option_tokens_minted=option_size_uint256,
         );
 
-        // Pool is locking in capital inly if there is no previous position to cover the user's long
+        // Pool is locking in capital only if there is no previous position to cover the user's long
         //      -> if pool does not have sufficient long to "pass down to user", it has to lock
         //           capital... option position has to be updated too!!!
 
@@ -230,10 +230,11 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
             // since only locked_capital storage_var exists
             let (current_balance) = get_lpool_balance(lptoken_address);
-            let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-            let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
+            // delete let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
+            // delete let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
             let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
             assert carry = 0;
+            // The nonnegativity of new_balance is checked inside of the set_lpool_balance
             set_lpool_balance(lptoken_address, new_balance);
         }
 
@@ -263,7 +264,9 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         with_attr error_message("Failed to calculate new_locked_capital in _mint_option_token_long") {
             // New state
             let new_long_position = current_long_position - decrease_long_by;
+            assert_nn(new_long_position);
             let new_short_position = current_short_position + increase_short_by;
+            assert_nn(new_short_position); // might in theory overflow
             let (new_locked_capital: Uint256, carry_: felt) = uint256_add(current_locked_balance, increase_locked_by);
             assert carry_ = 0;
         }
@@ -278,7 +281,6 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             // Update the state
             set_option_position(lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_long_position);
             set_option_position(lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position);
-            assert carry = 0;
             set_pool_locked_capital(lptoken_address, new_locked_capital);
         }
 
@@ -402,12 +404,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         let (current_locked_balance: Uint256) = get_pool_locked_capital(lptoken_address);
         let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, size_to_be_unlocked);
 
-        with_attr error_message("Not enough capital") {
-            // This will never happen. It is here just as sanity check.
-            let (res) = uint256_signed_nn(new_locked_balance);
-            assert res = 1;
-        }
-
+        // Non negativity of the new_locked_balance is validated in set_pool_locked_capital
         set_pool_locked_capital(lptoken_address, new_locked_balance);
 
         // Mint tokens
@@ -468,21 +465,23 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         assert contract_option_side = option_side;
     }
 
+    local optsize_in_pc = option_size_in_pool_currency.low;
+    local optsize = option_size;
     if (option_side == TRADE_SIDE_LONG) {
-        _burn_option_token_long(
-            lptoken_address=lptoken_address,
-            option_token_address=option_token_address,
-            option_size=option_size,
-            option_size_in_pool_currency=option_size_in_pool_currency,
-            premia_including_fees=premia_including_fees,
-            option_side = option_side,
-            option_type=option_type,
-            maturity = maturity,
-            strike_price=strike_price,
-        );
+        with_attr error_message("unable to burn option token long optsize: {optsize}, optsize_in_pc: {optsize_in_pc}, strike: {strike_price}"){
+            _burn_option_token_long(
+                lptoken_address=lptoken_address,
+                option_token_address=option_token_address,
+                option_size=option_size,
+                option_size_in_pool_currency=option_size_in_pool_currency,
+                premia_including_fees=premia_including_fees,
+                option_side = option_side,
+                option_type=option_type,
+                maturity = maturity,
+                strike_price=strike_price,
+            );
+        }
     } else {
-        local optsize_in_pc = option_size_in_pool_currency.low;
-        local optsize = option_size; // TODO remove
         with_attr error_message("unable to burn option token short optsize: {optsize}, optsize_in_pc: {optsize_in_pc}, strike: {strike_price}"){
             _burn_option_token_short(
                 lptoken_address=lptoken_address,
@@ -518,7 +517,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     alloc_locals;
 
-    let (current_contract_address) = get_contract_address();
+    // delete let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
     let (currency_address) = get_underlying_token_address(lptoken_address);
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
@@ -539,8 +538,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     // This decrease is happening because burning long is similar to minting short,
     // hence the payment.
     let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
+    let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, currency_address);
     let (new_balance: Uint256) = uint256_sub(current_balance, premia_including_fees_uint256);
     set_lpool_balance(lptoken_address, new_balance);
 
@@ -557,6 +555,7 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         //      -> The locked capital was locked by users and not pool
         //      -> do not decrease pool_locked_capital by the option_size_in_pool_currency
         let new_option_position = pool_long_position + option_size;
+        assert_nn(new_option_position); // to check that it doesn't overflow
         set_option_position(
             lptoken_address,
             option_side,
@@ -583,21 +582,16 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         set_pool_locked_capital(lptoken_address, new_locked_balance);
 
         // Update pool's short position
-        let (pools_short_position) = get_option_position(
-            lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
-        );
-        let pools_short_position_uint256 = intToUint256(pools_short_position);
-        let new_pools_short_position = pools_short_position - size_to_be_unlocked_in_base;
+        let new_pools_short_position = pool_short_position - size_to_be_unlocked_in_base;
+        assert_nn(new_pools_short_position);
         set_option_position(
             lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
         );
 
         // Update pool's long position
-        let (pools_long_position) = get_option_position(
-            lptoken_address, TRADE_SIDE_LONG, maturity, strike_price
-        );
         let size_to_increase_long_position = option_size - size_to_be_unlocked_in_base;
-        let new_pools_long_position = pools_long_position + size_to_increase_long_position;
+        assert_nn(size_to_increase_long_position);
+        let new_pools_long_position = pool_long_position + size_to_increase_long_position;
         assert_nn(new_pools_long_position);
         set_option_position(
             lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
@@ -632,7 +626,6 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     alloc_locals;
 
-    let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
     let (currency_address) = get_underlying_token_address(lptoken_address);
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
@@ -655,8 +648,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     // This increase is happening because burning short is similar to minting long,
     // hence the payment.
     let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
+    let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, currency_address);
     let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
     assert carry = 0;
     set_lpool_balance(lptoken_address, new_balance);
@@ -666,6 +658,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
     );
 
+    let (current_locked_capital_uint256: Uint256) = get_pool_locked_capital(lptoken_address);
     // FIXME: the inside of the if (not the else) should work for both cases
     if (pool_short_position == 0) {
         // If pool is LONG
@@ -681,6 +674,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
         let (decrease_long_position_by) = min(pool_long_position, option_size);
         let increase_short_position_by = option_size - decrease_long_position_by;
+        assert_nn(increase_short_position_by);
         let new_long_position = pool_long_position - decrease_long_position_by;
         let new_short_position = pool_short_position + increase_short_position_by;
         assert_nn(new_long_position);
@@ -703,8 +697,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             base_address
         );
 
-        let (current_locked_capital) = get_pool_locked_capital(lptoken_address);
-        let (new_locked_capital: Uint256, carry_: felt) = uint256_add(current_locked_capital, capital_to_be_locked);
+        let (new_locked_capital: Uint256, carry_: felt) = uint256_add(current_locked_capital_uint256, capital_to_be_locked);
         assert carry_ = 0;
 
 
@@ -731,29 +724,23 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         // Burn increases pool's short
         //      -> increase pool's locked capital by the option_size_in_pool_currency
         //      -> there might not be enough unlocked capital to be locked
-        let (current_locked_capital_uint256: Uint256) = get_pool_locked_capital(lptoken_address);
-
-        let (current_total_capital_uint256: Uint256) = get_lpool_balance(lptoken_address);
-
-        let (current_unlocked_capital_uint256: Uint256) = uint256_sub(
-            current_locked_capital_uint256, current_total_capital_uint256
-        );
+        let (current_unlocked_capital_uint256: Uint256) = get_unlocked_capital(lptoken_address);
 
         with_attr error_message("Not enough unlocked capital."){
-            let assert_diff: Uint256 = uint256_sub(current_unlocked_capital_uint256, option_size_in_pool_currency);
-            assert_uint256_le(Uint256(0, 0), assert_diff);
+            assert_uint256_le(option_size_in_pool_currency, current_unlocked_capital_uint256);
         }
 
         // Update locked capital
-        let (new_locked_capital: Uint256, carry: felt) = uint256_add(current_locked_capital_uint256, option_size_in_pool_currency);
+        let (new_locked_capital: Uint256, carry: felt) = uint256_add(
+            current_locked_capital_uint256, option_size_in_pool_currency
+        );
         assert carry = 0;
+        // checking that new_locked_capital is non negative is done in the set_pool_locked_capital
         set_pool_locked_capital(lptoken_address, new_locked_capital);
 
         // Update pools (short) position
-        let (pools_short_position) = get_option_position(
-            lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price
-        );
-        let new_pools_short_position = pools_short_position - option_size;
+        let new_pools_short_position = pool_short_position + option_size;
+        assert_nn(new_pools_short_position);
         set_option_position(
             lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_pools_short_position
         );
@@ -799,6 +786,8 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
             maturity=maturity,
             strike_price=strike_price
         );
+
+        let (base_token_address) = IOptionToken.base_token_address(option_token_address);
     }
 
     let (currency_address) = get_underlying_token_address(lptoken_address);
@@ -809,27 +798,22 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (current_pool_position) = get_option_position(
         lptoken_address,TRADE_SIDE_SHORT, maturity, strike_price
     );
+    if (current_pool_position != 0) {
+        expire_option_token_for_pool(
+            lptoken_address=lptoken_address,
+            option_side=option_side,
+            strike_price=strike_price,
+            maturity=maturity,
+        );
+    }
+    // Check that the pool's position was expired correctly
+    let (current_pool_position_2) = get_option_position(
+        lptoken_address,TRADE_SIDE_SHORT, maturity, strike_price
+    );
     with_attr error_message(
         "Pool hasn't released the locked capital for users -> call expire_option_token_for_pool to release it."
     ) {
-        // Even though the transaction might go through with no problems, there is a chance
-        // of it failing or chance for pool manipulation if the pool hasn't released the capital yet.
-        assert current_pool_position = 0;
-    }
-
-    // Make sure the contract is the one that user wishes to expire
-    let (contract_option_type) = IOptionToken.option_type(option_token_address);
-    let (contract_strike) = IOptionToken.strike_price(option_token_address);
-    let (contract_maturity) = IOptionToken.maturity(option_token_address);
-    let (contract_option_side) = IOptionToken.side(option_token_address);
-    let (base_token_address) = IOptionToken.base_token_address(option_token_address);
-    let (current_contract_address) = get_contract_address();
-
-    with_attr error_message("Required contract doesn't match the address.") {
-        assert contract_option_type = option_type;
-        assert contract_strike = strike_price;
-        assert contract_maturity = maturity;
-        assert contract_option_side = option_side;
+        assert current_pool_position_2 = 0;
     }
 
     // Make sure that user owns the option tokens
@@ -838,7 +822,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         contract_address=option_token_address, account=user_address
     );
     with_attr error_message("User doesn't own any tokens.") {
-        assert_nn(user_tokens_owned.low);
+        assert_not_zero(user_tokens_owned.low);
     }
 
     // Make sure that the contract is ready to expire

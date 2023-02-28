@@ -584,3 +584,22 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     return ();
 }
+
+
+@view
+func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
+) -> (option_availability: Bool) {
+    let (option_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    // FIXME: create unit test for this
+    if (option_address == 0) {
+        return (FALSE,);
+    }
+
+    return (TRUE,);
+}

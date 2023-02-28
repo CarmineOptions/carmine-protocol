@@ -1,7 +1,7 @@
 %lang starknet
 
-from interface_lptoken import ILPToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_amm import IAMM
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61

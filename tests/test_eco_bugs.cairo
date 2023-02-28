@@ -6,9 +6,9 @@ from starkware.cairo.common.uint256 import Uint256, uint256_sub, assert_uint256_
 from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-from interface_lptoken import ILPToken
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 
 from constants import EMPIRIC_ORACLE_ADDRESS, TRADE_SIDE_LONG
 from contracts.constants import get_opposite_side

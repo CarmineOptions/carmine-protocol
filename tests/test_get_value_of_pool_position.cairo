@@ -4,7 +4,7 @@ from math64x61 import Math64x61
 
 from types import Math64x61_
 from tests.itest_specs.setup import deploy_setup
-from interface_amm import IAMM
+from interfaces.interface_amm import IAMM
 from constants import EMPIRIC_ORACLE_ADDRESS
 
 @external

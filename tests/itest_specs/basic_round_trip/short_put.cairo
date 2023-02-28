@@ -1,8 +1,8 @@
 %lang starknet
 
-from interface_lptoken import ILPToken
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 
