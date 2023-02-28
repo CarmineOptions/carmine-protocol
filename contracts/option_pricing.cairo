@@ -220,10 +220,14 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         underlying_price,
         risk_free_rate_annualized,
     );
-
-    let (normal_d_1) = adjusted_std_normal_cdf(d_1, is_pos_d_1);
-    let (normal_d_2) = adjusted_std_normal_cdf(d_2, is_pos_d_2);
-
+    
+    with_attr error_message("Black scholes function failed when calculating d_1"){
+        let (normal_d_1) = adjusted_std_normal_cdf(d_1, is_pos_d_1);
+    }
+    with_attr error_message("Black scholes function failed when calculating d_2"){
+        let (normal_d_2) = adjusted_std_normal_cdf(d_2, is_pos_d_2);
+    }
+    
     let normal_d_1_underlying_price = Math64x61.mul(normal_d_1, underlying_price);
     let normal_d_2_strike_e_neg_risk_time_till_maturity = Math64x61.mul(
         normal_d_2, strike_e_neg_risk_time_till_maturity

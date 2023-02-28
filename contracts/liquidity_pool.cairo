@@ -259,8 +259,10 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
     alloc_locals;
 
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-
+    with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
+    
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
 
