@@ -127,7 +127,7 @@ namespace LPBasicViewFunctions {
             stop_warp = warp(1000000000 - 60*60*96, target_contract_address=ids.amm_addr)
 
             context.opt_long_call_addr_1 = deploy_contract(
-                "./contracts/option_token.cairo",
+                "./contracts/erc20_tokens/option_token.cairo",
                 [
                     12345, 14, 18, 0, 0, context.admin_address, context.amm_addr, context.myusd_address,
                     context.myeth_address, optype_call, ids.strike_price, expiry, side_long
