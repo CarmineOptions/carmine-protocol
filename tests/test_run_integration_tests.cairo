@@ -54,6 +54,18 @@ func test_option_attrs{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
+@external
+func test_slippage{syscall_ptr: felt*, range_check_ptr}() {
+    SeriesOfTrades.test_slippage();
+    return ();
+}
+
+@external
+func test_deadline{syscall_ptr: felt*, range_check_ptr}() {
+    SeriesOfTrades.test_deadline();
+    return ();
+}
+
 
 @external
 func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {

@@ -47,7 +47,7 @@ from contracts.option_pricing_helpers import (
     get_new_volatility,
     convert_amount_to_option_currency_from_base_uint256,
 )
-from helpers import intToUint256, toUint256_balance, get_underlying_from_option_data
+from helpers import intToUint256, toUint256_balance, get_underlying_from_option_data, check_deadline
 
 
 
@@ -87,7 +87,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_size: Int,
     quote_token_address: Address,
     base_token_address: Address,
-    lptoken_address: Address
+    lptoken_address: Address,
+    limit_total_premia: Math64x61_, // Should be total premia including fees
 ) -> (premia: Math64x61_) {
     // options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
     // Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
@@ -200,6 +201,15 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         underlying_price=underlying_price,
     );
 
+    // 10) Validate slippage
+    with_attr error_message("Current premia with fees is out of slippage bounds (do_trade). side: {side}, limit_total_premia: {limit_total_premia}, total_premia: {total_premia}"){
+        if (side == TRADE_SIDE_LONG) {
+            assert_le(total_premia, limit_total_premia);
+        } else {
+            assert_le(limit_total_premia, total_premia);
+        }
+    }
+
     return (premia=premia);
 }
 
@@ -212,7 +222,8 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     option_size : Int, // in base token
     quote_token_address: Address,
     base_token_address: Address,
-    lptoken_address: Address
+    lptoken_address: Address,
+    limit_total_premia: Math64x61_, // Should be total premia including fees - w.r.t. to opposite side
 ) -> (premia : Math64x61_) {
     // All of the unlocking of capital happens inside of the burn function below.
     // Volatility is not updated since closing position is considered as
@@ -308,6 +319,15 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         );
     }
 
+    // 10) Validate slippage
+    with_attr error_message("Current premia with fees is out of slippage bounds (close_position). opposite_side: {opposite_side}, limit_total_premia: {limit_total_premia}, total_premia: {total_premia}"){
+        if (opposite_side == TRADE_SIDE_LONG) {
+            assert_le(total_premia, limit_total_premia);
+        } else {
+            assert_le(limit_total_premia, total_premia);
+        }
+    }
+    
     return (premia=premia);
 }
 
@@ -400,6 +420,8 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
+    limit_total_premia: Math64x61_, // The limit price that user wants
+    tx_deadline: Int,
 ) -> (premia : Math64x61_) {
     // User wants to open a position
 
@@ -434,9 +456,14 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
             option_size,
             quote_token_address,
             base_token_address,
-            lptoken_address
+            lptoken_address,
+            limit_total_premia,
         );
     }
+
+    // Validate deadline
+    check_deadline(tx_deadline);
+
     return (premia=premia);
 }
 
@@ -451,6 +478,8 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     // underlying_asset
     quote_token_address: Address,
     base_token_address: Address,
+    limit_total_premia: Math64x61_, // The limit price that user wants
+    tx_deadline: Int,
 ) -> (premia : Math64x61_) {
     // User is closing a position before the option has expired
     //  -> side is what the user wants to close
@@ -488,6 +517,7 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     with_attr error_message("Trading of given maturity has been stopped before expiration") {
         assert_le(current_block_time, maturity - STOP_TRADING_BEFORE_MATURITY_SECONDS);
     }
+
     with_attr error_message("unable to close_position in trade_close"){
         let (premia) = close_position(
             option_type,
@@ -497,9 +527,14 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
             option_size,
             quote_token_address,
             base_token_address,
-            lptoken_address
+            lptoken_address,
+            limit_total_premia,
         );
     }
+
+    // Validate deadline
+    check_deadline(tx_deadline);
+    
     return (premia=premia);
 
 }

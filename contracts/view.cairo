@@ -208,8 +208,18 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     }
 
     // Get value of users position
-    let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
+    let (_current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
     let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
+    let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
+
+    let (_, current_volatility) = get_new_volatility(
+        _current_volatility,
+        position_size,
+        option.option_type,
+        option.option_side,
+        option.strike_price,
+        pool_volatility_adjustment_speed
+    );
     with_attr error_message(
         "Failed getting premium in save_option_with_position_of_user_to_array"
     ){

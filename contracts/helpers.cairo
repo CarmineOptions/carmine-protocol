@@ -38,6 +38,17 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 from math64x61 import Math64x61
 from lib.pow import pow10, pow5, pow2
 
+func check_deadline{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(deadline: felt) {
+
+    let (current_block_time) = get_block_timestamp();
+
+    with_attr error_message("Transaction is too old") {
+        assert_le(current_block_time, deadline);
+    }
+
+    return ();
+}
+
 
 
 func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -112,7 +123,7 @@ func _get_premia_before_fees{
         let HUNDRED = Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-        with_attr error_message("black scholes time until maturity{time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility} current pool balance{current_pool_balance}"){
+        with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility} current pool balance{current_pool_balance}"){
             let (call_premia, put_premia) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
@@ -122,7 +133,7 @@ func _get_premia_before_fees{
             );
         }
     }
-    with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
         assert_nn(call_premia);
         assert_nn(put_premia);
     }
@@ -160,26 +171,36 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
 
     if (option_type == OPTION_CALL) {
-        // User receives max(0, option_size * (terminal_price - strike_price) / terminal_price) in base token for long
-        // User receives (option_size - long_profit) for short
+        // User receives option_size * max(0,  (terminal_price - strike_price) / terminal_price) in base token for long
+        // User receives option_size * (1 - max(0,  (terminal_price - strike_price) / terminal_price)) for short
+        // Summing the two equals option_size
+        // In reality there is rounding that is happening and since we are not able to distribute
+        // tokens to buyers and sellers all at the same transaction and since users can split
+        // tokens we have to do it like this to ensure that
+        // locked capital >= to_be_paid_buyer + to_be_paid_seller
+        // and the equality cannot be guaranteed because of the reasons above
         let price_diff = Math64x61.sub(terminal_price, strike_price);
-        let to_be_paid_quote = Math64x61.mul(option_size, price_diff);
-        let to_be_paid_base = Math64x61.div(to_be_paid_quote, terminal_price);
-        let (to_be_paid_buyer) = max(0, to_be_paid_base);
+        let price_relative_diff = Math64x61.div(price_diff, terminal_price);
+        let (buyer_relative_profit) = max(0, price_relative_diff);
+        let one = Math64x61.fromFelt(1);
+        let seller_relative_profit = Math64x61.sub(one, buyer_relative_profit);
 
-        let to_be_paid_seller = Math64x61.sub(option_size, to_be_paid_buyer);
+        let to_be_paid_buyer = Math64x61.mul(option_size, buyer_relative_profit);
+        let to_be_paid_seller = Math64x61.mul(option_size, seller_relative_profit);
 
         return (to_be_paid_buyer, to_be_paid_seller);
     }
 
     // For Put option
-    // User receives  max(0, option_size * (strike_price - terminal_price)) in base token for long
-    // User receives (option_size * strike_price - long_profit) for short
+    // User receives option_size * max(0, (strike_price - terminal_price)) in base token for long
+    // User receives option_size * min(strike_price, terminal_price) for short
+    // Summing the two equals option_size * strike_price (=locked capital
     let price_diff = Math64x61.sub(strike_price, terminal_price);
-    let amount_x_diff_quote = Math64x61.mul(option_size, price_diff);
-    let (to_be_paid_buyer) = max(0, amount_x_diff_quote);
-    let to_be_paid_seller_ = Math64x61.mul(option_size, strike_price);
-    let to_be_paid_seller = Math64x61.sub(to_be_paid_seller_, to_be_paid_buyer);
+    let (buyer_relative_profit) = max(0, price_diff);
+    let (seller_relative_profit) = min(strike_price, terminal_price);
+
+    let to_be_paid_buyer = Math64x61.mul(option_size, buyer_relative_profit);
+    let to_be_paid_seller = Math64x61.mul(option_size, seller_relative_profit);
 
     return (to_be_paid_buyer, to_be_paid_seller);
 }

@@ -10,7 +10,7 @@ from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
 from interface_amm import IAMM
 
-from constants import EMPIRIC_ORACLE_ADDRESS
+from constants import EMPIRIC_ORACLE_ADDRESS, TRADE_SIDE_LONG
 from contracts.option_pricing_helpers import get_new_volatility
 from types import Option
 from tests.itest_specs.setup import deploy_setup
@@ -257,6 +257,17 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         0
     );
 
+    // Effectively switching off the slippage
+    local limit_total_premia;
+    local opposite_limit_total_premia;
+    if (trade_side == TRADE_SIDE_LONG) {
+        tempvar limit_total_premia=230584300921369400000000000000000000;
+        tempvar opposite_limit_total_premia=1;
+    } else {
+        tempvar limit_total_premia=1;
+        tempvar opposite_limit_total_premia=230584300921369400000000000000000;
+    }
+
     // Conduct first trade of half size
     let (prem_1) = IAMM.trade_open(
         contract_address=amm_addr,
@@ -266,7 +277,9 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_side=trade_side,
         option_size=option_size_half,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=limit_total_premia,
+        tx_deadline=1000000001
     );
     // Conduct second trade of half size
     let (prem_2) = IAMM.trade_open(
@@ -277,7 +290,9 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_side=trade_side,
         option_size=option_size_half,
         quote_token_address=myusd_addr,
-        base_token_address=myeth_addr
+        base_token_address=myeth_addr,
+        limit_total_premia=limit_total_premia,
+        tx_deadline=1000000001
     );
 
     // Get final amount of myUSD on option-buyer's account
@@ -336,23 +351,7 @@ func test_volatility_updates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         if ids.option_type == 0:
             assert isclose(desired_balance, ids.admin_myETH_balance_final.low, rel_tol = 0.01), error_string
         if ids.option_type == 1:
-            # rel_tol = 0.1 here is NOT needed for every case, it just failes for one or two specific numbers idk why yet
-            # FIXME: Find out why it fails on rel_tol=0.01 and fix
-            # @Marek
-
-            # Example of failing test(always fails for size 3eth)
-            # prem_1 = 253845901750340999400 
-            # prem_2 = 466636461010444770500 
-            # prem_no_fee = 1526513357895611292300 
-            # total_premia_including_fees = 1572308758632479630698
-            # option_type = 1,
-            # side = 0 ,
-            # size = 3000000000000000000,
-            # size_half = 1500000000000000000,
-            # desired_balance = 4318119772,
-            # final_balance_USD = 4517250202
-            # final_balance_ETH = 5000000000000000000
-            
+            # The higher rel_tol is caused by the extreme proportion of trade size to liquidity pool
             assert isclose(desired_balance, ids.admin_myUSD_balance_final.low, rel_tol = 0.1), error_string
     %}
     
