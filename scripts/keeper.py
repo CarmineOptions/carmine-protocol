@@ -57,13 +57,13 @@ def setup_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-def get_abi(abi_path: str) -> List:
-    with open(abi_path, 'r') as f:
+def get_abi(args: argparse.Namespace) -> List:
+    with open(args.abi_path, 'r') as f:
         abi = json.load(f)
 
     return abi
 
-def get_chain(args) -> StarknetChainId:
+def get_chain(args: argparse.Namespace) -> StarknetChainId:
     if args.net not in SUPPORTED_NETWORKS:
         raise ValueError(f'Unknown network, expected one of {SUPPORTED_NETWORKS}, got: {args.net}')
 
