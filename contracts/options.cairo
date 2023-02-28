@@ -798,6 +798,9 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (current_pool_position) = get_option_position(
         lptoken_address,TRADE_SIDE_SHORT, maturity, strike_price
     );
+    tempvar syscall_ptr: felt* = syscall_ptr;
+    tempvar pedersen_ptr: HashBuiltin* = pedersen_ptr;
+    tempvar range_check_ptr = range_check_ptr;
     if (current_pool_position != 0) {
         expire_option_token_for_pool(
             lptoken_address=lptoken_address,

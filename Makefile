@@ -11,7 +11,7 @@ test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
 # Takes 0 time relative to protostar, let's steer clear of this potential error src
 .PHONY: build/ammcontract.cairo
 
-build/ammcontract.cairo: tests/proxy_mock.cairo contracts/amm.cairo contracts/liquidity_pool.cairo contracts/options.cairo contracts/view_from_outside/view.cairo contracts/state.cairo
+build/ammcontract.cairo: tests/proxy_mock.cairo contracts/amm.cairo contracts/liquidity_pool.cairo contracts/options.cairo contracts/views_from_outside/view.cairo contracts/state.cairo
 	mkdir -p build
 	cat $+ > $@
 	sed -i '/%lang starknet/d' $@
