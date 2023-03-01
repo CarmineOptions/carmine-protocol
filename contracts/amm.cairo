@@ -344,7 +344,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     }
 
 	with_attr error_message("Option size must be larger than zero") {
-		assert_nn(option_size)
+		assert_nn(option_size);
 	}
 	
     with_attr error_message("Given option_type is not available") {
