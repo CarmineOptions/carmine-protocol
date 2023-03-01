@@ -262,7 +262,18 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }
-    
+
+    // Check that base/quote token even exists - use total supply for now I guess
+    let (supply_base) = IERC20.totalSupply(base_token_address);
+    let (supply_quote) = IERC20.totalSupply(quote_token_address);
+
+    with_attr error_message("Base token has total supply lower than 1"){
+        assert_uint256_le(Uint256(1, 0), supply_base);
+    }
+    with_attr error_message("Quote token has total supply lower than 1"){
+        assert_uint256_le(Uint256(1, 0), supply_quote);
+    }
+
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
 
