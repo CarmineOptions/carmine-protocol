@@ -314,6 +314,9 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) {
     alloc_locals;
 
+    with_attr error_message("Amount must be > 0"){
+        assert_uint256_le(Uint256(0, 0), amount);
+    }
     with_attr error_message("pooled_token_addr address is zero"){
         assert_not_zero(pooled_token_addr);
     }
@@ -409,6 +412,10 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let (lptoken_address: felt) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
+
+    with_attr error_message("LP token amount must be > 0"){
+        assert_uint256_le(Uint256(0, 0), lp_token_amount);
+    }
 
     // Test the pooled_token_addr corresponds to the underlying token address of the pool,
     // that is defined by the quote_token_address, base_token_address and option_type
