@@ -145,20 +145,12 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
             local optsize = option_size_m64x61;
             // 4) Update volatility
             with_attr error_message("do_trade: unable to update volatility to {newvol}, adjusting at {adjspd}, optsize {optsize}") {
-                if (SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES == 1){
-                    set_pool_volatility_separate(
-                        lptoken_address=lptoken_address,
-                        maturity=maturity,
-                        strike_price=strike_price,
-                        volatility=new_volatility
-                    );
-                }else{
-                    set_pool_volatility(
-                        lptoken_address=lptoken_address,
-                        maturity=maturity,
-                        volatility=new_volatility
-                    );
-                }
+                set_pool_volatility_separate(
+                    lptoken_address=lptoken_address,
+                    maturity=maturity,
+                    strike_price=strike_price,
+                    volatility=new_volatility
+                );
             }
         }
 

@@ -334,6 +334,7 @@ func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
     let (pool_volatility_) = pool_volatility_separate.read(lptoken_address, maturity, strike_price);
     if (pool_volatility_ == 0){
+        // this is here only to ensure a seamless migration on testnet and will be removed on mainnet
         let (main_pool_vol) = pool_volatility.read(lptoken_address, maturity);
         pool_volatility_separate.write(lptoken_address, maturity, strike_price, main_pool_vol);
         return (main_pool_vol,);
