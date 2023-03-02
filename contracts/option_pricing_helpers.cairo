@@ -202,7 +202,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
 func _get_option_size_in_pool_currency{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(option_size: felt, option_type: felt, underlying_price: felt) -> (relative_option_size: felt) {
+}(option_size: Math64x61_, option_type: OptionType, underlying_price: Math64x61_) -> (relative_option_size: Math64x61_) {
     if (option_type == OPTION_CALL) {
         return (option_size,);
     }

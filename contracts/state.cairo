@@ -328,7 +328,6 @@ func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 
 // Is it an issue that this is a view fn that sometimes writes stuff? Probably not, since it almost never writes stuff.
-@view
 func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
 ) -> (pool_volatility: Math64x61_) {
@@ -345,6 +344,7 @@ func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
 // Automatically retrieves correct pool vol according to SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES flag
 // Eliminates branching, local allocations and revoked references in code elsewhere.
+@view
 func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
 ) -> (pool_volatility: Math64x61_) {
@@ -535,6 +535,9 @@ func get_pool_volatility_adjustment_speed{
     lptoken_address: Address
 ) -> (res: Math64x61_) {
     let (res) = pool_volatility_adjustment_speed.read(lptoken_address);
+    with_attr error_message("pool volatility adjustment speed 0, liquidity pool not configured"){
+        assert_not_zero(res);
+    }
     return (res,);
 }
 

@@ -101,22 +101,25 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         with_attr error_message("conversions failed in do_trade"){
             let option_size_uint256 = intToUint256(option_size);
             let strike_price_uint256 = toUint256_balance(strike_price, quote_token_address);
-        }
-        let (option_size_in_pool_currency: Uint256) = convert_amount_to_option_currency_from_base_uint256(
-            option_size_uint256,
-            option_type,
-            strike_price_uint256,
-            base_token_address
-        );
+        
+            let (option_size_in_pool_currency: Uint256) = convert_amount_to_option_currency_from_base_uint256(
+                option_size_uint256,
+                option_type,
+                strike_price_uint256,
+                base_token_address
+            );
 
-        let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
+            let option_size_m64x61 = fromInt_balance(option_size, base_token_address);
+        }
 
         // 1) Get current volatility
-        let (current_volatility) = get_pool_volatility_auto(
-            lptoken_address=lptoken_address,
-            maturity=maturity,
-            strike_price=strike_price
-        );
+        with_attr error_message("do_trade: unable to get pool vol"){
+            let (current_volatility) = get_pool_volatility_auto(
+                lptoken_address=lptoken_address,
+                maturity=maturity,
+                strike_price=strike_price
+            );
+        }
 
         // 2) Get price of underlying asset
         with_attr error_message("do_trade: error while getting current price from Empiric") {
@@ -126,28 +129,37 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
         // 3) Calculate new volatility, calculate trade volatility
         
-        let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(
-            lptoken_address=lptoken_address
-        );
+        with_attr error_message("do_trade: unable to calculate volatility") {
+            with_attr error_message("do_trade: unable to get_pool_volatility_adjustment_speed") {
+                let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(
+                    lptoken_address=lptoken_address
+                );
+            }
 
-        let (new_volatility, trade_volatility) = get_new_volatility(
-            current_volatility, option_size_m64x61, option_type, side, strike_price, pool_volatility_adjustment_speed
-        );
+            let (new_volatility, trade_volatility) = get_new_volatility(
+                current_volatility, option_size_m64x61, option_type, side, strike_price, pool_volatility_adjustment_speed
+            );
 
-        // 4) Update volatility
-        if (SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES == 1){
-            set_pool_volatility_separate(
-                lptoken_address=lptoken_address,
-                maturity=maturity,
-                strike_price=strike_price,
-                volatility=new_volatility
-            );
-        }else{
-            set_pool_volatility(
-                lptoken_address=lptoken_address,
-                maturity=maturity,
-                volatility=new_volatility
-            );
+            local newvol = new_volatility;
+            local adjspd = pool_volatility_adjustment_speed;
+            local optsize = option_size_m64x61;
+            // 4) Update volatility
+            with_attr error_message("do_trade: unable to update volatility to {newvol}, adjusting at {adjspd}, optsize {optsize}") {
+                if (SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES == 1){
+                    set_pool_volatility_separate(
+                        lptoken_address=lptoken_address,
+                        maturity=maturity,
+                        strike_price=strike_price,
+                        volatility=new_volatility
+                    );
+                }else{
+                    set_pool_volatility(
+                        lptoken_address=lptoken_address,
+                        maturity=maturity,
+                        volatility=new_volatility
+                    );
+                }
+            }
         }
 
         // 5) Get time till maturity
@@ -182,24 +194,28 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         // fees are already in the currency same as premia
         // if side == TRADE_SIDE_LONG (user pays premia) the fees are added on top of premia
         // if side == TRADE_SIDE_SHORT (user receives premia) the fees are substracted from the premia
-        let (total_fees) = get_fees(total_premia_before_fees);
-        let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
+        with_attr error_message("do_trade: error while counting fees"){
+            let (total_fees) = get_fees(total_premia_before_fees);
+            let (total_premia) = add_premia_fees(side, total_premia_before_fees, total_fees);
+        }
     }
 
     assert option_size_in_pool_currency.high = 0;
 
     // 9) Make the trade
-    mint_option_token(
-        lptoken_address=lptoken_address,
-        option_size=option_size,
-        option_size_in_pool_currency=option_size_in_pool_currency,
-        option_side=side,
-        option_type=option_type,
-        maturity=maturity,
-        strike_price=strike_price,
-        premia_including_fees=total_premia,
-        underlying_price=underlying_price,
-    );
+    with_attr error_message("do_trade: unable to mint option token"){
+        mint_option_token(
+            lptoken_address=lptoken_address,
+            option_size=option_size,
+            option_size_in_pool_currency=option_size_in_pool_currency,
+            option_side=side,
+            option_type=option_type,
+            maturity=maturity,
+            strike_price=strike_price,
+            premia_including_fees=total_premia,
+            underlying_price=underlying_price,
+        );
+    }
 
     // 10) Validate slippage
     with_attr error_message("Current premia with fees is out of slippage bounds (do_trade). side: {side}, limit_total_premia: {limit_total_premia}, total_premia: {total_premia}"){

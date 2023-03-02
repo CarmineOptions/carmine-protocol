@@ -492,6 +492,7 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 func intToUint256{range_check_ptr}(
     x: Int
 ) -> Uint256 {
+    assert_nn(x);
     with_attr error_message("Unable to work with x this big until Cairo 1.0 comes along") {
         assert_le_felt(x, 2**127-1);
         let res = Uint256(x, 0);
