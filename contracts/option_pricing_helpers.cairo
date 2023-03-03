@@ -196,10 +196,6 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     } else {
         let new_volatility = Math64x61.add(current_volatility, -relative_option_size);
     }
-    
-    // alpha – rate of change assumed to be 1
-    // let (denominator) = _get_vol_update_denominator(relative_option_size, side);
-    // let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
     const two = 4611686018427387904;

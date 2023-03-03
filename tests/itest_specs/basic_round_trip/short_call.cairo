@@ -198,7 +198,7 @@ namespace ShortCallRoundTrip {
             tx_deadline=99999999999, // Disable deadline
         );
 
-        assert premia = 555834944799301; // approx 0.00036 ETH which may sound like way too different from the long premia, but the trade_vol here is 91.6
+        assert premia = 555834944799301; // approx 0.00036 ETH which may sound like way too different from the long premia, but the trade_vol here is 90
 
         // Test balance of lp tokens in the account after the option was bought
         let (bal_eth_lpt_1: Uint256) = ILPToken.balanceOf(
@@ -337,7 +337,7 @@ namespace ShortCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_2 = 539159896455322; // FIXME THIS WAS 703123751803000
+        assert pools_pos_val_call_2 = 539159896455322;
         
         let (pools_pos_val_put_2) = IAMM.get_value_of_pool_position(
             contract_address = amm_addr,
