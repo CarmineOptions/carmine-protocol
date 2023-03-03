@@ -1,6 +1,6 @@
 %lang starknet
 
-from interface_lptoken import ILPToken
+from interfaces.interface_lptoken import ILPToken
 
 @external
 func __setup__() {

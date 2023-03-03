@@ -81,7 +81,7 @@ func _get_premia_before_fees{
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_,
+    pool_volatility_adjustment_speed: Math64x61_,
 ) -> (total_premia_before_fees: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
@@ -92,7 +92,6 @@ func _get_premia_before_fees{
     let strike_price = option.strike_price;
     let quote_token_address = option.quote_token_address;
     let base_token_address = option.base_token_address;
-    assert option_type = option.option_type; // TODO remove once tests pass even with this
 
     let option_size = position_size;
 
@@ -103,9 +102,9 @@ func _get_premia_before_fees{
     }
 
     // 2) Calculate new volatility, calculate trade volatility
-    with_attr error_message("helpers._get_premia_before_fees getting volatility FAILED"){
+    with_attr error_message("helpers._get_premia_before_fees getting new volatility FAILED"){
         let (_, trade_volatility) = get_new_volatility(
-            current_volatility, option_size, option_type, side, strike_price, current_pool_balance
+            current_volatility, option_size, option_type, side, strike_price, pool_volatility_adjustment_speed
         );
         local tradevol = trade_volatility;
     }
@@ -214,7 +213,7 @@ func _get_value_of_position{
     position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_
+    pool_volatility_adjustment_speed: Math64x61_
 ) -> (position_value: Math64x61_){
     // Gets value of position ADJUSTED for fees!!!
 
@@ -269,7 +268,7 @@ func _get_value_of_position{
             position_size=option_size_m64x61,
             option_type=option_type,
             current_volatility=current_volatility,
-            current_pool_balance=current_pool_balance
+            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
         );
     }
 
@@ -328,7 +327,7 @@ func _get_premia_with_fees{
     position_size: Math64x61_,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_
+    pool_volatility_adjustment_speed: Math64x61_
 ) -> (position_value: Math64x61_){
     // Gets premia ADJUSTED for fees!!!
     // FIXME: this is basically the same as _get_value_of_position... only one is from perspective
@@ -346,7 +345,7 @@ func _get_premia_with_fees{
         position_size=position_size,
         option_type=option_type,
         current_volatility=current_volatility,
-        current_pool_balance=current_pool_balance
+        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
     );
 
     // Get fees and total premia
@@ -493,6 +492,7 @@ func fromInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 func intToUint256{range_check_ptr}(
     x: Int
 ) -> Uint256 {
+    assert_nn(x);
     with_attr error_message("Unable to work with x this big until Cairo 1.0 comes along") {
         assert_le_felt(x, 2**127-1);
         let res = Uint256(x, 0);

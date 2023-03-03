@@ -1,6 +1,6 @@
 %lang starknet
 
-from types import (
+from contracts.types import (
     Address, OptionType, Math64x61_, OptionSide, Int, Option, Bool, OptionWithPremia, PoolInfo,
     UserPoolInfo
 )
@@ -241,6 +241,13 @@ namespace IAMM {
     }
 
 
+    func get_pool_volatility_auto(
+        lptoken_address: Address, maturity: Int, strike_price: Math64x61_
+    ) -> (pool_volatility: Math64x61_) {
+
+    }
+
+
     func get_option_position(
         lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
     ) -> (
@@ -257,5 +264,11 @@ namespace IAMM {
         total_premia_before_fees: Math64x61_,
         total_premia_including_fees: Math64x61_
     ) {
+    }
+
+
+    func set_pool_volatility_adjustment_speed(
+        lptoken_address: Address, new_speed: Math64x61_
+    ) -> () {
     }
 }

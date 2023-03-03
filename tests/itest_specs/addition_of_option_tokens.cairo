@@ -1,6 +1,6 @@
 %lang starknet
 
-from interface_option_token import IOptionToken
+from interfaces.interface_option_token import IOptionToken
 
 
 

@@ -3,10 +3,10 @@
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from openzeppelin.token.erc20.IERC20 import IERC20
-from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_liquidity_pool import ILiquidityPool
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 
 
 // Struct containing informations about the amm 

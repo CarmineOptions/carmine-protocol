@@ -129,7 +129,9 @@ func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) 
     const secs_in_year = 72717065138563052470272000;
 
     let secs_left = Math64x61.sub(maturity_math, currtime_math);
-    assert_nn(secs_left);
+    with_attr error_message("get_time_till_maturity - time till maturity is negative"){
+        assert_nn(secs_left);
+    }
 
     let time_till_maturity = Math64x61.div(secs_left, secs_in_year);
     return (time_till_maturity,);
@@ -172,7 +174,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     option_type: OptionType,
     side: OptionSide,
     strike_price: Math64x61_,
-    current_pool_balance: Math64x61_,
+    pool_volatility_adjustment_speed: Math64x61_,
 ) -> (new_volatility: Math64x61_, trade_volatility: Math64x61_) {
     // Calculates two volatilities, one for trade that is happening
     // and the other to update the volatility param (storage_var).
@@ -185,12 +187,14 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         option_size, option_type, strike_price
     );
 
-    let relative_option_size = Math64x61.div(option_size_in_pool_currency, current_pool_balance);
+    let _relative_option_size = Math64x61.div(option_size_in_pool_currency, pool_volatility_adjustment_speed);
+    let hundred = Math64x61.fromFelt(100);
+    let relative_option_size = Math64x61.mul(_relative_option_size, hundred);
 
     // alpha – rate of change assumed to be 1
-    let (denominator) = _get_vol_update_denominator(relative_option_size, side);
-    let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
-    let new_volatility = Math64x61.mul(current_volatility, volatility_scale);
+    // let (denominator) = _get_vol_update_denominator(relative_option_size, side);
+    // let volatility_scale = Math64x61.div(Math64x61.ONE, denominator);
+    let new_volatility = Math64x61.add(current_volatility, relative_option_size);
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
     const two = 4611686018427387904;
@@ -202,7 +206,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
 func _get_option_size_in_pool_currency{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(option_size: felt, option_type: felt, underlying_price: felt) -> (relative_option_size: felt) {
+}(option_size: Math64x61_, option_type: OptionType, underlying_price: Math64x61_) -> (relative_option_size: Math64x61_) {
     if (option_type == OPTION_CALL) {
         return (option_size,);
     }

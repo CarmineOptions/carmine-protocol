@@ -56,15 +56,20 @@ func get_value_of_position{
     option: Option,
     position_size: Math64x61_,
     option_type: OptionType,
-    current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_
+    current_volatility: Math64x61_
 ) -> (position_value: Math64x61_){
+    let (lptoken_address) = get_lptoken_address_for_given_option(
+        option.quote_token_address,
+        option.base_token_address,
+        option.option_type
+    );
+    let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
     let (res) = _get_value_of_position(
         option,
         position_size,
         option_type,
         current_volatility,
-        current_pool_balance
+        pool_volatility_adjustment_speed
     );
     return (res,);
 }
@@ -109,11 +114,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         return (res = value_of_rest_of_the_pool_);
     }
 
-    let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-
-    let (current_pool_balance_uint256) = get_unlocked_capital(lptoken_address);
-    let (underlying) = get_underlying_token_address(lptoken_address);
-    let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, underlying);
+    let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
 
     with_attr error_message("Failed getting value of position in _get_value_of_pool_position"){
         let (value_of_option) = get_value_of_position(
@@ -121,7 +122,6 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
             _option_position,
             option.option_type,
             current_volatility,
-            current_pool_balance
         );
     }
 

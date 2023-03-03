@@ -50,6 +50,12 @@ func pool_volatility(lptoken_address: Address, maturity: Int) -> (volatility: Ma
 }
 
 
+// Stores volatility for given pool, maturity and strike_price combination.
+@storage_var
+func pool_volatility_separate(lptoken_address: Address, maturity: Int, strike_price: Math64x61_) -> (volatility: Math64x61_) {
+}
+
+
 // List of available options (mapping from 1 to n to available strike x maturity,
 // for n+1 returns zeros). STARTS INDEXING AT 0.
 @storage_var
@@ -138,6 +144,11 @@ func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
 @storage_var
 func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
 }
+
+@storage_var
+func pool_volatility_adjustment_speed(lptoken_address: Address) -> (res: Math64x61_) {
+}
+
 
 //migration only, to convert m64x61 lpool_balance to Uint256
 @external
@@ -305,12 +316,44 @@ func get_option_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
+// This shouldn't be used if SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1.
 @view
 func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int
 ) -> (pool_volatility: Math64x61_) {
+    assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0;
     let (pool_volatility_) = pool_volatility.read(lptoken_address, maturity);
     return (pool_volatility_,);
+}
+
+
+// Is it an issue that this is a view fn that sometimes writes stuff? Probably not, since it almost never writes stuff.
+func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, maturity: Int, strike_price: Math64x61_
+) -> (pool_volatility: Math64x61_) {
+    assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
+    let (pool_volatility_) = pool_volatility_separate.read(lptoken_address, maturity, strike_price);
+    if (pool_volatility_ == 0){
+        // this is here only to ensure a seamless migration on testnet and will be removed on mainnet
+        let (main_pool_vol) = pool_volatility.read(lptoken_address, maturity);
+        pool_volatility_separate.write(lptoken_address, maturity, strike_price, main_pool_vol);
+        return (main_pool_vol,);
+    }
+    return (pool_volatility_,);
+}
+
+
+// Automatically retrieves correct pool vol according to SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES flag
+// Eliminates branching, local allocations and revoked references in code elsewhere.
+@view
+func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, maturity: Int, strike_price: Math64x61_
+) -> (pool_volatility: Math64x61_) {
+    if (SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES == 1){
+        return get_pool_volatility_separate(lptoken_address, maturity, strike_price);
+    }else{
+        return get_pool_volatility(lptoken_address, maturity);
+    }
 }
 
 
@@ -337,10 +380,28 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // volatility=Math64x61.FRACT_PART)
 
     alloc_locals;
-
+    with_attr error_message("tried to set pool volatility, but volatility is per-strike"){
+        assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0;
+    }
     assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
     assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
     pool_volatility.write(lptoken_address, maturity, volatility);
+    return ();
+}
+
+
+func set_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, maturity: Int, strike_price: Math64x61_, volatility: Math64x61_
+) {
+    // volatility has to be above 1 (in terms of Math64x61.FRACT_PART units...
+    // ie volatility = 1 is very very close to 0 and 100% volatility would be
+    // volatility=Math64x61.FRACT_PART)
+    alloc_locals;
+    assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
+
+    assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
+    assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
+    pool_volatility_separate.write(lptoken_address, maturity, strike_price, volatility);
     return ();
 }
 
@@ -470,6 +531,32 @@ func set_trading_halt{
 }
 
 
+@view
+func get_pool_volatility_adjustment_speed{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address
+) -> (res: Math64x61_) {
+    let (res) = pool_volatility_adjustment_speed.read(lptoken_address);
+    with_attr error_message("pool volatility adjustment speed 0, liquidity pool not configured"){
+        assert_not_zero(res);
+    }
+    return (res,);
+}
+
+
+@external
+func set_pool_volatility_adjustment_speed{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address, new_speed: Math64x61_
+) -> () {
+    Proxy.assert_only_admin();
+    pool_volatility_adjustment_speed.write(lptoken_address, new_speed);
+    return ();
+}
+
+
 func _get_option_info{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -583,4 +670,23 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     shift_available_options(lptoken_address, index + 1);
 
     return ();
+}
+
+
+@view
+func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
+) -> (option_availability: Bool) {
+    let (option_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    // FIXME: create unit test for this
+    if (option_address == 0) {
+        return (FALSE,);
+    }
+
+    return (TRUE,);
 }

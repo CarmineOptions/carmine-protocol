@@ -1,8 +1,8 @@
 %lang starknet
 
-from interface_lptoken import ILPToken
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 
@@ -114,16 +114,18 @@ namespace ShortPutRoundTrip {
         assert bal_opt_short_put_tokens_0.low = 0;
 
         // Test pool_volatility -> 100
-        let (call_volatility_0) = IAMM.get_pool_volatility(
+        let (call_volatility_0) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_0 = 230584300921369395200;
-        let (put_volatility_0) = IAMM.get_pool_volatility(
+        let (put_volatility_0) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert put_volatility_0 = 230584300921369395200;
 
@@ -216,7 +218,7 @@ namespace ShortPutRoundTrip {
             option_size=one,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_total_premia=-230584300921369395200000, // 100_000
+            limit_total_premia=1, // Disable deadline
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -264,16 +266,18 @@ namespace ShortPutRoundTrip {
         );
         assert bal_opt_short_put_tokens_1.low = 1000000000000000000;
 
-        let (call_volatility_1) = IAMM.get_pool_volatility(
+        let (call_volatility_1) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_1 = 230584300921369395200;
-        let (put_volatility_1) = IAMM.get_pool_volatility(
+        let (put_volatility_1) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert put_volatility_1 = 177372539170284150100;
 
@@ -350,7 +354,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_1 = 224659661559513847575; // 97.65 USD
+        assert put_pool_value_1 = 224628504839639667746; // 97.65 USD
 
         ///////////////////////////////////////////////////
         // UPDATE THE ORACLE PRICE
@@ -394,7 +398,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_2.low = 5579515933;
+        assert admin_myUSD_balance_2.low = 5579491190;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
@@ -413,7 +417,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_2.low = 2920484067;
+        assert put_pool_unlocked_capital_2.low = 2920508810;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_2: Uint256) = IOptionToken.balanceOf(
@@ -422,16 +426,18 @@ namespace ShortPutRoundTrip {
         );
         assert bal_opt_short_put_tokens_2.low = 1000000000000000000;
 
-        let (call_volatility_2) = IAMM.get_pool_volatility(
+        let (call_volatility_2) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_2 = 230584300921369395200;
-        let (put_volatility_2) = IAMM.get_pool_volatility(
+        let (put_volatility_2) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert put_volatility_2 = 177372539170284150100;
 
@@ -479,7 +485,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_2.low=2920484067;
+        assert put_pool_balance_2.low = 2920508810;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_2) = IAMM.get_pool_locked_capital(
@@ -507,7 +513,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_2 = 129768524643053348904;
+        assert put_pool_value_2 = 121727835334354166307;
 
         ///////////////////////////////////////////////////
         // CLOSE HALF OF THE BOUGHT OPTION
@@ -523,11 +529,11 @@ namespace ShortPutRoundTrip {
             option_size=half,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_total_premia=230584300921369395200000, // 100_000
+            limit_total_premia=230584300921369395200000, // Disable deadline
             tx_deadline=99999999999, // Disable deadline
         );
 
-        assert premia = 124515225675871019200; // approx 53.9998712746395 USD...
+        assert premia = 122634884898634389300; // approx 53.9998712746395 USD...
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -548,7 +554,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_3.low = 6301706000;
+        assert admin_myUSD_balance_3.low = 6302101223;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = IAMM.get_unlocked_capital(
@@ -563,7 +569,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_3.low = 2948294000;
+        assert put_pool_unlocked_capital_3.low = 2947898777;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_3: Uint256) = IOptionToken.balanceOf(
@@ -572,18 +578,20 @@ namespace ShortPutRoundTrip {
         );
         assert bal_opt_short_put_tokens_3.low = 500000000000000000;
 
-        let (call_volatility_3) = IAMM.get_pool_volatility(
+        let (call_volatility_3) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_3 = 230584300921369395200;
-        let (put_volatility_3) = IAMM.get_pool_volatility(
+        let (put_volatility_3) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
-        assert put_volatility_3 = 177372539170284150100; // close option has no impact on volatility
+        assert put_volatility_3 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_3) = IAMM.get_option_position(
@@ -632,7 +640,7 @@ namespace ShortPutRoundTrip {
         // Previous state - premia + fee on premia
         // 2920.4840662842084 + 27.809933706439345 = 2948.293999990648
         // 26.99993563731975
-        assert put_pool_balance_3.low = 2948294000;
+        assert put_pool_balance_3.low = 2947898777;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = IAMM.get_pool_locked_capital(
@@ -660,7 +668,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_3 = 60365382251290395849;
+        assert put_pool_value_3 = 61649285012932134207;
 
         ///////////////////////////////////////////////////
         // SETTLE (EXPIRE) POOL
@@ -724,7 +732,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_4.low = 6301706000;
+        assert admin_myUSD_balance_4.low = 6302101223;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_4) = IAMM.get_unlocked_capital(
@@ -739,7 +747,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4.low = 2973294000;
+        assert put_pool_unlocked_capital_4.low = 2972898777;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -748,18 +756,20 @@ namespace ShortPutRoundTrip {
         );
         assert bal_opt_short_put_tokens_4.low = 500000000000000000;
 
-        let (call_volatility_4) = IAMM.get_pool_volatility(
+        let (call_volatility_4) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_4 = 230584300921369395200;
-        let (put_volatility_4) = IAMM.get_pool_volatility(
+        let (put_volatility_4) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
-        assert put_volatility_4 = 177372539170284150100;
+        assert put_volatility_4 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_4) = IAMM.get_option_position(
@@ -805,7 +815,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_4.low = 2973294000;
+        assert put_pool_balance_4.low = 2972898777;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = IAMM.get_pool_locked_capital(
@@ -866,7 +876,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_5.low = 7026706000;
+        assert admin_myUSD_balance_5.low = 7027101223;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = IAMM.get_unlocked_capital(
@@ -878,7 +888,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5.low = 2973294000;
+        assert put_pool_unlocked_capital_5.low = 2972898777;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -887,18 +897,20 @@ namespace ShortPutRoundTrip {
         );
         assert bal_opt_short_put_tokens_5.low = 0;
 
-        let (call_volatility_5) = IAMM.get_pool_volatility(
+        let (call_volatility_5) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
         assert call_volatility_5 = 230584300921369395200;
-        let (put_volatility_5) = IAMM.get_pool_volatility(
+        let (put_volatility_5) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
-            maturity=expiry
+            maturity=expiry,
+            strike_price = strike_price
         );
-        assert put_volatility_5 = 177372539170284150100;
+        assert put_volatility_5 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_5) = IAMM.get_option_position(
@@ -944,7 +956,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5.low = 2973294000;
+        assert put_pool_balance_5.low = 2972898777;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = IAMM.get_pool_locked_capital(

@@ -7,32 +7,22 @@ from starkware.cairo.common.math import abs_value, assert_not_zero
 
 from math64x61 import Math64x61
 
-from interface_lptoken import ILPToken
+from interfaces.interface_lptoken import ILPToken
 from types import Address
 
+const SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
 
-
-// The maximum amount of token in a pool.
-const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
-// The maximum amount of token for account balance
-const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // The minimum and maximum volatility
 const VOLATILITY_LOWER_BOUND = 1;
 const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
-// Maximum strike price allowed
-const STRIKE_PRICE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 
-// Imagine Token A being ETH and Token B being USDC. Ie underlying asset is ETH/USDC
-// TOKEN_A corresponds to ETH and TOKEN_B to USDC... Ie underlying asset is TOKEN_A/TOKEN_B
-// Call pool is denominated in TOKEN_A (ETH) and Put pool in TOKEN_B (USDC). Denominated
-// also means, that the liquidity is in given token.
-// FIXME: look into how the tokens are actually identified
-// FIXME: move the token identification to separate file
-const TOKEN_A = 1;
-const TOKEN_B = 2;
+// FIXME:
+// add max deposit, min deposit (and withdraw)
+// add min/max option size
+// max liquidity pool size - for mainnet limit (our business)
+// max trade size - for mainnet limit (our business) - to think through
 
 // option_type
-// TOKEN_A is used as locked capital in OPTION_CALL
 const OPTION_CALL = 0;
 const OPTION_PUT = 1;
 
@@ -55,11 +45,10 @@ func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 // Token addresses
 // ############################
 
-// const TOKEN_ETH_ADDRESS = 0x62230ea046a9a5fbc261ac77d03c8d41e5d442db2284587570ab46455fd2488;  // devnet address
-// const TOKEN_USD_ADDRESS = 456;  // devnet address
+// FIXME: double check mainnet addresses here (used for empiric)
 const TOKEN_ETH_ADDRESS = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;  // goerli address
 const TOKEN_USD_ADDRESS = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426;  // goerli address
-const TOKEN_BTC_ADDRESS = 789;
+// const TOKEN_BTC_ADDRESS = ...;
 
 
 // ############################
@@ -69,14 +58,16 @@ const TOKEN_BTC_ADDRESS = 789;
 const FEE_PROPORTION_PERCENT = 3;
 const RISK_FREE_RATE = 0; // Same as Math64x61.fromFelt(0)
 // Stops trading x amount of seconds before given option matures.
+// ie stops buy/sell and close of given options (only those that are close to expiry)
+// as a consequence the pricing of a position of liquidity pool is not working so the deposit/withraw is not working
 const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
-// const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 2; // This is used for testing.
 
 
 // ############################
 // Contrants for Empiric oracle
 // ############################
 
+// FIXME: double check numbers and 
 const EMPIRIC_ORACLE_ADDRESS = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
 const EMPIRIC_AGGREGATION_MODE = 0;  // 0 is default for median
 
@@ -104,11 +95,11 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
             return (EMPIRIC_ETH_USD_KEY,);
         }
     }
-    if (base_token_addr == TOKEN_BTC_ADDRESS) {
-        if (quote_token_addr == TOKEN_USD_ADDRESS) {
-            return (EMPIRIC_BTC_USD_KEY,);
-        }
-    }
+    // if (base_token_addr == TOKEN_BTC_ADDRESS) {
+    //     if (quote_token_addr == TOKEN_USD_ADDRESS) {
+    //         return (EMPIRIC_BTC_USD_KEY,);
+    //     }
+    // }
     return (0,);
 }
 
@@ -116,13 +107,15 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 func get_decimal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     token_address: Address
 ) -> (dec: felt) {
+    // To limit the calls outside some of the values are fixed.
     if (token_address == TOKEN_ETH_ADDRESS) {
         return (18,);
     }
     if (token_address == TOKEN_USD_ADDRESS) {
         return (6,);
     }
-    // FIXME: needs ERC20 intergace
+
+    // ILPToken is basically the same as IERC20
     let (dec) = ILPToken.decimals(token_address);
 
     with_attr error_message("Specified token_address possibly does not exist - decimals=0"){

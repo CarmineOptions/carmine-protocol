@@ -86,13 +86,8 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
     let (current_block_time) = get_block_timestamp();
     if (is_le(current_block_time, option.maturity) == TRUE) {
         let one = Math64x61.fromFelt(1);
-        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-
-        let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
-        let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-        let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
-
-        let current_pool_balance_uint256_low = current_pool_balance_uint256.low;
+        let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
+        let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
         with_attr error_message(
             "Failed getting premium in save_all_non_expired_options_with_premia_to_array, cpb_uint256.low {current_pool_balance_uint256_low}"
         ){
@@ -101,7 +96,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
                 position_size=one,
                 option_type=option.option_type,
                 current_volatility=current_volatility,
-                current_pool_balance=current_pool_balance
+                pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
             );
         }
         with_attr error_message(
@@ -152,7 +147,7 @@ func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuil
 func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     option: Option,
     current_volatility: Math64x61_,
-    current_pool_balance: Math64x61_,
+    pool_volatility_adjustment_speed: Math64x61_,
     position_size: Math64x61_
 ) -> (res: Math64x61_) {
     alloc_locals;
@@ -182,7 +177,7 @@ func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, peders
         position_size=position_size,
         option_type=option.option_type,
         current_volatility=current_volatility,
-        current_pool_balance=current_pool_balance
+        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
     );
     return (premia_with_fees_x_position, );
 }
@@ -249,10 +244,9 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
     }
 
     // Get value of users position
-    let (_current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
+    let (_current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
+    let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
     let (current_pool_balance_uint256: Uint256) = get_unlocked_capital(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let current_pool_balance: Math64x61_ = fromUint256_balance(current_pool_balance_uint256, lpool_underlying_token);
 
     let (_, current_volatility) = get_new_volatility(
         _current_volatility,
@@ -260,14 +254,13 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
         option.option_type,
         option.option_side,
         option.strike_price,
-        current_pool_balance
+        pool_volatility_adjustment_speed
     );
-    
     with_attr error_message(
         "Failed getting premium in save_option_with_position_of_user_to_array"
     ){
         let (premia_with_fees_x_position) = _get_premia_for_get_option_with_position_of_user(
-            option, current_volatility, current_pool_balance, position_size
+            option, current_volatility, pool_volatility_adjustment_speed, position_size
         );
     }
 
@@ -605,14 +598,13 @@ func get_total_premia{
     with_attr error_message("Error in prep"){
         let (option) = _get_option_with_correct_side(_option, is_closing);
 
-        let (current_volatility) = get_pool_volatility(lptoken_address, option.maturity);
-        let (current_pool_balance) = get_unlocked_capital(lptoken_address);
+        let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
+        let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
         let underlying = get_underlying_from_option_data(option.option_type, option.base_token_address, option.quote_token_address);
     }
     with_attr error_message(
         "Failed while converting pool balance and position size"
     ){
-        let current_pool_balance_m64x61 = fromUint256_balance(current_pool_balance, underlying);
         let position_size_m64x61 = fromUint256_balance(position_size, option.base_token_address);
     }
     with_attr error_message(
@@ -623,7 +615,7 @@ func get_total_premia{
             position_size=position_size_m64x61,
             option_type=option.option_type,
             current_volatility=current_volatility,
-            current_pool_balance=current_pool_balance_m64x61
+            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
         );
     }
     

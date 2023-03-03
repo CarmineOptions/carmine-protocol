@@ -7,8 +7,8 @@
 
 // It is also adjusted for the purpose of being options
 // Notes
-// - transfering any capital happens outside of this token (on an LP contract side
-// -
+// - transfering any capital happens outside of this token (on the AMM contract side)
+
 
 %lang starknet
 
@@ -29,7 +29,7 @@ from contracts.constants import (
     get_opposite_side,
 )
 from contracts.helpers import max
-from types import (Bool, Wad, Math64x61_, OptionType, OptionSide, Int, Address, Option)
+from types import (Bool, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 
 
 @storage_var
@@ -186,117 +186,6 @@ func side{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> 
     return (side,);
 }
 
-// @view
-// func get_value_for_holder{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-//     final_price: felt, amount: felt
-// ) -> (holder_value: felt) {
-//     // Make sure the number coming out of this function are used in a relation with correct
-//     // currencies.
-
-//     // FIXME: validate that the code below makes LP better off in case of rounding values
-
-//     // in terms of base token (ETH in case ETH/USD)
-//     let option_size = amount;
-
-//     // current_timestamp is in number of seconds... unix timestamp
-//     let (current_timestamp) = get_block_timestamp();
-//     let (maturity_timestamp) = option_token_maturity.read();
-
-//     let is_mature = is_le(maturity_timestamp, current_timestamp);
-
-//     if (is_not_yet_mature == TRUE) {
-//         with_attr error_message("Option is not yet mature.") {
-//             assert is_mature = 1;
-//         }
-
-//         let (option_type) = option_token_option_type.read();
-//         let (option_side) = option_token_side.read();
-//         let (strike_price) = option_token_strike_price.read();
-
-//         if (option_type == OPTION_CALL) {
-//             // The sum of the following two cases has to equal to the size of the locked capital
-//             // which is in base tokens (ETH in case ETH/USD)
-
-//             let (final_minus_strike) = final_price - strike_price;
-//             let (best_case_in_quote_call_long) = max(0, final_minus_strike);
-//             let (best_case_in_base_call_long) = best_case_in_quote_call_long / final_price;
-//             let (
-//                 best_case_in_base_call_long_scaled
-//             ) = option_size * best_case_in_base_call_long;
-
-//             if (option_side == TRADE_SIDE_LONG) {
-//                 // user is buyer and gets money only if the strike was hit
-//                 // in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
-//                 // and the final_price and option_token_strike_price are in terms of quote token
-
-//                 return best_case_in_base_call_long_scaled;
-//             } else {
-//                 // user is seller (underwriter) and gets money everytime, but size of the cash
-//                 // depends on the final price and the strike
-//                 // in case of a call option all cash is settled in base tokens (ETH in case ETH/USD)
-//                 // and the final_price and option_token_strike_price are in terms of quote token
-//                 // and option_size in terms of base token
-
-//                 return option_size - best_case_in_base_call_long_scaled;
-//             }
-//         } else {
-//             // The sum of the following two cases has to equal to the size of the locked capital
-//             // which is in quote tokens (USD in case ETH/USD)
-
-//             let (strike_minus_final) = strike_price - final_price;
-//             let (best_case_in_quote_put_long) = max(0, strike_minus_final);
-//             let (
-//                 best_case_in_quote_put_long_scaled
-//             ) = option_size * best_case_in_quote_put_long;
-
-//             if (side == long) {
-//                 // user is buyer and gets money only if the strike was hit
-//                 // in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
-//                 // and the final_price and option_token_strike_price are in terms of quote token (same token)
-//                 return best_case_in_quote_put_long_scaled;
-//             } else {
-//                 // user is seller (underwriter) and gets money everytime unless the final price is 0,
-//                 // but size of the cash depends on the final price and the strike
-//                 // in case of a put option all cash is settled in quote tokens (USD in case ETH/USD)
-//                 // and the final_price and option_token_strike_price are in terms of quote token (same token)
-//                 // and option_size in terms of base token
-//                 // FIXME: extra test the scenario that the currencies are of correct type (base/quote)
-
-//                 let (option_size_in_quote) = option_size * strike_price;
-
-//                 return option_size_in_quote - best_case_in_quote_put_long_scaled;
-//             }
-//         }
-//     }
-//     return ();
-// }
-
-// @view
-// func get_value_for_liquidity_pool{
-//     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-// }(final_price: felt, amount: felt) -> (liqudity_pool_value: felt) {
-//     // FIXME: deal with correct types -> felt vs Math_64x61 vs uint256
-
-//     let (side) = option_token_side.read();
-//     let (option_type) = option_token_option_type.read();
-
-//     let (opposite_side) = get_opposite_side(side);
-//     let (holder_value) = get_value_for_holder(final_price);
-
-//     // liquidity pool value is locked capital minus holder value
-//     // options_size = amount  // in terms of base token (ETH in case ETH/USD)
-//     if (option_type == OPTION_CALL) {
-//         // holder_value is already in the same currency as amount... in base token
-//         let (call_lp_value) = amount - holder_value;
-//         return (call_lp_value,);
-//     }
-
-//     // holder_value is already in the same currency as amount_in_quote... in quote token
-//     let (amount_in_quote) = amount * final_price;
-//     let (put_lp_value) = amount_in_quote - holder_value;
-//     return (put_lp_value,);
-// }
-
 //
 // Externals
 //
@@ -354,8 +243,6 @@ func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, amount: Uint256
 ) {
-    // FIXME: burn should also unfreeze the locked capital of the liquidity pool...
-    // FIXME: hence burn only through LP contact
     Ownable.assert_only_owner();
     ERC20._burn(account, amount);
     return ();
@@ -365,9 +252,6 @@ func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func transferOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     newOwner: felt
 ) {
-    // FIXME: as per note in the burn func... tranfering ownership should not be allowed or should
-    // unfreeze the locked capital in LP since if ownership is transfered the burn method could be called
-    // this is potentiall leak
     Ownable.transfer_ownership(newOwner);
     return ();
 }

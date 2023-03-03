@@ -6,13 +6,13 @@ from starkware.cairo.common.uint256 import Uint256, assert_uint256_eq
 from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20
 
-from interface_lptoken import ILPToken
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 
 from constants import EMPIRIC_ORACLE_ADDRESS, TRADE_SIDE_LONG
 from contracts.option_pricing_helpers import get_new_volatility
-from types import Option
+from contracts.types import Option
 from tests.itest_specs.setup import deploy_setup
 
 
@@ -77,7 +77,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance
+        pool_volatility_adjustment_speed = pool_balance
     );
 
     %{
@@ -92,7 +92,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance
+        pool_volatility_adjustment_speed = pool_balance
     );
 
     // Adjust pool balance 
@@ -115,7 +115,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance_2
+        pool_volatility_adjustment_speed = pool_balance_2
     );  
 
     %{
