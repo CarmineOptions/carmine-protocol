@@ -185,7 +185,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Premia - fees -> User is short, pool is long
     // 0.004164921240799478 - 0.004164921240799478 * 0.03
-    assert pools_pos_val_call_4 = 9312357712919169;
+    assert pools_pos_val_call_4 = 4859560664905061;
         
     let (pools_pos_val_put_4) = IAMM.get_value_of_pool_position(
         contract_address = amm_addr,

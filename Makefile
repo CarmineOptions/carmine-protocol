@@ -4,6 +4,12 @@ build: contracts/*
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
 	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests/
 
+testa: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
+	~/.protostar/dist/protostar/protostar test -x --seed 18000000 ./tests/test_get_value_of_pool_position.cairo
+
+testb: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
+	~/.protostar/dist/protostar/protostar test -x --seed 18000000 ./tests/test_eco_bugs.cairo
+
 #testpy: tests/*.py
 #	pytest tests/  # TODO FIXME, is broken
 

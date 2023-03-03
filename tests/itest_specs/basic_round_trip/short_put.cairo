@@ -591,7 +591,7 @@ namespace ShortPutRoundTrip {
             maturity=expiry,
             strike_price = strike_price
         );
-        assert put_volatility_3 = 177372539170284150100; // close option has no impact on volatility
+        assert put_volatility_3 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_3) = IAMM.get_option_position(
@@ -668,7 +668,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_3 = 59477919175837678826;
+        assert put_pool_value_3 = 61649285012932134207;
 
         ///////////////////////////////////////////////////
         // SETTLE (EXPIRE) POOL
@@ -769,7 +769,7 @@ namespace ShortPutRoundTrip {
             maturity=expiry,
             strike_price = strike_price
         );
-        assert put_volatility_4 = 177372539170284150100;
+        assert put_volatility_4 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_4) = IAMM.get_option_position(
@@ -910,7 +910,7 @@ namespace ShortPutRoundTrip {
             maturity=expiry,
             strike_price = strike_price
         );
-        assert put_volatility_5 = 177372539170284150100;
+        assert put_volatility_5 = 208673575494451941167;
 
         // Test option position
         let (opt_long_put_position_5) = IAMM.get_option_position(

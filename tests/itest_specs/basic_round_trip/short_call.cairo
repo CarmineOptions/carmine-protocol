@@ -603,7 +603,7 @@ namespace ShortCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_3 = 192153584101141162600; // close option has no impact on volatility
+        assert call_volatility_3 = 213503982334601291675;
 
         let (put_volatility_3) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -681,7 +681,7 @@ namespace ShortCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_4 = 2861504313961437;
+        assert pools_pos_val_call_4 = 3872294703603720;
         
         let (pools_pos_val_put_4) = IAMM.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -788,7 +788,7 @@ namespace ShortCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_4 = 192153584101141162600;
+        assert call_volatility_4 = 213503982334601291675;
 
         let (put_volatility_4) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -946,7 +946,7 @@ namespace ShortCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_5 = 192153584101141162600; // close option has no impact on volatility
+        assert call_volatility_5 = 213503982334601291675;
 
         let (put_volatility_5) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,

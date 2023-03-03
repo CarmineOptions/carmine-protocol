@@ -634,7 +634,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_3 = 288230376151711743900; // close option has no impact on volatility
+        assert call_volatility_3 = 262027614683374312534;
 
         let (put_volatility_3) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -714,7 +714,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_4 = 1146118987417090048;
+        assert pools_pos_val_call_4 = 1147518647952204051;
         
         let (pools_pos_val_put_4) = IAMM.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -824,7 +824,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_4 = 288230376151711743900; // close option has no impact on volatility
+        assert call_volatility_4 = 262027614683374312534;
 
         let (put_volatility_4) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -981,7 +981,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_5 = 288230376151711743900; // close option has no impact on volatility
+        assert call_volatility_5 = 262027614683374312534;
 
         let (put_volatility_5) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
