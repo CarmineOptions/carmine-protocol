@@ -644,7 +644,7 @@ namespace LongPutRoundTrip {
         );
         // Previous state - premia + fee on premia
         // 3087.084675218243 - 29.203155843084424 + 0.8760946752925327 = 3058.757614050451
-        assert put_pool_balance_3.low = 3057960081;
+        assert put_pool_balance_3.low = 3057850966;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_3) = IAMM.get_pool_locked_capital(
@@ -675,7 +675,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_value_3 = 1660753750107119064008;
+        assert put_pool_value_3 = 1662348061219545601478;
 
         ///////////////////////////////////////////////////
         // SETTLE (EXPIRE) POOL
@@ -739,7 +739,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_4.low = 6942039919;
+        assert admin_myUSD_balance_4.low = 6942149034;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_4) = IAMM.get_unlocked_capital(
@@ -758,7 +758,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4.low = 3032960081;
+        assert put_pool_unlocked_capital_4.low = 3032850966;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -781,7 +781,7 @@ namespace LongPutRoundTrip {
             maturity=expiry,
             strike_price = strike_price
         );
-        assert put_volatility_4 = 286440125368160739267;
+        assert put_volatility_4 = 265171946059574804500;
 
         // Test option position
         let (opt_long_put_position_4) = IAMM.get_option_position(
@@ -829,7 +829,7 @@ namespace LongPutRoundTrip {
         );
         // Previous state - what will be payed to the option owner
         // 3058.757614050451 - 25
-        assert put_pool_balance_4.low = 3032960081;
+        assert put_pool_balance_4.low = 3032850966;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = IAMM.get_pool_locked_capital(
@@ -888,7 +888,7 @@ namespace LongPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_5.low = 6967039919;
+        assert admin_myUSD_balance_5.low = 6967149034;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = IAMM.get_unlocked_capital(
@@ -903,7 +903,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5.low = 3032960081;
+        assert put_pool_unlocked_capital_5.low = 3032850966;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_long_put_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -926,7 +926,7 @@ namespace LongPutRoundTrip {
             maturity=expiry,
             strike_price = strike_price
         );
-        assert put_volatility_5 = 286440125368160739267;
+        assert put_volatility_5 = 265171946059574804500;
 
         // Test option position
         let (opt_long_put_position_5) = IAMM.get_option_position(
@@ -972,7 +972,7 @@ namespace LongPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5.low = 3032960081;
+        assert put_pool_balance_5.low = 3032850966;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = IAMM.get_pool_locked_capital(
