@@ -1,5 +1,3 @@
-// Enums and constants for the AMM
-
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
@@ -12,6 +10,15 @@ from types import Address
 
 const SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
 
+//
+// @title Constants Contract
+//
+
+
+// The maximum amount of token in a pool.
+const POOL_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
+// The maximum amount of token for account balance
+const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // The minimum and maximum volatility
 const VOLATILITY_LOWER_BOUND = 1;
 const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
@@ -83,6 +90,10 @@ const EMPIRIC_XRP_USD_KEY = 24860302295520068;
 const EMPIRIC_MATIC_USD_KEY = 1425106761739050242884;
 
 
+// @notice Get Empiric key based on used tokens
+// @param quote_token_addr: Address of the quote token, USDC for ETH/USDC
+// @param base_token_addr: Address of the base token, ETH for ETH/USDC
+// @return empiric_key: Key for the Empiric oracle
 func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_addr: Address,
     base_token_addr: Address,
@@ -104,6 +115,10 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
+// @notice Get decimal count for the given token
+// @dev 18 for ETH, 6 for USDC
+// @param token_address: Address of the token for which decimals are being retrieved
+// @return dec: Decimal count
 func get_decimal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     token_address: Address
 ) -> (dec: felt) {

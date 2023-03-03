@@ -69,7 +69,7 @@ from helpers import intToUint256, toUint256_balance, get_underlying_from_option_
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param lptoken_address: Address of the liquidity pool token
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: OptionType,
     strike_price: Math64x61_,
@@ -224,7 +224,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param lptoken_address: Address of the liquidity pool token
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -463,7 +463,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
 // @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 @external
 func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
@@ -537,7 +537,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
 // @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 @external
 func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
