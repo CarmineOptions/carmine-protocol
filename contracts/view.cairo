@@ -5,7 +5,6 @@ from contracts.types import OptionWithUsersPosition
 
 //
 // @title View Functions
-// @author Marek Hauzr - marek@carmine.finance
 // @notice Collection of view functions used by the frontend and traders
 //
 
