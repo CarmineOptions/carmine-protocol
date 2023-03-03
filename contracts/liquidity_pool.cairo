@@ -262,7 +262,18 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }
-    
+
+    // Check that base/quote token even exists - use total supply for now I guess
+    let (supply_base) = IERC20.totalSupply(base_token_address);
+    let (supply_quote) = IERC20.totalSupply(quote_token_address);
+
+    with_attr error_message("Base token has total supply lower than 1"){
+        assert_uint256_le(Uint256(1, 0), supply_base);
+    }
+    with_attr error_message("Quote token has total supply lower than 1"){
+        assert_uint256_le(Uint256(1, 0), supply_quote);
+    }
+
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
 
@@ -314,6 +325,9 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) {
     alloc_locals;
 
+    with_attr error_message("Amount must be > 0"){
+        assert_uint256_le(Uint256(0, 0), amount);
+    }
     with_attr error_message("pooled_token_addr address is zero"){
         assert_not_zero(pooled_token_addr);
     }
@@ -409,6 +423,10 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let (lptoken_address: felt) = get_lptoken_address_for_given_option(
         quote_token_address, base_token_address, option_type
     );
+
+    with_attr error_message("LP token amount must be > 0"){
+        assert_uint256_le(Uint256(0, 0), lp_token_amount);
+    }
 
     // Test the pooled_token_addr corresponds to the underlying token address of the pool,
     // that is defined by the quote_token_address, base_token_address and option_type

@@ -56,6 +56,20 @@ from helpers import intToUint256, toUint256_balance, get_underlying_from_option_
 // ############################
 
 
+// @notice Executes option trade
+// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
+// @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param lptoken_address: Address of the liquidity pool token
+// @param limit_total_premia: Limit for premia with fees, min when short and max when long
+// @return premia: Premia that was payed
 func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     option_type: OptionType,
     strike_price: Math64x61_,
@@ -198,6 +212,19 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 }
 
 
+// @notice Closes existing position or part of it
+// @dev options_size is always denominated in the lowest possible unit of base token - "wei" for ETH/USDC
+// @dev options_size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded in base token lowest unit
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param lptoken_address: Address of the liquidity pool token
+// @param limit_total_premia: Limit for premia with fees, min when short and max when long
+// @return premia: Premia that was payed
 func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -321,6 +348,19 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     return (premia=premia);
 }
 
+
+// @notice Validates trade inputs and fails if any input is not valid
+// @dev options_size is always denominated in the lowest possible unit of base token - "wei" for ETH/USDC
+// @dev options_size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded in base token lowest unit
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param lptoken_address: Address of the liquidity pool token
+// @param open_position: True if user wants to open position, false otherwise
 func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
     strike_price : Math64x61_,
@@ -341,6 +381,10 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
         assert halt_status = 0;
     }
 
+	with_attr error_message("Option size must be larger than zero") {
+		assert_nn(option_size);
+	}
+	
     with_attr error_message("Given option_type is not available") {
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }
@@ -406,6 +450,20 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 }
 
 
+// @notice External function for opening a position
+// @dev options_size is always denominated in the lowest possible unit of base token - "wei" for ETH/USDC
+// @dev options_size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei
+// @dev options_size of 1 USD would be 10**6 since USDC has 6 decimal places
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param option_side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded in base token lowest unit
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param limit_total_premia: Limit for premia with fees, min when short and max when long
+// @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
+// @return premia: Premia that was payed
 @external
 func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
@@ -466,6 +524,20 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 }
 
 
+// @notice External function for closing a position
+// @dev options_size is always denominated in the lowest possible unit of base token - "wei" for ETH/USDC
+// @dev options_size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei
+// @dev options_size of 1 USD would be 10**6 since USDC has 6 decimal places
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param option_side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded in base token lowest unit
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param limit_total_premia: Limit for premia with fees, min when short and max when long
+// @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
+// @return premia: Premia that was payed
 @external
 func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
@@ -529,6 +601,17 @@ func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
 }
 
 
+// @notice External function for settling a position
+// @dev options_size is always denominated in the lowest possible unit of base token - "wei" for ETH/USDC
+// @dev options_size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei
+// @dev options_size of 1 USD would be 10**6 since USDC has 6 decimal places
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
+// @param option_side: Side of the option 0 for Long, 1 for Short
+// @param option_size: Size to be traded in base token lowest unit
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
 @external
 func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,

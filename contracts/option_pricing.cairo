@@ -63,6 +63,8 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
         return (res=res);
     }
 
+    // Max value of x for standard normal distribution function is currently 8, since after that, 
+    // Math64x61 runs out of precision and this function returns only 0, which is sub-optimal
     with_attr error_message("option_pricing.std_normal_cdf received X value higher than 8") {
         assert_le(x, EIGHT);
     }

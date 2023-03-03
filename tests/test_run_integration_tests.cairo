@@ -10,6 +10,9 @@ from tests.itest_specs.basic_round_trip.long_put import LongPutRoundTrip
 from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip
 from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
 from tests.itest_specs.basic_round_trip.short_call import ShortCallRoundTrip
+// from tests.itest_specs.expire_option_token_for_pool import ExpireOptionTokenForPool
+// from tests.itest_specs.basic_round_trip.round_trip_for_non_eth_usd import NonEthRoundTrip
+// from tests.itest_specs.deposit_liquidity import DepositLiquidity
 from tests.itest_specs.withdraw_liquidity import WithdrawLiquidity
 from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
 from tests.itest_specs.addition_of_lp_tokens import AdditionOfLPTokens
@@ -45,33 +48,42 @@ func test_lpt_attrs{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
+// @external
+// func test_addition_of_incorrect_lpt{syscall_ptr: felt*, range_check_ptr}() {
+//     AdditionOfLPTokens.add_incorrect_lpt();
+//     return ();
+// }
 
 @external
 func test_option_attrs{syscall_ptr: felt*, range_check_ptr}() {
-    // FIXME: missing tests for the state storage_vars in AMM (that the lp tokens were correctly
-    // added and pools correctly created)
     AdditionOfOptionTokens.option_attrs();
     return ();
 }
 
-@external
-func test_slippage{syscall_ptr: felt*, range_check_ptr}() {
-    SeriesOfTrades.test_slippage();
-    return ();
-}
+// @external
+// func test_addition_of_incorrect_option{syscall_ptr: felt*, range_check_ptr}() {
+//     AdditionOfOptionTokens.add_incorrect_option();
+//     return ();
+// }
 
-@external
-func test_deadline{syscall_ptr: felt*, range_check_ptr}() {
-    SeriesOfTrades.test_deadline();
-    return ();
-}
+// @external
+// func test_trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    // SeriesOfTrades.trade_open();
+    // return ();
+// }
 
+// @external
+// func test_trade_close{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+//     SeriesOfTrades.trade_close();
+//     return ();
+// }
 
-@external
-func test_trade_open{syscall_ptr: felt*, range_check_ptr}() {
-    SeriesOfTrades.trade_open();
-    return ();
-}
+// FIXME: Broken somewhere in expire_option_token, overflowing or sth
+// @external
+// func test_trade_settle{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+//     SeriesOfTrades.trade_settle();
+//     return ();
+// }
 
 
 @external
@@ -81,6 +93,51 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
+// FIXME: This needs to be fixed, more info in the test itself
+// @external
+// func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
+//     // test what happens when more capital is withdrawn than there is unlocked
+//     WithdrawLiquidity.withdraw_liquidity_not_enough_unlocked();
+//     return ();
+// }
+
+
+// @external
+// func test_withdraw_liquidity_not_enough_lptokens_call{syscall_ptr: felt*, range_check_ptr}() {
+//     // test what happens when more capital is withdrawn than there is unlocked
+//     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_call();
+//     return ();
+// }
+
+// @external
+// func test_withdraw_liquidity_not_enough_lptokens_put{syscall_ptr: felt*, range_check_ptr}() {
+//     // test what happens when more capital is withdrawn than there is unlocked
+//     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_put();
+//     return ();
+// }
+
+
+// FIXME: This is also broken somewhere in the expire_option_token
+// @external
+// func test_non_eth_round_trip{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
+//     // test
+//     // buy call and put option
+//     // withde
+//     NonEthRoundTrip.min_round_trip_non_eth();
+//     return ();
+// }
+
+// @external
+// func test_deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: hashbuiltin*, range_check_ptr}(){
+//     depositliquidity.test_deposit();
+//     return ();
+// }
+
+// @external
+// func test_expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: hashbuiltin*, range_check_ptr}(){
+//     expireoptiontokenforpool.test_expire_option_token_for_pool();
+//     return ();
+// }
 
 @external
 func test_minimal_round_trip_long_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {

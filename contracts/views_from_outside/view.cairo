@@ -3,9 +3,14 @@
 from contracts.helpers import _get_premia_before_fees
 from contracts.types import OptionWithUsersPosition
 
-// This file contains view functions that are to be called only from the frontend (and by traders).
-// In no case should code in any other file call any function here. (Except for tests of course.)
+//
+// @title View Functions
+// @notice Collection of view functions used by the frontend and traders
+//
 
+// @notice Getter for all options
+// @param lptoken_address: Address of the liquidity pool token
+// @return array: Array of all options
 @view
 func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -20,6 +25,11 @@ func get_all_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
+// @notice Adds option into the array of options
+// @param lptoken_address: Address of the liquidity pool token
+// @param array_len_so_far: Current length of the array
+// @param array: Array containing options
+// @return Array length
 func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     array_len_so_far : felt,
@@ -34,6 +44,10 @@ func save_option_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     return save_option_to_array(lptoken_address, array_len_so_far + 1, array + Option.SIZE);
 }
 
+
+// @notice Getter for all non-expired options with premia
+// @param lptoken_address: Address of the liquidity pool token
+// @return array: Array of non-expired options
 @view
 func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -49,6 +63,12 @@ func get_all_non_expired_options_with_premia{syscall_ptr: felt*, pedersen_ptr: H
 }
 
 
+// @notice Adds non-expired options with premia to the array
+// @param lptoken_address: Address of the liquidity pool token
+// @param array_len_so_far: Current length of the array
+// @param array: Array containing options
+// @param option_index: Index of the current option
+// @return Array length
 func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     array_len_so_far : felt,
@@ -100,6 +120,9 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
 }
 
 
+// @notice Getter for all non-expired options with premia
+// @param lptoken_address: Address of the liquidity pool token
+// @return array: Array of non-expired options
 @view
 func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     user_address : Address
@@ -115,6 +138,12 @@ func get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuil
 }
 
 
+// @notice Calculates premia for the provided option
+// @param option: Option premia will be calculated for
+// @param current_volatility: Volatility of the option's pool
+// @param current_pool_balance: Balance of the option's pool
+// @param position_size: Size of the position
+// @return res: Value for expired option and premia with fees for non-expired
 func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     option: Option,
     current_volatility: Math64x61_,
@@ -154,6 +183,13 @@ func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, peders
 }
 
 
+// @notice Adds option into the array of options with position of user
+// @param array_len_so_far: Current length of the array
+// @param array: Array containing options with user position
+// @param pool_index: Index of the pool
+// @param option_index: Index of the option
+// @param user_address: Address of the user
+// @return Array length
 func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     array_len_so_far : felt,
     array : OptionWithUsersPosition*,
@@ -247,6 +283,8 @@ func save_option_with_position_of_user_to_array{syscall_ptr: felt*, pedersen_ptr
 }
 
 
+// @notice Getter for all liquidity pool addresses
+// @return array: Array of liquidity pool addresses
 @view
 func get_all_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> (
@@ -260,6 +298,13 @@ func get_all_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, r
 }
 
 
+// @notice Adds addresses into the array
+// @param array_len_so_far: Current length of the array
+// @param array: Array containing options with user position
+// @param pool_index: Index of the pool
+// @param option_index: Index of the option
+// @param user_address: Address of the user
+// @return Array length
 func save_lptoken_addresses_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     array_len_so_far : felt,
     array : Address*
@@ -274,6 +319,9 @@ func save_lptoken_addresses_to_array{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 }
 
 
+// @notice Retrieve pool information for the given user
+// @param user: User's wallet address
+// @return user_pool_infos: Information about user's stake in the liquidity pools
 @view
 func get_user_pool_infos{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -292,6 +340,13 @@ func get_user_pool_infos{
     return (user_pool_infos_len, user_pool_infos);
 }
 
+
+// @notice Filter out pools with no user stake
+// @param user_addr: Address of the user's wallet
+// @param lptoken_addrs: Array of the liquidity pool token addresses
+// @param lptoken_addrs_len: Length of the liquidity pool token addresses array
+// @param user_pool_infos: Array of the UserPoolInfos
+// @return user_pool_info_len: Length of the UserPoolInfos array
 func map_and_filter_address_to_userpoolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 } (
@@ -326,7 +381,11 @@ func map_and_filter_address_to_userpoolinfo{
     return (user_pool_infos_len + 1,);
 }
 
-// Returns UserPoolInfo, which is the value of user's capital in pool and PoolInfo.
+
+// @notice Retrieves user's capital in the pool and PoolInfo
+// @param user_addr: Address of the user's wallet
+// @param lptoken_addrs: Address of the liquidity pool token
+// @return UserPoolInfo: User's capital in the pool and PoolInfo
 func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     user_address: Address,
     lptoken_address: Address
@@ -362,6 +421,8 @@ func get_one_user_pool_info{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 }
 
 
+// @notice Retrieves PoolInfo for all liquidity pools
+// @return pool_info: Array of PoolInfo
 @view
 func get_all_poolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
@@ -378,6 +439,12 @@ func get_all_poolinfo{
     return (lptoken_addrs_len, res);
 }
 
+
+// @notice Map address to PoolInfo struct
+// @param lpt_addrs: Array of liquidity pool tokens addresses 
+// @param poolinfo: Array of PoolInfo structs
+// @param lpt_addrs_len: Length of liquidity pool tokens addresses array
+// @param curr_index: Current index
 func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     lpt_addrs: Address*,
     poolinfo: PoolInfo*,
@@ -393,6 +460,9 @@ func map_address_to_poolinfo{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 
+// @notice Retrieves PoolInfo for the provided pool
+// @param lptoken_address: Address of the liquidity pool token
+// @return pool_info: Information about the pool
 func get_poolinfo{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -410,6 +480,10 @@ func get_poolinfo{
 }
 
 
+// @notice Retrieves option struct
+// @param lptoken_address: Address of the liquidity pool token
+// @param option_token_address: Address of the option token
+// @return option: Option struct
 @view
 func get_option_info_from_addresses{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -431,6 +505,11 @@ func get_option_info_from_addresses{
 }
 
 
+// @notice Helper function for retrieving option struct
+// @param lptoken_address: Address of the liquidity pool token
+// @param option_token_address: Address of the option token
+// @param starting_index: Current index
+// @return option: Option struct
 func _get_option_info_from_addresses{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -438,8 +517,6 @@ func _get_option_info_from_addresses{
     option_token_address: Address,
     starting_index: felt
 ) -> (option: Option) {
-    // Returns Option (struct) information.
-
     alloc_locals;
 
     let (option_) = available_options.read(lptoken_address, starting_index);
@@ -467,6 +544,11 @@ func _get_option_info_from_addresses{
     return (option = option);
 }
 
+
+// @notice Helper function for retrieving option with the correct side
+// @param _option: Option with potentially incorrect side
+// @param is_closing: Is the position being closed or opened
+// @return option: Option struct
 func _get_option_with_correct_side{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 } (
@@ -493,6 +575,13 @@ func _get_option_with_correct_side{
 }
 
 
+// @notice Calculates premia for the provided option
+// @param _option: Option for which premia is being calculated
+// @param lptoken_address: Address of the liquidity pool token
+// @param position_size: Size of the position
+// @param is_closing: Is the position being closed or opened
+// @return total_premia_before_fees: Premia
+// @return total_premia_including_fees: Premia with fees
 @view
 func get_total_premia{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
