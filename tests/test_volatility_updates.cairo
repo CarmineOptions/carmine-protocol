@@ -64,10 +64,9 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     //
     // sigma_{trade} = (sigma_{t-1} + sigma_{t}) / 2
     // 
-    // vol_denom = 1 - (Q_{t} / PS_{t}) ^ alpha
-    // sigma_{t} = sigma_{t-1} * 1 / vol_denom
-    //
-    // Note: alpha is 1
+    // sigma_{t} = sigma_{t-1} + (trade_size / pool_volatility_adjustment_speed) -> LONG
+    // sigma_{t} = sigma_{t-1} - (trade_size / pool_volatility_adjustment_speed) -> SHORT
+    // 
     //////////////////////////////////////
 
     // Basic update
