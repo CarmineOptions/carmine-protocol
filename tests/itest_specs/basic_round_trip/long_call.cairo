@@ -526,7 +526,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_2.low = 2002686059406557299;
+        assert call_pool_unlocked_capital_2.low = 2002424402678508619;
 
         let (put_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
@@ -540,7 +540,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_2 = 2293480693299802194;
+        assert pools_pos_val_call_2 = 2294653295906286710;
         
         let (pools_pos_val_put_2) = IAMM.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -566,7 +566,7 @@ namespace LongCallRoundTrip {
             tx_deadline=99999999999, // Disable deadline
         );
 
-        assert premia_2 = 13208771242246464; // approx 0.0049 ETH or 7.22 USD
+        assert premia_2 = 12107224171513991; // approx 0.0049 ETH or 7.22 USD
 
         // Test balance of lp tokens in the account after the option was bought and after withdraw
         let (bal_eth_lpt_3: Uint256) = ILPToken.balanceOf(
@@ -593,14 +593,14 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_3.low = 7000092210417923989;
+        assert admin_myETH_balance_3.low = 7000122172998899130;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_3) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_3.low = 2499907789582076011;
+        assert call_pool_unlocked_capital_3.low = 2499877827001100870;
 
         let (put_pool_unlocked_capital_3) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
@@ -634,7 +634,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_3 = 262027614683374312534;
+        assert call_volatility_3 = 253642731013506334700;
 
         let (put_volatility_3) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -686,7 +686,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_3.low = 2999907789582076011;
+        assert call_pool_balance_3.low = 2999877827001100870;
         // Previous state - premia + fee on premia
         // 3.0025930258533364 - 0.00249 + 0.00249*0.03 = 3.000177
         
@@ -714,7 +714,7 @@ namespace LongCallRoundTrip {
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr
         );
-        assert pools_pos_val_call_4 = 1147518647952204051;
+        assert pools_pos_val_call_4 = 1147947422721868871;
         
         let (pools_pos_val_put_4) = IAMM.get_value_of_pool_position(
             contract_address = amm_addr,
@@ -790,7 +790,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_4.low = 7000092210417923989;
+        assert admin_myETH_balance_4.low = 7000122172998899130;
 
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
@@ -798,7 +798,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_4.low = 2983778757324011494;
+        assert call_pool_unlocked_capital_4.low = 2983748794743036353;
 
         // // 6917938287916112155 translates to 
         // Before settlement -> 2.50017748835172 of unlocked, 0.5 of locked
@@ -824,7 +824,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_4 = 262027614683374312534;
+        assert call_volatility_4 = 253642731013506334700;
 
         let (put_volatility_4) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -876,7 +876,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_4.low = 2983778757324011495;
+        assert call_pool_balance_4.low = 2983748794743036354;
 
         let (put_pool_balance_4) = IAMM.get_lpool_balance(
             contract_address=amm_addr,
@@ -949,7 +949,7 @@ namespace LongCallRoundTrip {
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_5.low = 7016221242675988505;
+        assert admin_myETH_balance_5.low = 7016251205256963646;
 
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
@@ -957,7 +957,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_unlocked_capital_5.low = 2983778757324011494;
+        assert call_pool_unlocked_capital_5.low = 2983748794743036353;
 
         // At this moment no additional capital is unlocked
         // (that happened when the option was settled for the pool)
@@ -981,7 +981,7 @@ namespace LongCallRoundTrip {
             maturity=expiry,
             strike_price=strike_price
         );
-        assert call_volatility_5 = 262027614683374312534;
+        assert call_volatility_5 = 253642731013506334700;
 
         let (put_volatility_5) = IAMM.get_pool_volatility_auto(
             contract_address=amm_addr,
@@ -1033,7 +1033,7 @@ namespace LongCallRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
-        assert call_pool_balance_5.low = 2983778757324011495;
+        assert call_pool_balance_5.low = 2983748794743036354;
 
         let (put_pool_balance_5) = IAMM.get_lpool_balance(
             contract_address=amm_addr,

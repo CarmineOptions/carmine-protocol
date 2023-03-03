@@ -21,6 +21,7 @@ const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // add min/max option size
 // max liquidity pool size - for mainnet limit (our business)
 // max trade size - for mainnet limit (our business) - to think through
+// NEW POOLS POSITION CANT BE HIGHER THAN VOL_ADJSPD
 
 // option_type
 const OPTION_CALL = 0;
