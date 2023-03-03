@@ -78,7 +78,7 @@ namespace SeriesOfTrades {
             tx_deadline=99999999999, // Disable deadline
         );
 
-        assert premia_short_call = 2020760452941187; // approx the same as before, but slightly higher, since vol. was increased 
+        assert premia_short_call = 2212140296744108; // approx the same as before, but slightly higher, since vol. was increased 
                                                      // with previous trade
         // Second trade, PUT LONG
         let (premia_long_put: Math64x61_) = IAMM.trade_open(
@@ -110,7 +110,7 @@ namespace SeriesOfTrades {
             tx_deadline=99999999999, // Disable deadline
         );
 
-        assert premia_short_put = 234722763583748232400;
+        assert premia_short_put = 235445719759193859400;
         %{
             # optional, but included for completeness and extensibility
             stop_prank_amm()
@@ -227,7 +227,7 @@ namespace SeriesOfTrades {
         %{
             # Following trade will fail
             expect_revert(
-                error_message = "Current premia with fees is out of slippage bounds (do_trade). side: 1, limit_total_premia: 237069991219585712128, total_premia: 227681080676235785486"
+                error_message = "Current premia with fees is out of slippage bounds (do_trade). side: 1, limit_total_premia: 237069991219585712128, total_premia: 228382348166418043676"
             )
         %}
 

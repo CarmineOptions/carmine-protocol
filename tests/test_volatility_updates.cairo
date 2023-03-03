@@ -77,7 +77,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance
+        pool_volatility_adjustment_speed = pool_balance
     );
 
     %{
@@ -92,7 +92,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance
+        pool_volatility_adjustment_speed = pool_balance
     );
 
     // Adjust pool balance 
@@ -115,7 +115,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        current_pool_balance = pool_balance_2
+        pool_volatility_adjustment_speed = pool_balance_2
     );  
 
     %{

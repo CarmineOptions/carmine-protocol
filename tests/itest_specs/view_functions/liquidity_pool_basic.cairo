@@ -376,7 +376,7 @@ namespace LPBasicViewFunctions {
         let option_put_premia_0 = get_array_element(6, option_put_len, option_put_array);
 
         assert option_put_premia_0 = 241695010576185446327;
-        
+
         let (put_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,

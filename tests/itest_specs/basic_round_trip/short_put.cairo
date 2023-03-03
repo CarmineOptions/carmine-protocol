@@ -747,7 +747,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_4.low = 2973294000;
+        assert put_pool_unlocked_capital_4.low = 2972898777;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_4: Uint256) = IOptionToken.balanceOf(
@@ -815,7 +815,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_4.low = 2973294000;
+        assert put_pool_balance_4.low = 2972898777;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_4) = IAMM.get_pool_locked_capital(
@@ -876,7 +876,7 @@ namespace ShortPutRoundTrip {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_5.low = 7026706000;
+        assert admin_myUSD_balance_5.low = 7027101223;
 
         // Test unlocked capital in the pools after the option was bought and after withdraw
         let (call_pool_unlocked_capital_5) = IAMM.get_unlocked_capital(
@@ -888,7 +888,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_unlocked_capital_5.low = 2973294000;
+        assert put_pool_unlocked_capital_5.low = 2972898777;
 
         // Test balance of option tokens in the account after the option was bought and after withdraw
         let (bal_opt_short_put_tokens_5: Uint256) = IOptionToken.balanceOf(
@@ -956,7 +956,7 @@ namespace ShortPutRoundTrip {
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        assert put_pool_balance_5.low = 2973294000;
+        assert put_pool_balance_5.low = 2972898777;
 
         // Test pool_locked_capital
         let (call_pool_locked_capital_5) = IAMM.get_pool_locked_capital(
