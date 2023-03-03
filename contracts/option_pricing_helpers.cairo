@@ -129,7 +129,9 @@ func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) 
     const secs_in_year = 72717065138563052470272000;
 
     let secs_left = Math64x61.sub(maturity_math, currtime_math);
-    assert_nn(secs_left);
+    with_attr error_message("get_time_till_maturity - time till maturity is negative"){
+        assert_nn(secs_left);
+    }
 
     let time_till_maturity = Math64x61.div(secs_left, secs_in_year);
     return (time_till_maturity,);

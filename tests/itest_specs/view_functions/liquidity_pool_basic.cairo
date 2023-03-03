@@ -1,9 +1,9 @@
 %lang starknet
 
 from constants import EMPIRIC_ORACLE_ADDRESS
-from interface_lptoken import ILPToken
-from interface_amm import IAMM
-from types import Option
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_amm import IAMM
+from contracts.types import Option
 
 from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -127,7 +127,7 @@ namespace LPBasicViewFunctions {
             stop_warp = warp(1000000000 - 60*60*96, target_contract_address=ids.amm_addr)
 
             context.opt_long_call_addr_1 = deploy_contract(
-                "./contracts/option_token.cairo",
+                "./contracts/erc20_tokens/option_token.cairo",
                 [
                     12345, 14, 18, 0, 0, context.admin_address, context.amm_addr, context.myusd_address,
                     context.myeth_address, optype_call, ids.strike_price, expiry, side_long

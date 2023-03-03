@@ -1,7 +1,7 @@
 %lang starknet
 
-from interface_lptoken import ILPToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_amm import IAMM
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 

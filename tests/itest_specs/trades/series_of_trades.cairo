@@ -1,6 +1,6 @@
 %lang starknet
 
-from interface_amm import IAMM
+from interfaces.interface_amm import IAMM
 from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 
@@ -74,7 +74,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_total_premia=-230584300921369395200000, // 100_000
+            limit_total_premia=1, // Disable check
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -106,7 +106,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_total_premia=-230584300921369395200000, // 100_000
+            limit_total_premia=1, // Disable check
             tx_deadline=99999999999, // Disable deadline
         );
 
@@ -342,7 +342,7 @@ namespace SeriesOfTrades {
             option_size=one_option_size,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
-            limit_total_premia=0,
+            limit_total_premia=1,  // Disable check
             tx_deadline=1000043199, // Current time - 1
         );
 

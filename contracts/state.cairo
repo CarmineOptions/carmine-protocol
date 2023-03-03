@@ -380,7 +380,9 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     // volatility=Math64x61.FRACT_PART)
 
     alloc_locals;
-    assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0;
+    with_attr error_message("tried to set pool volatility, but volatility is per-strike"){
+        assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0;
+    }
     assert_nn_le(volatility, VOLATILITY_UPPER_BOUND - 1);
     assert_nn_le(VOLATILITY_LOWER_BOUND, volatility);
     pool_volatility.write(lptoken_address, maturity, volatility);
@@ -668,4 +670,23 @@ func shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     shift_available_options(lptoken_address, index + 1);
 
     return ();
+}
+
+
+@view
+func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, strike_price: Math64x61_, maturity: Int
+) -> (option_availability: Bool) {
+    let (option_address) = get_option_token_address(
+        lptoken_address=lptoken_address,
+        option_side=option_side,
+        maturity=maturity,
+        strike_price=strike_price
+    );
+    // FIXME: create unit test for this
+    if (option_address == 0) {
+        return (FALSE,);
+    }
+
+    return (TRUE,);
 }
