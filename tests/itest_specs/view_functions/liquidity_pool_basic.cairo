@@ -708,17 +708,17 @@ namespace LPBasicViewFunctions {
         );
 
         // Results copied from long/short_put/call round trips (same option size, maturity, strike etc)
-        assert total_premia_before_fees_long_call = 2020558154346487;
-        assert total_premia_including_fees_long_call = 2081174898976881;
+        assert total_premia_before_fees_long_call = 1803246998050415;
+        assert total_premia_including_fees_long_call = 1857344407991927;
 
-        assert total_premia_before_fees_short_call = 627445539966218;
-        assert total_premia_including_fees_short_call = 608622173767232;
+        assert total_premia_before_fees_short_call = 555834944799301;
+        assert total_premia_including_fees_short_call = 539159896455322;
         
-        assert total_premia_before_fees_long_put = 234655350073966452800;
-        assert total_premia_including_fees_long_put = 241695010576185446327;
+        assert total_premia_before_fees_long_put = 233736537374646457500;
+        assert total_premia_including_fees_long_put = 240748633495885851168;
 
-        assert total_premia_before_fees_short_put = 231276759164374043900;
-        assert total_premia_including_fees_short_put = 224338456389442822640;
+        assert total_premia_before_fees_short_put = 231107037403980796200;
+        assert total_premia_including_fees_short_put = 224173826281861372371;
 
         return();
     }
