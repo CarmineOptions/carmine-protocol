@@ -253,7 +253,8 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
-    lptoken_address: Address
+    lptoken_address: Address,
+    volatility_adjustment_speed: Math64x61_
 ){
     // This function initializes the pool.
 
@@ -307,6 +308,9 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
         // quote tokens (USDC in case of ETH/USDC) for put option
         underlying_token_address.write(lptoken_address, quote_token_address);
     }
+
+    // 4 Set the volality adjustment speed (same const across pool)
+    set_pool_volatility_adjustment_speed(lptoken_address, volatility_adjustment_speed);
 
     return ();
 }

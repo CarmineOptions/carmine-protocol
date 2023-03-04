@@ -61,11 +61,13 @@ namespace IAMM {
     func get_trading_halt() -> (res: Bool) {
     }
 
-        func add_lptoken(
-        quote_token_address: felt,
-        base_token_address: felt,
-        option_type: felt,
-        lptoken_address: felt
+
+    func add_lptoken(
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionType,
+        lptoken_address: Address,
+        volatility_adjustment_speed: Math64x61_
     ){
     }
 
