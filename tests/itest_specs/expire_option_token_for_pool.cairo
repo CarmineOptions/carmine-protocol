@@ -5,10 +5,9 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from tests.itest_specs.itest_utils import Stats, StatsInput, get_stats, print_stats
 from starkware.cairo.common.uint256 import Uint256
 from openzeppelin.token.erc20.IERC20 import IERC20
-from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from contracts.interfaces.interface_lptoken import ILPToken
+from contracts.interfaces.interface_option_token import IOptionToken
+from contracts.interfaces.interface_amm import IAMM
 from math64x61 import Math64x61
 
 namespace ExpireOptionTokenForPool {
@@ -160,9 +159,11 @@ namespace ExpireOptionTokenForPool {
             option_side=0,
             option_size=one,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
-        assert premia_put = 245637639548324079300;
+        assert premia_put = 243220648420250043900;
 
         let (premia_call) = IAMM.trade_open(
             contract_address=amm_addr,
@@ -172,9 +173,11 @@ namespace ExpireOptionTokenForPool {
             option_side=0,
             option_size=one,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
-        assert premia_call = 8386844129651233;
+        assert premia_call = 7766812800888664;
         
         ///////////////////////////////////////////////////
         // JUMP TO FUTURE AND EXPIRE THE POOL
@@ -187,28 +190,28 @@ namespace ExpireOptionTokenForPool {
                 ids.tmp_address, "get_last_spot_checkpoint_before", [0, 155000000000, 0, 0, 0]  # mock terminal ETH price at 1550
             )
         %}
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -222,12 +225,12 @@ namespace ExpireOptionTokenForPool {
         let (stats_long_call_1) = get_stats(long_call_input);
 
         // Assert amount of unlocked capital
-        assert stats_long_put_1.pool_unlocked_capital = 5109724195;
-        assert stats_long_call_1.pool_unlocked_capital = 4971488265749645015;
+        assert stats_long_put_1.pool_unlocked_capital = 5108644546;
+        assert stats_long_call_1.pool_unlocked_capital = 4971211303152419793;
         
         // Assert volatility
-        assert stats_long_put_1.pool_volatility = 329406144173384850100; 
-        assert stats_long_call_1.pool_volatility = 288230376151711743900; 
+        assert stats_long_put_1.pool_volatility = 299759591197780213700; 
+        assert stats_long_call_1.pool_volatility = 276701161105643274200; 
 
         // Assert position from pool's position
         assert stats_long_put_1.opt_long_pos = 0;
@@ -237,11 +240,11 @@ namespace ExpireOptionTokenForPool {
 
         // Assert lpool balance -> same as unlocked now
         // Since puts expired OTM, the capital is -> 5000(previous balance) + premia + premia*0.03 
-        assert stats_long_put_1.lpool_balance = 5109724195;
+        assert stats_long_put_1.lpool_balance = 5108644546;
         
         // Calls expired ITM, so the capital is -> 1(previous balance) + premia + premia*0.03 - (50 / 1550) 
         // The 50 is difference between strike and terminal price (payoff for the user)
-        assert stats_long_call_1.lpool_balance = 4971488265749645016;
+        assert stats_long_call_1.lpool_balance = 4971211303152419794;
 
         // Assert locked capital
         assert stats_long_put_1.pool_locked_capital = 0;
@@ -255,28 +258,28 @@ namespace ExpireOptionTokenForPool {
         //  TRY TO EXPIRE THE POOL AGAIN
         ///////////////////////////////////////////////////
 
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=0,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr,
             option_side=1,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=0,
             strike_price=strike_price,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr,
             option_side=1,
@@ -290,12 +293,12 @@ namespace ExpireOptionTokenForPool {
         let (stats_long_call_2) = get_stats(long_call_input);
 
         // Assert amount of unlocked capital
-        assert stats_long_put_2.pool_unlocked_capital = 5109724195;
-        assert stats_long_call_2.pool_unlocked_capital = 4971488265749645015;
+        assert stats_long_put_2.pool_unlocked_capital = 5108644546;
+        assert stats_long_call_2.pool_unlocked_capital = 4971211303152419793;
         
         // Assert volatility
-        assert stats_long_put_2.pool_volatility = 329406144173384850100; 
-        assert stats_long_call_2.pool_volatility = 288230376151711743900; 
+        assert stats_long_put_2.pool_volatility = 299759591197780213700; 
+        assert stats_long_call_2.pool_volatility = 276701161105643274200; 
 
         // Assert position from pool's position
         assert stats_long_put_2.opt_long_pos = 0;
@@ -304,8 +307,8 @@ namespace ExpireOptionTokenForPool {
         assert stats_long_call_2.opt_long_pos = 0;
 
         // Assert lpool balance
-        assert stats_long_put_2.lpool_balance = 5109724195;
-        assert stats_long_call_2.lpool_balance = 4971488265749645016;
+        assert stats_long_put_2.lpool_balance = 5108644546;
+        assert stats_long_call_2.lpool_balance = 4971211303152419794;
 
         // Assert locked capital
         assert stats_long_put_2.pool_locked_capital = 0;
