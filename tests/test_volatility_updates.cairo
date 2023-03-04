@@ -20,6 +20,7 @@ from tests.itest_specs.setup import deploy_setup
 func setup_get_new_volatility{syscall_ptr: felt*, range_check_ptr}(){
 
     %{
+        # TODO: Add fuzzy pool_vol_adj_spd as well
         given(
             option_type = strategy.integers(0, 1),
             trade_side = strategy.integers(0, 1),
@@ -44,7 +45,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     alloc_locals;
 
     local half_size;
-    local pool_balance;
+    local pool_volatility_adjustment_speed;
     let strike = Math64x61.fromFelt(1000);
 
     %{
@@ -52,11 +53,14 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         ids.option_size = ids.half_size * 2 # To prevent rounding errors I guess
 
         if ids.option_type == 0: 
-            ids.pool_balance = ids._pool_balance
+            ids.pool_volatility_adjustment_speed = int(5 * 2**61)
+
         elif ids.option_type == 1: 
-            ids.pool_balance = int(ids._pool_balance * (ids.strike / 2**61))
+            ids.pool_volatility_adjustment_speed = int(5_000 * 2**61)
+
         else:
             raise ValueError(f"Unknown option type: {ids.option_type}")
+
    %}
 
     //////////////////////////////////////
@@ -64,10 +68,9 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     //
     // sigma_{trade} = (sigma_{t-1} + sigma_{t}) / 2
     // 
-    // vol_denom = 1 - (Q_{t} / PS_{t}) ^ alpha
-    // sigma_{t} = sigma_{t-1} * 1 / vol_denom
-    //
-    // Note: alpha is 1
+    // sigma_{t} = sigma_{t-1} + (trade_size / pool_volatility_adjustment_speed) -> LONG
+    // sigma_{t} = sigma_{t-1} - (trade_size / pool_volatility_adjustment_speed) -> SHORT
+    // 
     //////////////////////////////////////
 
     // Basic update
@@ -77,7 +80,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        pool_volatility_adjustment_speed = pool_balance
+        pool_volatility_adjustment_speed = pool_volatility_adjustment_speed
     );
 
     %{
@@ -92,22 +95,8 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        pool_volatility_adjustment_speed = pool_balance
+        pool_volatility_adjustment_speed = pool_volatility_adjustment_speed
     );
-
-    // Adjust pool balance 
-    local pool_balance_2;
-    %{  
-        if ids.trade_side == 0:
-            if ids.option_type == 0:
-                ids.pool_balance_2 = ids.pool_balance - ids.half_size
-            elif ids.option_type == 1:
-                ids.pool_balance_2 = ids.pool_balance - int(ids.half_size * (ids.strike / 2**61))
-        elif ids.trade_side == 1:
-            ids.pool_balance_2 = ids.pool_balance
-        else:
-            raise ValueError(f"Unknown trade side: {ids.trade_side}")
-    %}
 
     let (vol_2, _) = get_new_volatility(
         current_volatility = vol_1, // Use previous vol
@@ -115,7 +104,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         option_type = option_type,
         side = trade_side,
         strike_price = strike,
-        pool_volatility_adjustment_speed = pool_balance_2
+        pool_volatility_adjustment_speed = pool_volatility_adjustment_speed
     );  
 
     %{
@@ -124,7 +113,7 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             Test get new vol failed for:
             option_type = {ids.option_type}, 
             side = {ids.trade_side} ,
-            pool_balance = {ids.pool_balance}, 
+            pool_balance = {ids.pool_volatility_adjustment_speed}, 
             size = {ids.option_size}, 
             init_vol = {ids.volatility}, 
             desired_vol = {context.desired_vol},

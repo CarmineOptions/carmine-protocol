@@ -46,7 +46,7 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
         option, position_size, option_type, current_volatility, current_pool_balance
     );
 
-    assert res = 226921594053289;
+    assert res = 227076445590131;
     %{ stop_mock() %}
 
     return ();

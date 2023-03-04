@@ -341,7 +341,7 @@ namespace LPBasicViewFunctions {
         let option_call_strike_0 = get_array_element(2, option_call_len, option_call_array);
         let option_call_premia_0 = get_array_element(6, option_call_len, option_call_array);
 
-        assert option_call_premia_0 = 2081174898976881;
+        assert option_call_premia_0 = 1857344407991927;
 
         let (call_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
@@ -357,7 +357,7 @@ namespace LPBasicViewFunctions {
         let option_call_strike_1 = get_array_element(9, option_call_len, option_call_array);
         let option_call_premia_1 = get_array_element(13, option_call_len, option_call_array);
 
-        assert option_call_premia_1 = 608622173767232;
+        assert option_call_premia_1 = 539159896455322;
 
         
         let (call_option_token_address_1) = IAMM.get_option_token_address(
@@ -375,7 +375,7 @@ namespace LPBasicViewFunctions {
         let option_put_strike_0 = get_array_element(2, option_put_len, option_put_array);
         let option_put_premia_0 = get_array_element(6, option_put_len, option_put_array);
 
-        assert option_put_premia_0 = 241695010576185446327;
+        assert option_put_premia_0 = 240748633495885851168;
 
         let (put_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
@@ -391,7 +391,7 @@ namespace LPBasicViewFunctions {
         let option_put_strike_1 = get_array_element(9, option_put_len, option_put_array);
         let option_put_premia_1 = get_array_element(13, option_put_len, option_put_array);
 
-        assert option_put_premia_1 = 224338456389442822640;     
+        assert option_put_premia_1 = 224173826281861372371;     
 
         let (put_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
@@ -708,17 +708,17 @@ namespace LPBasicViewFunctions {
         );
 
         // Results copied from long/short_put/call round trips (same option size, maturity, strike etc)
-        assert total_premia_before_fees_long_call = 2020558154346487;
-        assert total_premia_including_fees_long_call = 2081174898976881;
+        assert total_premia_before_fees_long_call = 1803246998050415;
+        assert total_premia_including_fees_long_call = 1857344407991927;
 
-        assert total_premia_before_fees_short_call = 627445539966218;
-        assert total_premia_including_fees_short_call = 608622173767232;
+        assert total_premia_before_fees_short_call = 555834944799301;
+        assert total_premia_including_fees_short_call = 539159896455322;
         
-        assert total_premia_before_fees_long_put = 234655350073966452800;
-        assert total_premia_including_fees_long_put = 241695010576185446327;
+        assert total_premia_before_fees_long_put = 233736537374646457500;
+        assert total_premia_including_fees_long_put = 240748633495885851168;
 
-        assert total_premia_before_fees_short_put = 231276759164374043900;
-        assert total_premia_including_fees_short_put = 224338456389442822640;
+        assert total_premia_before_fees_short_put = 231107037403980796200;
+        assert total_premia_including_fees_short_put = 224173826281861372371;
 
         return();
     }
