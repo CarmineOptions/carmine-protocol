@@ -1,5 +1,10 @@
 %lang starknet
 
+//
+// @title Options handling module
+// @notice Module that deals with minting, burning and expirying options for users.
+//
+
 from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
 
 // Functions related to option token minting, option accouting, ...
@@ -26,6 +31,23 @@ func remove_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 }
 
 
+// @notice Adds option into the AMM. Requires all the option definition.
+// @dev ATM this requires Proxy contract, but down the line it will be replaced by governance
+//      voting.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @param quote_token_address: Address of quote token (USDC in case of ETH/USDC).
+// @param base_token_address: Address of base token (ETH in case of ETH/USDC).
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_token_address_: Address of option token. These token are later on minted when
+//      users are getting into this position.
+// @param initial_volatility: Initial volatility in terms of Math64x61. Ie 80% volatility is
+//      inputted as 184467440737095516160.
+// @return: Doesn't return anything. 
 @external
 func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     option_side: OptionSide,
@@ -93,12 +115,32 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 }
 
 
-// User increases its position (if user is long, it increases the size of its long,
-// if he/she is short, the short gets increased).
-// Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
-// This corresponds to something like "mint_option_token", but does more, it also changes internal state of the pool
-//   and realocates locked capital/premia and fees between user and the pool
-//   for example how much capital is unlocked, how much is locked,...
+// @notice Mints option token for user and "removes" capital from the user.
+// @dev  User opens/increases its position (if user is long, it increases the size of its long,
+//      if he/she is short, the short gets increased).
+//      Switching position from long to short requires both mint_option_token and burn_option_token
+//      functions to be called. This also changes internal state of the pool and realocates locked
+//      capital/premia and fees between user and the pool for example how much capital is unlocked,
+//      how much is locked,...
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @param premia_including_fees: What the user pays for the option or what the user gets
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param underlying_price: Price of the underlying asset.
+// @return: Doesn't return anything.
 func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_size: Int, // in base tokens (ETH in case of ETH/USDC)
@@ -162,7 +204,6 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
                 option_type=option_type,
                 maturity=maturity,
                 strike_price=strike_price,
-                underlying_price=underlying_price,
             );
         }
     }
@@ -171,6 +212,28 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 
+// @notice Mints LONG option token for user and "removes" capital from the user.
+// @dev Not only mints the option token, but also transfers cash from user and update
+//      internal state. Transfers premium from user to the pool and locks the pool's capital
+//      to guarantee the buyers payment.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_token_address:
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param premia_including_fees: What the user pays for the option or what the user gets
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @return: Doesn't return anything.
 func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -313,6 +376,28 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 
+// @notice Mints SHORT option token for user and "removes" capital from the user.
+// @dev Not only mints the option token, but also transfers cash from user and update
+//      internal state. Transfers (locked capital minus premium) from user to the pool to guarantee
+//      pool's payoff.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_token_address:
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param premia_including_fees: What the user pays for the option or what the user gets
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @return: Doesn't return anything.
 func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -321,8 +406,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     premia_including_fees: Math64x61_,
     option_type: OptionType,
     maturity: Int,
-    strike_price: Math64x61_,
-    underlying_price: Math64x61_,
+    strike_price: Math64x61_
 ) {
     alloc_locals;
 
@@ -432,12 +516,32 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     return ();
 }
 
-// User decreases its position (if user is long, it decreases the size of its long,
-// if he/she is short, the short gets decreased).
-// Switching position from long to short requires both mint_option_token and burn_option_token functions to be called.
-// This corresponds to something like "burn_option_token", but does more, it also changes internal state of the pool
-//   and realocates locked capital/premia and fees between user and the pool
-//   for example how much capital is unlocked, how much is locked,...
+
+// @notice Burns option token (closes position) for user and "sends" capital to the user.
+// @dev User decreases its position (if user is long, it decreases the size of its long, if he/she
+//      is short, the short gets decreased). Switching position from long to short requires both
+//      mint_option_token and burn_option_token functions to be called. This also changes internal
+//      state of the pool and realocates locked capital/premia and fees between user and the pool
+//      for example how much capital is unlocked, how much is locked,...
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @param premia_including_fees: What the user gets for the option or what the user pays
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param underlying_price: Price of the underlying asset.
+// @return: Doesn't return anything.
 func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_size: Int,
@@ -508,6 +612,27 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 
+// @notice Burns LONG option token (closes position) for user and "sends" capital to the user.
+// @dev Burns users tokens, sends capital to the user and updates internal state.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_token_address: Address of the option token to be burned.
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param premia_including_fees: What the user gets for the option or what the user pays
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @return: Doesn't return anything.
 func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -619,6 +744,27 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 
+// @notice Burns SHORT option token (closes position) for user and "sends" capital to the user.
+// @dev Burns users tokens, sends capital to the user and updates internal state.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_token_address: Address of the option token to be burned.
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param option_size_in_pool_currency: Same as option_size, just in the pool's currency
+//      (each option is assigned to given pool). For example for PUT option this is in USDC.
+//      This variable is used to lock in capital into the option. This means that
+//      option_size_in_pool_currency might be tiny bit bigger than option_size in value, but not
+//      smaller.
+// @param premia_including_fees: What the user gets for the option or what the user pays
+//      for the option in terms of premium. It's already adjusted for fees but not for locked
+//      capital if that is required.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param maturity: Maturity as unix timestamp.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @return: Doesn't return anything.
 func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_token_address: Address,
@@ -771,6 +917,19 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 
+// @notice Expires option token for the user.
+// @dev Not an external func, it is used through trade_settle.
+// @param lptoken_address: Address of lp token. Ie identifier of liquidity pool that will be
+//      providing liquidity for this option.
+// @param option_type: 0 or 1. 0 for call option and 1 for put option.
+// @param option_side: Either 0 or 1. 0 for long option and 1 for short.
+// @param strike_price: Strike in terms of Math64x61. For example 3458764513820540928000 for strike
+//      1500 USD (ie 1500*2**61 = 3458764513820540928000).
+// @param terminal_price: Price at which the option get settled.
+// @param option_size: Size of option to be minted. In decimals of base token (ETH in case of
+//      ETH/USDC). For example size 0.1 is inputted as 0.1 * 10**18.
+// @param maturity: Maturity as unix timestamp.
+// @return: Doesn't return anything.
 func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     option_type: OptionType,
