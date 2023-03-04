@@ -489,6 +489,8 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         let assert_res: Uint256 = uint256_sub(free_capital_uint256, underlying_amount_uint256);
         let ZERO = Uint256(0, 0);
         assert_uint256_le(ZERO, assert_res);
+        // One additional check
+        assert_uint256_le(underlying_amount_uint256, free_capital_uint256);
     }
 
     WithdrawLiquidity.emit(
@@ -501,6 +503,7 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     with_attr error_message("Failed to write new lpool_balance in withdraw_liquidity"){
         // Update that the capital in the pool (including the locked capital).
         let (current_balance: Uint256) = get_lpool_balance(lptoken_address);
+        let (unlocked_capital: Uint256) = get_unlocked_capital(lptoken_address);
         let (new_pb: Uint256) = uint256_sub(current_balance, underlying_amount_uint256);
 
         // Dont use Math.fromUint here since it would multiply the number by FRACT_PART AGAIN
