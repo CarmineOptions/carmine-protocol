@@ -1,9 +1,16 @@
 %lang starknet
 
-// In this file live all storage_vars of the AMM and their getters and setters.
-// No @external functions, the state should be manipulated from their respective component files (e.g. liquidity_pool, amm)
 
-// lptoken_address serves also as an identifier of pool
+//
+// @title Internal state module
+// @notice In this file live all storage_vars of the AMM and their getters and setters.
+//
+
+// @notice Stores all the lptoken addresses
+// @dev Stores the balances of each pot
+// @param order_i: from 0 to n, used as a key to get to a given address
+// @return lptoken_address: Address of given lp token. Which also serves as identifier
+//      for given pool.
 @storage_var
 func available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
 }
@@ -11,6 +18,13 @@ func available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
 
 // FIXME: typo in lptoken_addres - missing "s"
 // FIXME: rename this to lptoken_address_for_given_pool
+// @notice Stores lp token addresses with access based on pool specification.
+// @dev Stores lp token addresses with keys based on quote and base token addresses and option type
+// @param quote_token_address: address of quote token (USDC in case of ETH/USDC)
+// @param base_token_address: address of base token (ETH in case of ETH/USDC)
+// @param option_type: 0 for call option pool and 1 for put
+// @return lptoken_address: Address of given lp token. Which also serves as identifier
+//      for given pool.
 @storage_var
 func lptoken_addr_for_given_pooled_token(
     quote_token_address: Address,
@@ -25,45 +39,80 @@ func lptoken_addr_for_given_pooled_token(
 }
 
 
-// This is inverse to lptoken_addr_for_given_pooled_token
+// @notice For given lp token stores the information about the definition of the pool
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns Pool which is a struct of base token address, quote token address and option
+//      type.
 @storage_var
 func pool_definition_from_lptoken_address(lptoken_addres: Address) -> (pool: Pool) {
 }
 
 
-// Option type that this pool corresponds to.
+// @notice For given lp token stores the information about what option type is traded in given pool
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns option type (call or put) for given pool.
 @storage_var
 func option_type_(lptoken_address: Address) -> (option_type: OptionType) {
 }
 
 
-// Address of the underlying token (for example address of ETH or USD or...).
-// Will return base/quote according to option_type
+// @notice Stores address of the underlying token for given pool. Ie in which currency does given
+//      pool operate. For example ETH/USDC PUT pool works with USDC and ETH/USDC CALL pool works
+//      with ETH.
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns address of the token that the pool operates in.
 @storage_var
 func underlying_token_address(lptoken_address: Address) -> (res: Address) {
 }
 
 
-// Stores current value of volatility for given pool (option type) and maturity.
+// @notice Stores current value of volatility for given pool (option type) and maturity.
+// @dev WILL BE DEPRICATED - this will be removed with next upgrade of testnet and
+//      is not used at all if freashly deployed
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @return Returns volatility. Volatility in % and in Math64x61.
+//      So for example 184467440737095516160 is 80% volatility (184467440737095516160 / 2**61 = 80)
 @storage_var
 func pool_volatility(lptoken_address: Address, maturity: Int) -> (volatility: Math64x61_) {
 }
 
 
-// Stores volatility for given pool, maturity and strike_price combination.
+// @notice Stores current value of volatility for given pool (option type), maturity and strike.
+// @dev In past versions of testnet we were using same volatility for given maturity and
+//      option type.
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns volatility. Volatility in % and in Math64x61.
+//      So for example 184467440737095516160 is 80% volatility (184467440737095516160 / 2**61 = 80)
 @storage_var
 func pool_volatility_separate(lptoken_address: Address, maturity: Int, strike_price: Math64x61_) -> (volatility: Math64x61_) {
 }
 
 
-// List of available options (mapping from 1 to n to available strike x maturity,
-// for n+1 returns zeros). STARTS INDEXING AT 0.
+// @notice List of available options (mapping from 1 to n to available strike x maturity,
+//      for n+1 returns zeros). STARTS INDEXING AT 0.
+// @param lptoken_address: id of given pool (address of given pool's LP token).
+// @param order_i: from 0 to N. Just an index for getting the Option out. (N+1 element is Null).
+// @return Returns Option struct. Which contains option_side, maturity, strike_price,
+//      quote_token_address, base_token_address, option_type.
 @storage_var
 func available_options(lptoken_address: Address, order_i: Int) -> (Option) {
 }
 
 
-// Maping from option params to option address
+// @notice Maping from option params to option address.
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param option_side: 0 for long, 1 for short
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns address of given option's token.
 @storage_var
 func option_token_address(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -79,8 +128,17 @@ func max_lpool_balance(pooled_token_addr: Address) -> (res: Uint256) {
 func max_option_size_percent_of_voladjspd() -> (res: Int) {
 }
 
-// Mapping from option params to pool's position
-// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+// @notice Mapping from option params to pool's position. Options held by the pool do not get their
+//      option tokens, which is why this storage_var exists.
+// @dev Notice the underscore at the end of the name. That is there because there was a migration
+//      before.
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param option_side: 0 for long, 1 for short
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns the position of pool in a given option. Is returned as Int, which means that if
+//      the pool has position 1.1 size in ETH/USDC then the returned number is 1.1*10**18
 @storage_var
 func option_position_(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int
