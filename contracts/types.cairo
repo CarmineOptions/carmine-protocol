@@ -6,7 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 
 using Bool = felt; // boolean
 using Math64x61_ = felt; // 64x61 floating point based on Math64x61 library
-// OptionTypei s enum, has 0 and 1 values as boolean at the moment, but the meaning is different.
+// OptionType is enum, has 0 and 1 values as boolean at the moment, but the meaning is different.
 // Down the line the OptionType might get other values for for example
 // Put/Call american options (ie not be just 0 and 1, but more enum values).
 using OptionType = felt;
