@@ -463,7 +463,7 @@ func validate_trade_input{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
 // @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 @external
 func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,
@@ -537,7 +537,7 @@ func trade_open{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param limit_total_premia: Limit for premia with fees, min when short and max when long
 // @param tx_deadline: Fail the transaction if the current block time is greater that the deadline
-// @return premia: Premia that was payed
+// @return premia: Premia that was paid
 @external
 func trade_close{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     option_type : OptionType,

@@ -1,6 +1,5 @@
 %lang starknet
 
-// Part of the main contract to not add complexity by having to transfer tokens between our own contracts
 from helpers import max, _get_value_of_position, min, _get_premia_with_fees, fromUint256_balance, toInt_balance, fromInt_balance, split_option_locked_capital
 from interface_lptoken import ILPToken
 from interface_option_token import IOptionToken
@@ -25,19 +24,27 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.access.ownable.library import Ownable
 
 
+//
+// @title Liquidity Pool Contract
+// @notice Part of the main contract to not add complexity by having to transfer tokens between our own contracts
+//
+
+
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 // Other get functions
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
-// Returns a total value of pools position (sum of value of all options held by pool).
-// Goes through all options in storage var "available_options"... is able to iterate by i
-// (from 0 to n)
-// It gets 0 from available_option(n), if the n-1 is the "last" option.
-// This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
-// If this doesn't look "good", there is an option to have the available_options instead of having
-// the argument i, it could have no argument and return array (it might be easier for the map above)
-// Used in get_lptokens_for_underlying, which is why it isn't in view.cairo.
+// @notice Retrieves the value of the position within the pool
+// @dev Returns a total value of pools position (sum of value of all options held by pool).
+// @dev Goes through all options in storage var "available_options"... is able to iterate by i
+// @dev (from 0 to n)
+// @dev It gets 0 from available_option(n), if the n-1 is the "last" option.
+// @dev This could possibly use map from https://github.com/onlydustxyz/cairo-streams/
+// @dev If this doesn't look "good", there is an option to have the available_options instead of having
+// @dev the argument i, it could have no argument and return array (it might be easier for the map above)
+// @dev Used in get_lptokens_for_underlying, which is why it isn't in view.cairo.
+// @param lptoken_address: Address of the liquidity pool token
+// @return res: Value of the position within specified liquidity pool
 @view
 func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -49,6 +56,12 @@ func get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
 }
 
 
+// @notice Retrieves the value of the position
+// @param option: Struct containing option data
+// @param position_size: Size of the position
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param current_volatility: Current volatility of the AMM
+// @return position_value: Value of the position
 @view
 func get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -75,6 +88,10 @@ func get_value_of_position{
 }
 
 
+// @notice Helper function for retrieving the value of the position within the pool
+// @param lptoken_address: Address of the liquidity pool token
+// @param index: Current index
+// @return res: Value of the position within specified liquidity pool
 func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, index: Int
 ) -> (res: Math64x61_) {
@@ -142,13 +159,15 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+// @notice Calculates how many LP tokens correspond to the given amount of underlying token
+// @dev Quote or base tokens are used based on the pool being put/call
+// @param lptoken_address: Address of the liquidity pool token
+// @param underlying_amt: Amount of underlying tokens
+// @return lpt_amt: How many LP tokens correspond to the given amount of underlying token
 func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     underlying_amt: Uint256
 ) -> (lpt_amt: Uint256) {
-    // Takes in underlying_amt in quote or base tokens (based on the pool being put/call).
-    // Returns how much lp tokens correspond to capital of size underlying_amt
-
     alloc_locals;
 
     with_attr error_message("Failed to get free_capital in get_lptokens_for_underlying"){
@@ -191,19 +210,18 @@ func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     return (mint_total,);
 }
 
-// computes what amt of underlying corresponds to a given amt of lpt.
-// Doesn't take into account whether this underlying is actually free to be withdrawn.
-// computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
-// notation used: ... = (a)*my_lpt = b
+// @notice Computes the amount of underlying token that corresponds to a given amount of LP token
+// @dev Doesn't take into account whether this underlying is actually free to be withdrawn.
+// @dev computes this essentially: my_underlying = (total_underlying/total_lpt)*my_lpt
+// @dev notation used: ... = (a)*my_lpt = b
+// @param lptoken_address: Address of the liquidity pool token
+// @param lpt_amt: Amount of liquidity pool tokens
+// @return underlying_amt: Amount of underlying token that correspond to the given amount of LP token
 @view
 func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     lpt_amt: Uint256
 ) -> (underlying_amt: Uint256) {
-    // Takes in lpt_amt in terms of amount of lp tokens.
-    // Returns how much underlying in quote or base tokens (based on the pool being put/call)
-    // corresponds to given lp tokens.
-
     alloc_locals;
 
     let (total_lpt: Uint256) = ILPToken.totalSupply(contract_address=lptoken_address);
@@ -248,6 +266,12 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 //ie that what you get for lptoken is what you need to get same amount of lptokens
 
 
+// @notice Adds the supply of LP tokens
+// @dev This function initializes the pool
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param lptoken_address: Address of the liquidity pool token
 @external
 func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     quote_token_address: Address,
@@ -256,8 +280,6 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     lptoken_address: Address,
     volatility_adjustment_speed: Math64x61_
 ){
-    // This function initializes the pool.
-
     alloc_locals;
 
     with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
@@ -315,10 +337,15 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     return ();
 }
 
-// Mints LPToken
-// Assumes the underlying token is already approved (directly call approve() on the token being
-// deposited to allow this contract to claim them)
-// amt is amount of underlying token to deposit (either in base or quote based on call or put pool)
+
+// @notice Mints LP tokens and deposits liquidity into the LP
+// @dev Assumes the underlying token is already approved (directly call approve() on the token being
+// @dev deposited to allow this contract to claim them)
+// @param pooled_token_addr: Address that should correspond to the underlying token address of the pool
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param amount: Amount of underlying token to deposit - based on option_type being call or put
 @external
 func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address,
@@ -402,6 +429,12 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 }
 
 
+// @notice Withdraw liquidity from the LP
+// @param pooled_token_addr: Address that should correspond to the underlying token address of the pool
+// @param quote_token_address: Address of the quote token (USDC in ETH/USDC)
+// @param base_token_address: Address of the base token (ETH in ETH/USDC)
+// @param option_type: Type of the option 0 for Call, 1 for Put
+// @param lp_token_amount: LP token amount in terms of LP tokens, not underlying tokens as in deposit_liquidity
 @external
 func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address,
@@ -410,8 +443,6 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     option_type: OptionType,
     lp_token_amount: Uint256
 ) {
-    // lp_token_amount is in terms of lp tokens, not underlying as deposit_liquidity
-
     alloc_locals;
 
     let (caller_addr_) = get_caller_address();
@@ -494,6 +525,14 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 }
 
 
+// @notice Helper function for expiring pool's options
+// @param lptoken_address: Address of the LP token
+// @param long_value: Pool's long position
+// @param short_value: Pool's short position
+// @param option_size: Size of the position
+// @param option_side: Option's side from the perspective of the pool
+// @param maturity: Option's maturity
+// @param strike_price: Option's strike price
 func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -505,9 +544,6 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     maturity: Int,
     strike_price: Math64x61_
 ) {
-    // This function is a helper function used only for expiring POOL'S options.
-    // option_side is from perspektive of the pool
-
     alloc_locals;
 
     let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
@@ -588,6 +624,11 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 }
 
 
+// @notice Expires option token
+// @param lptoken_address: Address of the LP token
+// @param option_side: Option's side from the perspective of the pool
+// @param strike_price: Option's strike price
+// @param maturity: Option's maturity
 @external
 func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
@@ -595,8 +636,6 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     strike_price: Math64x61_,
     maturity: Int,
 ) -> () {
-    // Side is from perspective of pool!!!
-
     alloc_locals;
 
     ExpireOptionTokenForPool.emit(
