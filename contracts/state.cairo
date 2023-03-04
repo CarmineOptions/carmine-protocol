@@ -332,6 +332,8 @@ func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
 ) -> (pool_volatility: Math64x61_) {
+    alloc_locals;
+
     assert SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1;
     let (pool_volatility_) = pool_volatility_separate.read(lptoken_address, maturity, strike_price);
     if (pool_volatility_ == 0){
@@ -455,17 +457,19 @@ func set_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     option_side: OptionSide,
     maturity: Int,
     strike_price: Math64x61_,
-    option_token_address: Address
+    option_token_address_: Address
 ) {
-    with_attr error_message("Unable to set option token address {lptoken_address} {option_side} {maturity} {strike_price} {option_token_address}"){
+    alloc_locals;
+
+    with_attr error_message("Unable to set option token address {lptoken_address} {option_side} {maturity} {strike_price} {option_token_address_}"){
         assert_not_zero(lptoken_address);
         assert (option_side - TRADE_SIDE_LONG) * (option_side - TRADE_SIDE_SHORT) = 0;
         assert_nn_le(0, maturity);
         assert_nn_le(0, strike_price);
-        assert_not_zero(option_token_address);
+        assert_not_zero(option_token_address_);
 
         option_token_address.write(
-            lptoken_address, option_side, maturity, strike_price, option_token_address
+            lptoken_address, option_side, maturity, strike_price, option_token_address_
         );
     }
     return ();
@@ -569,13 +573,28 @@ func get_pool_volatility_adjustment_speed{
 }
 
 
-@external
 func set_pool_volatility_adjustment_speed{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     lptoken_address: Address, new_speed: Math64x61_
 ) -> () {
+    assert_nn(new_speed);
+    assert_not_zero(lptoken_address);
+    pool_volatility_adjustment_speed.write(lptoken_address, new_speed);
+    return ();
+}
+
+
+// Here just to make sure testnet's migration can go through correctly. Will be removed later
+@external
+func set_pool_volatility_adjustment_speed_external{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_address: Address, new_speed: Math64x61_
+) -> () {
     Proxy.assert_only_admin();
+    assert_nn(new_speed);
+    assert_not_zero(lptoken_address);
     pool_volatility_adjustment_speed.write(lptoken_address, new_speed);
     return ();
 }
