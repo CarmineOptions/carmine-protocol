@@ -717,7 +717,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
             lptoken_address, TRADE_SIDE_SHORT, maturity, strike_price, new_short_position
         );
 
-        // Set the pool_locked_capital.
+        // Set the pool_locked_capital_.
         set_pool_locked_capital(lptoken_address, new_locked_capital);
 
         // Assert there is enough capital to be locked

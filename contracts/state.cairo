@@ -70,29 +70,6 @@ func option_token_address(
 ) -> (res: Address) {
 }
 
-@external
-func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) {
-    alloc_locals;
-    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-
-    let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    let newval: Int = toInt_balance(currval, lpool_underlying_token);
-
-    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
-    return ();
-}
-
-
-// DEPRECATED
-@storage_var
-func option_position(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (res: Math64x61_) {
-}
-
 
 // Mapping from option params to pool's position
 // Options held by the pool do not get their option tokens, which is why this storage_var exists.
@@ -102,28 +79,9 @@ func option_position_(
 ) -> (res: Int) {
 }
 
-//migration only, to convert m64x61 lpool_balance to Uint256
-@external
-func migrate_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
-    alloc_locals;
-
-    let (currval: Math64x61_) = lpool_balance.read(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
-    set_lpool_balance(lptoken_address, newval);
-    return ();
-}
-
-
 // total balance of underlying in the pool (owned by the pool)
 // available balance for withdraw will be computed on-demand since
 // compute is cheap, storage is expensive on StarkNet currently
-// DEPRECATED
-@storage_var
-func lpool_balance(lptoken_address: Address) -> (res: Math64x61_) {
-}
-
-// we must rename the storage var during the migration, because otherwise Starknet would be angry that we are writing a struct
 @storage_var
 func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
 }
@@ -136,30 +94,12 @@ func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
     // - start pool with no position
     // - user sells option (user locks capital), pool pays premia and does not lock capital
     // - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unlocked capital"
-// DEPRECATED
-@storage_var
-func pool_locked_capital(lptoken_address: Address) -> (res: Math64x61_) {
-}
-
 @storage_var
 func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
 }
 
 @storage_var
 func pool_volatility_adjustment_speed(lptoken_address: Address) -> (res: Math64x61_) {
-}
-
-
-//migration only, to convert m64x61 lpool_balance to Uint256
-@external
-func migrate_pool_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(lptoken_address: Address) {
-    alloc_locals;
-
-    let (currval: Math64x61_) = pool_locked_capital.read(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-    let newval: Uint256 = toUint256_balance(currval, lpool_underlying_token);
-    set_pool_locked_capital(lptoken_address, newval);
-    return ();
 }
 
 
@@ -300,7 +240,6 @@ func set_pool_definition_from_lptoken_address{
     lptoken_addres: Address,
     pool: Pool,
 ) {
-    // will be deleted once we are migrated
     alloc_locals;
     pool_definition_from_lptoken_address.write(lptoken_addres, pool);
     return ();
@@ -585,7 +524,7 @@ func set_pool_volatility_adjustment_speed{
 }
 
 
-// Here just to make sure testnet's migration can go through correctly. Will be removed later
+// Here just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
 @external
 func set_pool_volatility_adjustment_speed_external{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
