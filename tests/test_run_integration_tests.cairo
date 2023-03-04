@@ -12,7 +12,7 @@ from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
 from tests.itest_specs.basic_round_trip.short_call import ShortCallRoundTrip
 // from tests.itest_specs.expire_option_token_for_pool import ExpireOptionTokenForPool
 // from tests.itest_specs.basic_round_trip.round_trip_for_non_eth_usd import NonEthRoundTrip
-// from tests.itest_specs.deposit_liquidity import DepositLiquidity
+from tests.itest_specs.deposit_liquidity import DepositLiquidity
 from tests.itest_specs.withdraw_liquidity import WithdrawLiquidity
 from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
 from tests.itest_specs.addition_of_lp_tokens import AdditionOfLPTokens
@@ -127,11 +127,11 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 //     return ();
 // }
 
-// @external
-// func test_deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: hashbuiltin*, range_check_ptr}(){
-//     depositliquidity.test_deposit();
-//     return ();
-// }
+@external
+func test_deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
+    DepositLiquidity.test_deposit();
+    return ();
+}
 
 // @external
 // func test_expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: hashbuiltin*, range_check_ptr}(){
