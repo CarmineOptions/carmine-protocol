@@ -1,7 +1,8 @@
 %lang starknet
 
-from interface_option_token import IOptionToken
-from interface_liquidity_pool import ILiquidityPool
+from contracts.interfaces.interface_option_token import IOptionToken
+from contracts.interfaces.interface_amm import IAMM
+from contracts.interfaces.interface_lptoken import ILPToken
 from math64x61 import Math64x61
 
 
@@ -82,7 +83,7 @@ namespace AdditionOfOptionTokens {
 
         %{ expect_revert(error_message = "Given inputs for add_option function do not match the option token") %}
         
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=0,
             maturity=expiry,
