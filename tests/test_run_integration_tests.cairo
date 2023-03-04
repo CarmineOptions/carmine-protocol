@@ -60,11 +60,11 @@ func test_option_attrs{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
-// @external
-// func test_addition_of_incorrect_option{syscall_ptr: felt*, range_check_ptr}() {
-//     AdditionOfOptionTokens.add_incorrect_option();
-//     return ();
-// }
+@external
+func test_addition_of_incorrect_option{syscall_ptr: felt*, range_check_ptr}() {
+    AdditionOfOptionTokens.add_incorrect_option();
+    return ();
+}
 
 // @external
 // func test_trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
