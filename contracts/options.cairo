@@ -47,16 +47,14 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     // 1) Check that owner (and no other entity) is adding the lptoken
     Proxy.assert_only_admin();
     // Check that the option token being added is the right one
-    // FIXME strike_price, option type, etc from option_token_address
-     // Assert that address hasn't been written yet 
+    // Assert that address hasn't been written yet
 
     with_attr error_message("Option Token has already been added") {
-        let (opt_address) = option_token_address.read(
+        let (opt_address) = get_option_token_address(
             lptoken_address, option_side, maturity, strike_price
         );
         assert opt_address = 0;
     }
-   // possibly do this when getting rid of Math64x61 in external function inputs
     
     with_attr error_message("Given inputs for add_option function do not match the option token") {
         let (contract_option_type) = IOptionToken.option_type(option_token_address_);
@@ -71,11 +69,12 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     
     // 2) Update following
     let hundred = Math64x61.fromFelt(100);
-    with_attr error_message("Option already exists"){
-        let (opt_addr) = get_option_token_address(lptoken_address, option_side, maturity, strike_price);
-        assert opt_addr = 0;
-    }
-    pool_volatility.write(lptoken_address, maturity, initial_volatility);
+    set_pool_volatility_separate(
+        lptoken_address=lptoken_address,
+        maturity=maturity,
+        strike_price=strike_price,
+        volatility=initial_volatility
+    );
     append_to_available_options(
         option_side,
         maturity,
@@ -86,11 +85,9 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
         lptoken_address
     );
 
-    
-    option_token_address.write(
+    set_option_token_address(
         lptoken_address, option_side, maturity, strike_price, option_token_address_
     );
-
 
     return ();
 }

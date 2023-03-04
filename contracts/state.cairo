@@ -328,6 +328,7 @@ func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 
 // Is it an issue that this is a view fn that sometimes writes stuff? Probably not, since it almost never writes stuff.
+@view
 func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
 ) -> (pool_volatility: Math64x61_) {
@@ -336,7 +337,7 @@ func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     if (pool_volatility_ == 0){
         // this is here only to ensure a seamless migration on testnet and will be removed on mainnet
         let (main_pool_vol) = pool_volatility.read(lptoken_address, maturity);
-        pool_volatility_separate.write(lptoken_address, maturity, strike_price, main_pool_vol);
+        set_pool_volatility_separate(lptoken_address, maturity, strike_price, main_pool_vol);
         return (main_pool_vol,);
     }
     return (pool_volatility_,);
@@ -446,6 +447,29 @@ func get_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         lptoken_address, option_side, maturity, strike_price
     );
     return (option_token_address=option_token_addr);
+}
+
+
+func set_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    option_side: OptionSide,
+    maturity: Int,
+    strike_price: Math64x61_,
+    option_token_address: Address
+) {
+    with_attr error_message("Unable to set option token address {lptoken_address} {option_side} {maturity} {strike_price} {option_token_address}"){
+        assert_not_zero(lptoken_address);
+        assert (option_side - TRADE_SIDE_LONG) * (option_side - TRADE_SIDE_SHORT) = 0;
+        assert_nn_le(0, maturity);
+        assert_nn_le(0, strike_price);
+        assert_not_zero(option_token_address);
+
+        option_token_address.write(
+            lptoken_address, option_side, maturity, strike_price, option_token_address
+        );
+    }
+    return ();
+
 }
 
 @view
