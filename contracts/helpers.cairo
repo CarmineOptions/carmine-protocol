@@ -44,8 +44,10 @@ from lib.pow import pow10, pow5, pow2
 
 // @notice Validates that the deadline has not passed yet
 // @dev If the deadline has passed this function will fail the transaction
-// @param deadline: Timestampt of the deadline
-func check_deadline{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(deadline: felt) {
+// @param deadline: Timestamp of the deadline
+func check_deadline{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    deadline: felt
+) {
 
     let (current_block_time) = get_block_timestamp();
 
@@ -91,15 +93,19 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 }
 
 
-// @notice Calculates premia without fees
-// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
-// @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
-// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
-// @param option: Struct containing option data
-// @param position_size: Size of the position
+// @notice Calculates premia without fees, DOES NOT update volatility parameter.
+// @dev The above means that this function is called only by view functions and not those allowing
+//      actual trading.
+// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case
+//      of ETH/USDC), e.g. wei in case of ETH.
+//      Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+// @param option: Struct containing option data. Look at types.cairo::Option
+// @param position_size: Size of the position in Math64x61, which means that size 1.1 is
+//      represented as 1.1*2**61.
 // @param option_type: Type of the option 0 for Call, 1 for Put
-// @param current_volatility: Current volatility of the AMM
-// @param pool_volatility_adjustment_speed: Limits how much the volatility will change
+// @param current_volatility: Current volatility of given option.
+// @param pool_volatility_adjustment_speed: Determines how fast the volatility would be updated if
+//      the position was executed.
 // @return total_premia_before_fees: Calculated premia without fees
 func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -110,7 +116,6 @@ func _get_premia_before_fees{
     current_volatility: Math64x61_,
     pool_volatility_adjustment_speed: Math64x61_,
 ) -> (total_premia_before_fees: Math64x61_){
-    // Gets value of position ADJUSTED for fees!!!
 
     alloc_locals;
 
@@ -187,14 +192,15 @@ func _get_premia_before_fees{
 
 
 // @notice Calculates amount to be paid to buyer and/or seller
-// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
-// @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
-// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
+// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case
+//      of ETH/USDC), e.g. wei in case of ETH.
+//      Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
 // @param option_type: Type of the option 0 for Call, 1 for Put
 // @param option_side: Side of the option 0 for Long, 1 for Short
-// @param option_size: Size to be traded
-// @param strike_price: Option's strike price
-// @param terminal_price: Price at which option is being settled
+// @param option_size: Size to be traded, denominated in Math64x61, which means that size 1.1 is
+//      represented as 1.1*2**61.
+// @param strike_price: Option's strike price in Math64x61.
+// @param terminal_price: Price at which option is being settled, in Math64x61.
 // @return long_value: Amount to be paid to the buyer
 // @return short_value: Amount to be paid to the seller
 func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -245,14 +251,15 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 
 
 // @notice Calculates the value of the provided position adjusted for fees
-// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
+// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case
+//      of ETH/USDC), e.g. wei in case of ETH.
 // @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
-// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
-// @param option: Struct containing option data
-// @param position_size: Size of the position
+// @param option: Struct containing option data. Look at types.cairo::Option
+// @param position_size: Size of the position, denominated in Math64x61, which means that size 1.1
+//      is represented as 1.1*2**61.
 // @param option_type: Type of the option 0 for Call, 1 for Put
-// @param current_volatility: Current volatility of the AMM
-// @param pool_volatility_adjustment_speed: Limits how much the volatility will change
+// @param current_volatility: Current volatility of the AMM, in Math64x61.
+// @param pool_volatility_adjustment_speed: Determines how much the volatility will change
 // @return position_value: Value of the provided position adjusted for fees
 func _get_value_of_position{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -297,11 +304,6 @@ func _get_value_of_position{
         let side = option.option_side;
         let strike_price = option.strike_price;
 
-        // let option_size_m64x61_ = Math64x61.fromFelt(position_size);
-        // let (base_decimals: felt) = IERC20.decimals(contract_address=option.base_token_address);
-        // let (base_div) = pow10(base_decimals);
-        // let base_div_m64x61 = Math64x61.fromFelt(base_div);
-        // let option_size_m64x61 = Math64x61.div(option_size_m64x61_, base_div_m64x61);
         let option_size_m64x61 = fromInt_balance(
             x=position_size,
             currency_address=option.base_token_address
@@ -367,14 +369,15 @@ func _get_value_of_position{
 
 
 // @notice Calculates the premia for the provided position adjusted for fees
-// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
+// @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case
+//      of ETH/USDC), e.g. wei in case of ETH.
 // @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
-// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
-// @param option: Struct containing option data
-// @param position_size: Size of the position
+// @param option: Struct containing option data. Look at types.cairo::Option
+// @param position_size: Size of the position, denominated in Math64x61, which means that size 1.1
+//      is represented as 1.1*2**61.
 // @param option_type: Type of the option 0 for Call, 1 for Put
-// @param current_volatility: Current volatility of the AMM
-// @param pool_volatility_adjustment_speed: Limits how much the volatility will change
+// @param current_volatility: Current volatility of the AMM, in Math64x61.
+// @param pool_volatility_adjustment_speed: Determines how much the volatility will change
 // @return premia_with_fees: Premia with fees for the provided position
 func _get_premia_with_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -386,7 +389,8 @@ func _get_premia_with_fees{
     pool_volatility_adjustment_speed: Math64x61_
 ) -> (premia_with_fees: Math64x61_){
     // FIXME: this is basically the same as _get_value_of_position... only one is from perspective
-    // of liquidating position and the other from perspective of entering position
+    // of liquidating position and the other from perspective of entering position... so consider
+    // joining these together
 
     alloc_locals;
 
@@ -421,6 +425,8 @@ func _get_premia_with_fees{
 // @notice Converts the value into Uint256 balance
 // @dev Conversions from Math64_61 to Uint256
 // @dev Only for balances/token amounts, takes care of getting decimals etc
+// @dev This function was done in several steps to optimize this in terms precision. It's pretty
+//      nasty in terms of deconstruction. I would suggest checking tests, it might be faster.
 // @param x: Value to be converted
 // @param currency_address: Address of the currency - used to get decimals
 // @return Input converted to Uint256
@@ -428,38 +434,39 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     x: Math64x61_,
     currency_address: Address
 ) -> Uint256 {
+    // converts for example 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
+
+    // We will guide you through with an example
+    // x = 1.2 * 2**61 (example input... 2**61 since it is Math64x61)
+    // We want to divide the number by 2**61 and multiply by 10**18 to get number in the "wei style
+    // But the order is important, first multiply and then divide, otherwise the .2 would be lost.
+    // (1.2 * 2**61) * 10**18 / 2**61
+    // We can split the 10*18 to (2**18 * 5**18)
+    // (1.2 * 2**61) * 2**18 * 5**18 / 2**61
+
     alloc_locals;
 
     with_attr error_message("Failed toUint256_balance with input {x}, {currency_address}"){
-        // converts 1.2 ETH (as Math64_61 float) to int(1.2*10**18)
         let (decimal) = get_decimal(currency_address);
-        // let (dec_) = pow10(decimal);
         let (five_to_dec) = pow5(decimal);
-        // with_attr error_message("dec to Math64x61 Failed in toUint256_balance"){
-        //     let dec = Math64x61.fromFelt(dec_);
-        // }
-
-        // let x_ = Math64x61.mul(x, dec);
-        // equivalent opperation as Math64x61.mul, but avoid the scale by 2**61
-        // Math64x61.mul takes two Math64x61 and multiplies them and divides them by 2**61
-        // (x*2**61) * (y*2**61) / 2**61
-        // Instead we skip the "*2**61" near "y" and the "/ 2**61"
-        // let x_ = x * dec_;
+        // rearange a little 
+        // (1.2 * 2**61 * 5**18) * 2**18 / 2**61
+        // (x_5) * 2**18 / 2**61
         let x_5 = x * five_to_dec;
 
+        // check for overflows
         with_attr error_message("x_5 out of bounds in toUint256_balance"){
             assert_le(x_5, Math64x61.BOUND);
             assert_nn(x_5);
         }
 
-        // To convert x_ to felt we could do the line below (x_ is commented)
-        // let amount_felt = Math64x61.toFelt(x_);
-        // or we could call directly what the toFelt does "signed_div_rem(x, FRACT_PART, BOUND);"
-        // since x_ is just x * dec_ = x * 10**decimal = x * 2**decimal * 5**decimal
-        // we can calculate x_5 = x * 5**decimal
-        // and then divide by 2**(61-decimal) instead of Math64x61.FRACT_PART of the original number
+        // we can rearange a little again
+        // (1.2 * 2**61 * 5**18) / (2**61 / 2**18)
+        // (1.2 * 2**61 * 5**18) / 2**(61 - 18)
         let sixty_one_minus_dec = 61 - decimal;
         let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
+        // just to see where we are
+        // (x_5) / decreased_FRACT_PART
         let (amount_felt, _) = signed_div_rem(x_5, decreased_FRACT_PART, Math64x61.BOUND);
 
         let res = Uint256(low = amount_felt, high = 0);
@@ -479,20 +486,23 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     x: Uint256,
     currency_address: Address
 ) -> Math64x61_ {
+    // converts for example 1.2*10**18 wei to 1.2*2**61 (Math64x61).
+
+    // We will guide you through with an example
+    // x = 1.2*10**18 (example input... 10**18 since it is ETH)
+    // We want to divide the number by 10**18 and multiply by 2**61 to get Math64x61 number
+    // But the order is important, first multiply and then divide, otherwise the .2 would be lost.
+    // (1.2 * 10**18) * 2**61 / 10**18
+    // We can split the 10*18 to (2**18 * 5**18)
+    // (1.2 * 10**18) * 2**61 / (5**18 * 2**18)
+
     alloc_locals;
 
     local x_low = x.low;
     with_attr error_message("Failed fromUint256_balance with input {x_low}, {currency_address}"){
-        // converts 1.2*10**18 WEI to 1.2 ETH (to Math64_61 float)
         let (decimal) = get_decimal(currency_address);
-        // let (dec_) = pow10(decimal);
         let (five_to_dec) = pow5(decimal);
-        // let dec = Math64x61.fromFelt(dec_);
 
-        // let x_ = Math64x61.fromUint256(x);
-        // "Math64x61.fromUint256" is just fromFelt(x.low)
-        // "Math64x61.fromFelt(x.low)" multiplies the number by Math64x61.FRACT_PART (2 ** 61)
-        // and checks that x.low is within Math64x61.INT_PART
         assert x.high = 0;
         let x_low = x.low;
 
@@ -505,19 +515,21 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         assert_le(x_low, increased_INT_PART);
         assert_le(-increased_INT_PART, x_low);
 
+        // (1.2 * 10**18) * 2**61 / (5**18 * 2**18)
+        // so we have
+        // x * 2**61 / (five_to_dec * 2**18)
+        // and with a little bit of rearanging
+        // (1.2 * 10**18) / 5**18 * (2**61 / 2**18)
+        // (1.2 * 10**18) / 5**18 * 2**(61-18)
+        // x / five_to_dec * 2**(sixty_one_minus_dec)
         let sixty_one_minus_dec = 61 - decimal;
         let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
+        // x / five_to_dec * decreased_FRACT_PART
+        // x * decreased_FRACT_PART / five_to_dec
         let x_ = x_low * decreased_FRACT_PART;
-
-        // let x__ = Math64x61.div(x_, dec);
-        // Equivalent to Math64x61.div
-
-        // let div = abs_value(dec_);
-        // let div_sign = sign(dec_);
-        // no need to get sign of y, sin dec_ is positiove
-        // tempvar product = x * FRACT_PART;
-        // no need to to do the tempvar, since only x_ is Math64x61 and dec_ is not
+        // x_ / five_to_dec
         let (x__, _) = unsigned_div_rem(x_, five_to_dec);
+        // Just checking the final number is not out of bounds.
         Math64x61.assert64x61(x__);
     }
     return x__;
@@ -543,6 +555,7 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
 
 // @notice Converts the value from Int (felt) balance to Math64_61
+// @dev Basically just a wrapper around fromUint256_balance for different input.
 // @param x: Value to be converted
 // @param currency_address: Address of the currency - used to get decimals
 // @return Input converted to Math64_61
@@ -573,10 +586,6 @@ func intToUint256{range_check_ptr}(
         assert_le_felt(x, 2**127-1);
         let res = Uint256(x, 0);
     }
-//    const LOW_BITS = 2 ** 128 - 1; //127 ones. Quite possible there's a off-by-one, watch out
-//    let (low_part) = bitwise_and(x, LOW_BITS);
-//    let high_part = x - low_part;
-//    let res = Uint256(low_part, high_part);
     return res;
 }
 
