@@ -204,23 +204,20 @@ namespace WithdrawLiquidity {
         );
 
         assert call_pool_unlocked_capital_2.low = 9254392596352227;
+    
+        %{
+            expect_revert(error_message = "Not enough 'cash' available funds in pool. Wait for it to be released from locked capital in withdraw_liquidity")
+        %}
 
-        let four_thousand_lptokens = Uint256(low = 2000000000, high = 0);
+        let five_thousand_lptokens = Uint256(low = 5000000000, high = 0);
         IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=1,
-            lp_token_amount=four_thousand_lptokens
+            lp_token_amount=five_thousand_lptokens
         );
-
-        let (put_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
-            contract_address=amm_addr,
-            lptoken_address=lpt_put_addr
-        );
-
-        assert put_pool_unlocked_capital_2.low = 222539724;
 
         return ();
     }
