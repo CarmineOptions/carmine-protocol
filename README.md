@@ -52,7 +52,7 @@ Available options (including expired ones)
 
 ## Oracles
 
-Currently using only [Empiric](https://empiric.network/) oracle, which returns the median price (aggregated over multiple sources) of an asset multiplied by 10^18. Only ETH price is used for the demo at the moment. 
+Currently using only [Empiric](https://empiric.network/) oracle, which returns the median price (aggregated over multiple sources) of an asset multiplied by 10^8. Only ETH price is used for the demo at the moment. 
 
 We're working on our own solution to make arbitrary timestamped data available on the blockchain, the [Chronos oracle](https://github.com/CarmineOptions/Chronos-Oracle).
 
