@@ -43,25 +43,25 @@ namespace AdditionOfLPTokens {
         let (name_put) = ILPToken.name(contract_address=lpt_put_addr);
         assert name_put = 112;
 
-        let (lptoken_address_0) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_0) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=0
         );
         assert lptoken_address_0 = lpt_call_addr;
 
-        let (lptoken_address_1) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_1) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=1
         );
         assert lptoken_address_1 = lpt_put_addr;
 
-        let (lptoken_address_2) = ILiquidityPool.get_available_lptoken_addresses(
+        let (lptoken_address_2) = IAMM.get_available_lptoken_addresses(
             contract_address=amm_addr,
             order_i=2
         );
         assert lptoken_address_2 = 0;
 
-        let (opt_address_long_call) = ILiquidityPool.get_option_token_address(
+        let (opt_address_long_call) = IAMM.get_option_token_address(
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr,
             option_side = 0,
@@ -70,7 +70,7 @@ namespace AdditionOfLPTokens {
         );
         assert opt_address_long_call = opt_long_call_addr;
         
-        let (opt_address_short_call) = ILiquidityPool.get_option_token_address(
+        let (opt_address_short_call) = IAMM.get_option_token_address(
             contract_address = amm_addr,
             lptoken_address = lpt_call_addr,
             option_side = 1,
@@ -79,7 +79,7 @@ namespace AdditionOfLPTokens {
         );
         assert opt_address_short_call = opt_short_call_addr;
 
-        let (opt_address_long_put) = ILiquidityPool.get_option_token_address(
+        let (opt_address_long_put) = IAMM.get_option_token_address(
             contract_address = amm_addr,
             lptoken_address = lpt_put_addr,
             option_side = 0,
@@ -88,7 +88,7 @@ namespace AdditionOfLPTokens {
         );
         assert opt_address_long_put = opt_long_put_addr;
 
-        let (opt_address_short_put) = ILiquidityPool.get_option_token_address(
+        let (opt_address_short_put) = IAMM.get_option_token_address(
             contract_address = amm_addr,
             lptoken_address = lpt_put_addr,
             option_side = 1,
@@ -117,12 +117,13 @@ namespace AdditionOfLPTokens {
 
         %{ expect_revert(error_message ="Received unknown option type(=2) in add_lptoken") %}
 
-        ILiquidityPool.add_lptoken(
+        IAMM.add_lptoken(
             contract_address=amm_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=2, // option with type '2' does not exist
-            lptoken_address=lpt_call_addr
+            lptoken_address=lpt_call_addr,
+            volatility_adjustment_speed = 1 // Does not matter here
         );
 
         return ();
