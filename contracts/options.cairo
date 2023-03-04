@@ -4,27 +4,6 @@ from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
 
 // Functions related to option token minting, option accouting, ...
 
-// FIXME: remove this external before going to mainnet
-// Function for removing option 
-// Currently removes only from available_options storage_var
-// Beacuse it storing duplicate options would cause provide 
-// wrong result when calculating value of pool's position
-@external
-func remove_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address,
-    index: felt
-) {
-    alloc_locals;
-
-    // Assert that only admin can access this function
-    Proxy.assert_only_admin();
-
-    // Remove option at given index and shift remaining options to the left
-    remove_and_shift_available_options(lptoken_address, index);
-
-    return ();
-}
-
 
 @external
 func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
