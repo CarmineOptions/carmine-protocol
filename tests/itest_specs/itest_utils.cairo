@@ -4,7 +4,6 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from openzeppelin.token.erc20.IERC20 import IERC20
 from interfaces.interface_lptoken import ILPToken
-from interfaces.interface_liquidity_pool import ILiquidityPool
 from interfaces.interface_option_token import IOptionToken
 from interfaces.interface_amm import IAMM
 
@@ -43,7 +42,7 @@ func get_stats{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         contract_address=input.lpt_addr,
         account=input.user_addr
     );
-    let (pool_unlocked_capital) = ILiquidityPool.get_unlocked_capital(
+    let (pool_unlocked_capital) = IAMM.get_unlocked_capital(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr
     );
@@ -51,34 +50,35 @@ func get_stats{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         contract_address=input.opt_addr,
         account=input.user_addr
     );
-    let (pool_volatility) = ILiquidityPool.get_pool_volatility(
+    let (pool_volatility) = IAMM.get_pool_volatility_auto(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr,
-        maturity=input.expiry
+        maturity=input.expiry,
+        strike_price = input.strike_price
     );
-    let (opt_long_pos) = ILiquidityPool.get_option_position(
+    let (opt_long_pos) = IAMM.get_option_position(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr,
         option_side=0,
         maturity=input.expiry,
         strike_price=input.strike_price
     );
-    let (opt_short_pos) = ILiquidityPool.get_option_position(
+    let (opt_short_pos) = IAMM.get_option_position(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr,
         option_side=1,
         maturity=input.expiry,
         strike_price=input.strike_price
     );
-    let (lpool_balance) = ILiquidityPool.get_lpool_balance(
+    let (lpool_balance) = IAMM.get_lpool_balance(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr
     );
-    let (pool_locked_capital) = ILiquidityPool.get_pool_locked_capital(
+    let (pool_locked_capital) = IAMM.get_pool_locked_capital(
         contract_address=input.amm_addr,
         lptoken_address=input.lpt_addr
     );
-    let (pools_pos_val) = ILiquidityPool.get_value_of_pool_position(
+    let (pools_pos_val) = IAMM.get_value_of_pool_position(
         contract_address = input.amm_addr,
         lptoken_address = input.lpt_addr
     );
