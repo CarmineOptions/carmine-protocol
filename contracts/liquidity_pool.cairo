@@ -407,6 +407,11 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         set_lpool_balance(lptoken_address, new_pb);
     }
 
+    with_attr error_message("lpool balance exceeds set maximum"){
+        let (max_balance) = get_max_lpool_balance(pooled_token_addr);
+        assert_uint256_le(current_balance, max_balance);
+    }
+
     with_attr error_message("Failed to mint lp tokens"){
         // Mint LP tokens
         ILPToken.mint(contract_address=lptoken_address, to=caller_addr, amount=mint_amount);
@@ -446,10 +451,6 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     local caller_addr = caller_addr_;
     with_attr error_message("caller_addr is zero in withdraw_liquidity"){
         assert_not_zero(caller_addr);
-    }
-    let (own_addr) = get_contract_address();
-    with_attr error_message("own_addr is zero in withdraw_liquidity"){
-        assert_not_zero(own_addr);
     }
 
     let (lptoken_address: felt) = get_lptoken_address_for_given_option(

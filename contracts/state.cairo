@@ -70,6 +70,34 @@ func option_token_address(
 ) -> (res: Address) {
 }
 
+@storage_var
+func max_lpool_balance(pooled_token_addr: Address) -> (res: Uint256) {
+}
+
+
+@external
+func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) {
+    alloc_locals;
+    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
+    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
+
+    let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
+    let newval: Int = toInt_balance(currval, lpool_underlying_token);
+
+    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
+    return ();
+}
+
+
+// DEPRECATED
+@storage_var
+func option_position(
+    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
+) -> (res: Math64x61_) {
+}
+
 
 // Mapping from option params to pool's position
 // Options held by the pool do not get their option tokens, which is why this storage_var exists.
@@ -264,12 +292,12 @@ func get_pool_definition_from_lptoken_address{
 func set_pool_definition_from_lptoken_address{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
-    lptoken_addres: Address,
+    lptoken_address: Address,
     pool: Pool,
 ) {
     alloc_locals;
     fail_if_existing_pool_definition_from_lptoken_address(lptoken_addres);
-    pool_definition_from_lptoken_address.write(lptoken_addres, pool);
+    pool_definition_from_lptoken_address.write(lptoken_address, pool);
     return ();
 }
 
@@ -361,6 +389,20 @@ func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
 
 @view
+func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: Address) -> (max_balance: Uint256) {
+        let(maxbal) = max_lpool_balance.read(pooled_token_addr);
+        return (maxbal, );
+}
+
+@external
+func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    pooled_token_addr: Address, max_lpool_bal: Uint256) {
+        max_lpool_balance.write(pooled_token_addr, max_lpool_bal);
+        return ();
+}
+
+@view
 func get_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (underlying_token_address_: Address) {
@@ -409,7 +451,7 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return ();
 }
 
-
+@external
 func set_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_, volatility: Math64x61_
 ) {

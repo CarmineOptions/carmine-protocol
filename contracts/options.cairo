@@ -6,6 +6,7 @@
 //
 
 from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
+from constants import MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD
 
 // Functions related to option token minting, option accouting, ...
 
@@ -184,6 +185,19 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
                 maturity=maturity,
                 strike_price=strike_price,
             );
+        }
+
+        with_attr error_message("trade exceeds max liqpool deposit size"){
+            let (user_address) = get_caller_address();
+            let (currency_address) = get_underlying_token_address(lptoken_address);
+            let (optsize) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
+            assert optsize.high = 0;
+            let (adjspd) = get_pool_volatility_adjustment_speed(lptoken_address=lptoken_address);
+            let adjspd_ = adjspd * 100;
+            assert_nn(adjspd_);
+            let max_optsize_m64x61 = adjspd_ /  MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD;
+            let max_optsize = toInt_balance(max_optsize_m64x61, currency_address);
+            assert_le(optsize.low, max_optsize);
         }
     }
 
