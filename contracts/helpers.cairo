@@ -548,6 +548,7 @@ func toInt_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     alloc_locals;
 
     let uint256 = toUint256_balance(x, currency_address);
+    assert uint256.high = 0;
     let low128 = uint256.low;
 
     return low128;
