@@ -201,6 +201,33 @@ func get_lptoken_address_for_given_option{
 }
 
 
+func set_lptoken_address_for_given_option{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    quote_token_address: Address,
+    base_token_address: Address,
+    option_type: OptionType,
+    lptoken_address: Address
+) {
+    with_attr error_message("One of the input values is zero in set_lptoken_address_for_given_option"){
+        assert_not_zero(quote_token_address);
+        assert_not_zero(base_token_address);
+        assert_not_zero(lptoken_address);
+    }
+    with_attr error_message(
+        "Definition of pool (option type) for set_lptoken_address_for_given_option"
+    ){
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
+
+    lptoken_addr_for_given_pooled_token.write(
+        quote_token_address, base_token_address, option_type, lptoken_address
+    );
+
+    return ();
+}
+
+
 @view
 func get_pool_definition_from_lptoken_address{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -241,7 +268,26 @@ func set_pool_definition_from_lptoken_address{
     pool: Pool,
 ) {
     alloc_locals;
+    fail_if_existing_pool_definition_from_lptoken_address(lptoken_addres);
     pool_definition_from_lptoken_address.write(lptoken_addres, pool);
+    return ();
+}
+
+
+func fail_if_existing_pool_definition_from_lptoken_address{
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(
+    lptoken_addres: Address
+) {
+    alloc_locals;
+
+    let (pool) = pool_definition_from_lptoken_address.read(lptoken_addres);
+    with_attr error_message("Given lptoken has already been registered"){
+        assert pool.quote_token_address = 0;
+        assert pool.base_token_address = 0;
+        assert pool.option_type = 0;
+    }
+
     return ();
 }
 
@@ -252,6 +298,21 @@ func get_option_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 ) -> (option_type: OptionType) {
     let (option_type) = option_type_.read(lptoken_address);
     return (option_type,);
+}
+
+
+func set_option_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    option_type: OptionType
+) {
+    with_attr error_message(
+        "Definition of pool (option type) for set_option_type is incorrect"
+    ){
+        assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
+    }
+
+    option_type_.write(lptoken_address, option_type);
+    return ();
 }
 
 
@@ -311,6 +372,23 @@ func get_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
         assert_not_zero(underlying_token_address_);
     }
     return (underlying_token_address_,);
+}
+
+
+func set_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    lptoken_address: Address,
+    underlying_token_address_: Address
+) {
+    with_attr error_message(
+        "Failed set_underlying_token_address, one of the addresses is zero"
+    ){
+        assert_not_zero(lptoken_address);
+        assert_not_zero(underlying_token_address_);
+    }
+
+    underlying_token_address.write(lptoken_address, underlying_token_address_);
+
+    return ();
 }
 
 
