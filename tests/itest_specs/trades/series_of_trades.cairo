@@ -831,7 +831,8 @@ namespace SeriesOfTrades {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
+        // let one = Math64x61.fromFelt(1);
+        let one = 1000000000000000000; // 1 * 10 **18
         tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
@@ -839,7 +840,7 @@ namespace SeriesOfTrades {
                 ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+                ids.tmp_address, "get_last_spot_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
             )
         %}
 
@@ -983,9 +984,11 @@ namespace SeriesOfTrades {
         %}
 
         let strike_price = Math64x61.fromFelt(1500);
-        let one = Math64x61.fromFelt(1);
-        let two = Math64x61.fromFelt(2);
-        let half = Math64x61.div(one, two);
+        // let one = Math64x61.fromFelt(1);
+        let one = 1000000000000000000; // 1 * 10 **18
+        // let two = Math64x61.fromFelt(2);
+        // let half = Math64x61.div(one, two);
+        let half = 500000000000000000; // 0.5 * 10**18
 
         tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
         %{
