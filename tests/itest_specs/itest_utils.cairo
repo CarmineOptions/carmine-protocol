@@ -115,17 +115,16 @@ func print_stats{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
     %{
         print("=================STATS=================")
-        print(str(ids.lpt))
-        print(str(ids.opt))
-        print(str(ids.puc))
-        print(str(ids.plc))
-        print(str(ids.lpb))
-        print(str(ids.pv))
-        print(str(ids.olp))
-        print(str(ids.osp))
-        print(str(ids.ppv))
+        print("LPT bal:    ", str(ids.lpt))
+        print("OPT bal:    ", str(ids.opt))
+        print("Unlocked:   ", str(ids.puc))
+        print("Locked:     ", str(ids.plc))
+        print("Lpool bal:  ", str(ids.lpb))
+        print("Vol:        ", str(ids.pv))
+        print("OPT long:   ", str(ids.olp))
+        print("OPT short:  ", str(ids.osp))
+        print("Pos val:    ", str(ids.ppv))
     %}
-    
 
     return ();
 }
