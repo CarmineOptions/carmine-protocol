@@ -59,7 +59,6 @@ from helpers import intToUint256, toUint256_balance, get_underlying_from_option_
 // @notice Executes option trade
 // @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case of ETH/USDC), e.g. wei in case of ETH.
 // @dev Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
-// @dev Option size of 100 USD would be 100*10**6 since USDC is divisible up to 6 decimal places.
 // @param option_type: Type of the option 0 for Call, 1 for Put
 // @param strike_price: Option's strike price
 // @param maturity: Option's maturity
