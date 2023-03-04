@@ -108,13 +108,6 @@ namespace IAMM {
     }
 
 
-    // FIXME: drop this function down the line
-    func set_available_lptoken_addresses(order_i: Int, lptoken_address: Address) -> (
-        lptoken_address: Address
-    ) {
-    }
-
-
     func get_all_options(lptoken_address: Address) -> (array_len : felt, array : felt*) {
     }
 

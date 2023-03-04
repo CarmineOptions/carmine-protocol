@@ -23,18 +23,11 @@ const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 const VOLATILITY_LOWER_BOUND = 1;
 const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 
-// FIXME:
-// add max deposit, min deposit (and withdraw)
-// add min/max option size
-// max liquidity pool size - for mainnet limit (our business)
-// max trade size - for mainnet limit (our business) - to think through
-// NEW POOLS POSITION CANT BE HIGHER THAN VOL_ADJSPD
-
 // option_type
 const OPTION_CALL = 0;
 const OPTION_PUT = 1;
 
-// This is used from perspective of user. When user goes long, the pool underwrites.
+// Long/short is used from perspective of user. When user goes long, the pool underwrites.
 const TRADE_SIDE_LONG = 0;
 const TRADE_SIDE_SHORT = 1;
 
@@ -56,7 +49,6 @@ func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 // FIXME: double check mainnet addresses here (used for empiric)
 const TOKEN_ETH_ADDRESS = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;  // goerli address
 const TOKEN_USD_ADDRESS = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426;  // goerli address
-// const TOKEN_BTC_ADDRESS = ...;
 
 
 // ############################
@@ -75,7 +67,6 @@ const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
 // Contrants for Empiric oracle
 // ############################
 
-// FIXME: double check numbers and 
 const EMPIRIC_ORACLE_ADDRESS = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
 const EMPIRIC_AGGREGATION_MODE = 0;  // 0 is default for median
 
@@ -100,7 +91,6 @@ func get_empiric_key{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     base_token_addr: Address,
 ) -> (empiric_key: felt) {
     // Where quote is USDC in case of ETH/USDC, base token is ETH in case of ETH/USDC
-    // and option_type is either CALL or PUT (constants.OPTION_CALL or constants.OPTION_PUT).
 
     if (base_token_addr == TOKEN_ETH_ADDRESS) {
         if (quote_token_addr == TOKEN_USD_ADDRESS) {
@@ -129,6 +119,10 @@ func get_decimal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     }
     if (token_address == TOKEN_USD_ADDRESS) {
         return (6,);
+    }
+
+    with_attr error_message("Specified token_address is 0"){
+        assert_not_zero(token_address);
     }
 
     // ILPToken is basically the same as IERC20
