@@ -48,11 +48,11 @@ func test_lpt_attrs{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
-// @external
-// func test_addition_of_incorrect_lpt{syscall_ptr: felt*, range_check_ptr}() {
-//     AdditionOfLPTokens.add_incorrect_lpt();
-//     return ();
-// }
+@external
+func test_addition_of_incorrect_lpt{syscall_ptr: felt*, range_check_ptr}() {
+    AdditionOfLPTokens.add_incorrect_lpt();
+    return ();
+}
 
 @external
 func test_option_attrs{syscall_ptr: felt*, range_check_ptr}() {
