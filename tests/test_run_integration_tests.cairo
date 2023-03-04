@@ -94,12 +94,12 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 }
 
 // FIXME: This needs to be fixed, more info in the test itself
-// @external
-// func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
-//     // test what happens when more capital is withdrawn than there is unlocked
-//     WithdrawLiquidity.withdraw_liquidity_not_enough_unlocked();
-//     return ();
-// }
+@external
+func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
+    // test what happens when more capital is withdrawn than there is unlocked
+    WithdrawLiquidity.withdraw_liquidity_not_enough_unlocked();
+    return ();
+}
 
 
 // @external

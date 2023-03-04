@@ -1,7 +1,6 @@
 %lang starknet
 
 from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
 from interface_amm import IAMM
 
 from constants import EMPIRIC_ORACLE_ADDRESS
@@ -44,20 +43,20 @@ namespace WithdrawLiquidity {
         );
         assert bal_usd_lpt.low = 5000000000;
 
-        let (call_pool_unlocked_capital) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
         assert_uint256_eq(call_pool_unlocked_capital, Uint256(5000000000000000000, 0));
 
-        let (put_pool_unlocked_capital) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
         assert_uint256_eq(put_pool_unlocked_capital, Uint256(5000000000, 0));
 
         let two_and_half_eth = Uint256(low = 2500000000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
@@ -67,7 +66,7 @@ namespace WithdrawLiquidity {
         );
 
         let two_and_half_thousand_usd = Uint256(low = 2500000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
@@ -88,13 +87,13 @@ namespace WithdrawLiquidity {
         );
         assert bal_usd_lpt_after.low = 2500000000;
 
-        let (call_pool_unlocked_capital_after) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital_after) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
         assert_uint256_eq(call_pool_unlocked_capital_after, Uint256(2500000000000000000, 0));
 
-        let (put_pool_unlocked_capital_after) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_after) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
@@ -134,11 +133,11 @@ namespace WithdrawLiquidity {
             )
         %}
 
-        let (put_pool_unlocked_capital_0) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_0) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        let (call_pool_unlocked_capital_0) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital_0) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
@@ -160,7 +159,9 @@ namespace WithdrawLiquidity {
             option_side=0,
             option_size=two,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
         let (_) = IAMM.trade_open(
             contract_address=amm_addr,
@@ -170,23 +171,25 @@ namespace WithdrawLiquidity {
             option_side=0,
             option_size=two,
             quote_token_address=myusd_addr,
-            base_token_address=myeth_addr
+            base_token_address=myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
         );
         
-        let (put_pool_unlocked_capital_1) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_1) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
-        let (call_pool_unlocked_capital_1) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital_1) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
 
-        assert call_pool_unlocked_capital_1.low = 3012715374959942009;
-        assert put_pool_unlocked_capital_1.low = 2241738692;
+        assert call_pool_unlocked_capital_1.low = 3009254392596352226;
+        assert put_pool_unlocked_capital_1.low = 2222539723;
 
-        let four_lptokens = Uint256(low = 5000000000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        let four_lptokens = Uint256(low = 3000000000000000000, high = 0);
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
@@ -195,16 +198,15 @@ namespace WithdrawLiquidity {
             lp_token_amount=four_lptokens
         );
 
-        let (call_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
+        let (call_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr
         );
 
-        // FIXME: this returns 340282366920938463461387345960256197662 
-        // assert call_pool_unlocked_capital_2.low = 3012715374959942009;
+        assert call_pool_unlocked_capital_2.low = 9254392596352227;
 
-        let four_thousand_lptokens = Uint256(low = 4000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        let four_thousand_lptokens = Uint256(low = 2000000000, high = 0);
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
@@ -213,13 +215,12 @@ namespace WithdrawLiquidity {
             lp_token_amount=four_thousand_lptokens
         );
 
-        let (put_pool_unlocked_capital_2) = ILiquidityPool.get_unlocked_capital(
+        let (put_pool_unlocked_capital_2) = IAMM.get_unlocked_capital(
             contract_address=amm_addr,
             lptoken_address=lpt_put_addr
         );
 
-        // FIXME: this returns 340282366920938463463374607430011254584
-        // assert put_pool_unlocked_capital_2.low = 3012715374959942009;
+        assert put_pool_unlocked_capital_2.low = 222539724;
 
         return ();
     }
@@ -241,7 +242,7 @@ namespace WithdrawLiquidity {
         %}
 
         let six_lptokens = Uint256(low = 6000000000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
@@ -269,7 +270,7 @@ namespace WithdrawLiquidity {
         %}
 
         let six_thousand_usd = Uint256(low = 6000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
