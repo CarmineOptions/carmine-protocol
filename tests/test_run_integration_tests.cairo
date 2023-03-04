@@ -66,17 +66,17 @@ func test_addition_of_incorrect_option{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
-// @external
-// func test_trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-    // SeriesOfTrades.trade_open();
-    // return ();
-// }
+@external
+func test_trade_open{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    SeriesOfTrades.trade_open();
+    return ();
+}
 
-// @external
-// func test_trade_close{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-//     SeriesOfTrades.trade_close();
-//     return ();
-// }
+@external
+func test_trade_close{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    SeriesOfTrades.trade_close();
+    return ();
+}
 
 // FIXME: Broken somewhere in expire_option_token, overflowing or sth
 // @external
