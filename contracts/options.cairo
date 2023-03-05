@@ -6,7 +6,6 @@
 //
 
 from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
-from constants import MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD
 
 // Functions related to option token minting, option accouting, ...
 
@@ -200,7 +199,8 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             let adjspd_ = adjspd * 100;
             assert_nn(adjspd_);
 
-            let max_opt_perc_math = Math64x61.fromFelt(MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD);
+            let (max_opt_perc) = get_max_opt_size_perc();
+            let max_opt_perc_math = Math64x61.fromFelt(max_opt_perc);
             let hundred = Math64x61.fromFelt(100);
             let ratio = Math64x61.div(max_opt_perc_math, hundred);
 
@@ -625,7 +625,8 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         let adjspd_ = adjspd * 100;
         assert_nn(adjspd_);
 
-        let max_opt_perc_math = Math64x61.fromFelt(MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD);
+        let (max_opt_perc) = get_max_opt_size_perc();
+        let max_opt_perc_math = Math64x61.fromFelt(max_opt_perc);
         let hundred = Math64x61.fromFelt(100);
         let ratio = Math64x61.div(max_opt_perc_math, hundred);
 
