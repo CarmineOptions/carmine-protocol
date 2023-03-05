@@ -296,7 +296,7 @@ func set_pool_definition_from_lptoken_address{
     pool: Pool,
 ) {
     alloc_locals;
-    fail_if_existing_pool_definition_from_lptoken_address(lptoken_addres);
+    fail_if_existing_pool_definition_from_lptoken_address(lptoken_address);
     pool_definition_from_lptoken_address.write(lptoken_address, pool);
     return ();
 }
