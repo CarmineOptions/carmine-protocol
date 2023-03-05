@@ -163,6 +163,9 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             assert contract_option_side = option_side;
         }
 
+        let (user_address) = get_caller_address();
+        let (optsize_before) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
+
         if (option_side == TRADE_SIDE_LONG) {
             _mint_option_token_long(
                 lptoken_address=lptoken_address,
@@ -188,10 +191,11 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         }
 
         with_attr error_message("trade exceeds max liqpool deposit size"){
-            let (user_address) = get_caller_address();
-            let (optsize) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
-            assert optsize.high = 0;
+            let (optsize_after) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
+            assert optsize_after.high = 0;
             
+            let (optsize_diff: Uint256) = uint256_sub(optsize_after, optsize_before);
+
             let (adjspd) = get_pool_volatility_adjustment_speed(lptoken_address=lptoken_address);
             let adjspd_ = adjspd * 100;
             assert_nn(adjspd_);
@@ -203,7 +207,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
             let max_optsize_m64x61 = Math64x61.mul(ratio, adjspd);
 
             let max_optsize = toInt_balance(max_optsize_m64x61, option_token_address);
-            assert_le(optsize.low, max_optsize);
+            assert_le(optsize_diff.low, max_optsize);
         }
     }
 
@@ -576,6 +580,9 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         assert contract_option_side = option_side;
     }
 
+    let (user_address) = get_caller_address();
+    let (optsize_before) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
+
     local optsize_in_pc = option_size_in_pool_currency.low;
     local optsize = option_size;
     if (option_side == TRADE_SIDE_LONG) {
@@ -606,6 +613,26 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
                 strike_price=strike_price,
             );
         }
+    }
+
+    with_attr error_message("trade exceeds max liqpool deposit size"){
+        let (optsize_after) = IOptionToken.balanceOf(contract_address=option_token_address, account=user_address);
+        assert optsize_after.high = 0;
+        
+        let (optsize_diff) = uint256_sub(optsize_before, optsize_after);
+
+        let (adjspd) = get_pool_volatility_adjustment_speed(lptoken_address=lptoken_address);
+        let adjspd_ = adjspd * 100;
+        assert_nn(adjspd_);
+
+        let max_opt_perc_math = Math64x61.fromFelt(MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD);
+        let hundred = Math64x61.fromFelt(100);
+        let ratio = Math64x61.div(max_opt_perc_math, hundred);
+
+        let max_optsize_m64x61 = Math64x61.mul(ratio, adjspd);
+
+        let max_optsize = toInt_balance(max_optsize_m64x61, option_token_address);
+        assert_le(optsize_diff.low, max_optsize);
     }
     return ();
 }
