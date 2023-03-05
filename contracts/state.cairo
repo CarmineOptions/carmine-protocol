@@ -70,8 +70,8 @@ func underlying_token_address(lptoken_address: Address) -> (res: Address) {
 
 
 // @notice Stores current value of volatility for given pool (option type) and maturity.
-// @dev WILL BE DEPRECIATED - this will be removed with next upgrade of testnet and
-//      is not used at all if freashly deployed
+// @dev WILL BE DEPRECATED - this will be removed with next upgrade of testnet and
+//      is not used at all if freshly deployed
 // @param lptoken_addres: identifying to which pool this volatility belongs to
 // @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
 // @return Returns volatility. Volatility in % and in Math64x61.
