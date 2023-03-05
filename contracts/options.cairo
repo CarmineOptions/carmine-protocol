@@ -294,8 +294,6 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
             // Increase lpool_balance by premia_including_fees -> this also increases unlocked capital
             // since only locked_capital storage_var exists
             let (current_balance) = get_lpool_balance(lptoken_address);
-            // delete let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-            // delete let premia_including_fees_uint256: Uint256 = toUint256_balance(premia_including_fees, lpool_underlying_token);
             let (new_balance: Uint256, carry: felt) = uint256_add(current_balance, premia_including_fees_uint256);
             assert carry = 0;
             // The nonnegativity of new_balance is checked inside of the set_lpool_balance
@@ -660,7 +658,6 @@ func _burn_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
     alloc_locals;
 
-    // delete let (current_contract_address) = get_contract_address();
     let (user_address) = get_caller_address();
     let (currency_address) = get_underlying_token_address(lptoken_address);
     let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
@@ -824,6 +821,7 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
     let (current_locked_capital_uint256: Uint256) = get_pool_locked_capital(lptoken_address);
     // FIXME: the inside of the if (not the else) should work for both cases
+    //      -> validate and update for more simple code
     if (pool_short_position == 0) {
         // If pool is LONG
         // Burn decreases pool's long -> up to a size of the pool's long 
@@ -1036,7 +1034,6 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     }
 
     with_attr error_message("option_size is higher than tokens owned by user") {
-        // FIXME: this might be failing because of rounding when converting between
         assert_uint256_le(option_size_uint256, user_tokens_owned);
     }
 
