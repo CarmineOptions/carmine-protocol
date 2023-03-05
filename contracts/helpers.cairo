@@ -464,6 +464,7 @@ func toUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         // (1.2 * 2**61 * 5**18) / (2**61 / 2**18)
         // (1.2 * 2**61 * 5**18) / 2**(61 - 18)
         let sixty_one_minus_dec = 61 - decimal;
+        assert_nn(sixty_one_minus_dec);
         let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
         // just to see where we are
         // (x_5) / decreased_FRACT_PART
@@ -511,6 +512,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // is done on decrease Math64x61.FRACT_PART
         // so the total does not go above 2**125
         let sixty_four_plus_dec = 64 + decimal;
+        assert_nn(sixty_four_plus_dec);
         let (increased_INT_PART) = pow2(sixty_four_plus_dec);
         assert_le(x_low, increased_INT_PART);
         assert_le(-increased_INT_PART, x_low);
@@ -523,6 +525,7 @@ func fromUint256_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         // (1.2 * 10**18) / 5**18 * 2**(61-18)
         // x / five_to_dec * 2**(sixty_one_minus_dec)
         let sixty_one_minus_dec = 61 - decimal;
+        assert_nn(sixty_one_minus_dec);
         let (decreased_FRACT_PART) = pow2(sixty_one_minus_dec);
         // x / five_to_dec * decreased_FRACT_PART
         // x * decreased_FRACT_PART / five_to_dec

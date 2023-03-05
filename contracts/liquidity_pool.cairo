@@ -570,6 +570,9 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
     let current_pool_position_uint256: Uint256 = toUint256_balance(current_pool_position, lpool_underlying_token);
 
     let new_pool_position = current_pool_position - option_size;
+    with_attr error_message("new_pool_position is negative in adjust_lpool_balance_and_pool_locked_capital_expired_options") {
+        assert_nn(new_pool_position);
+    }
     set_option_position(lptoken_address, option_side, maturity, strike_price, new_pool_position);
 
     if (option_side == TRADE_SIDE_LONG) {
