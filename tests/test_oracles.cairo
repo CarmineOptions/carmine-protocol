@@ -46,7 +46,7 @@ func test_Math64x61_div_imprecise{range_check_ptr}() {
     // test some random coin worth 0.58 dollars
     let rand_test = 58000000;
     let rand_res = Math64x61_div_imprecise(rand_test, pow10xM_to_64x61);
-    assert rand_res = 0;  // FIXME: this should not be zero
+    assert rand_res = 0;  // This should not be zero, but rounding errors are currently expected
 
     return ();
 }
