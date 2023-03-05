@@ -392,7 +392,7 @@ func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 }
 
 @external
-func set_max_opt_size_perc{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func set_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     max_opt_size_as_perc_of_vol_adjspd: Int
 ){
     with_attr error_message("Max opt size perc can be set only by admin"){
@@ -408,7 +408,7 @@ func set_max_opt_size_perc{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 }
 
 @view
-func get_max_opt_size_perc{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: Int){
+func get_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: Int){
     let (res) = max_option_size_percent_of_voladjspd.read();
     return (res, );
 }
