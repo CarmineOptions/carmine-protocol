@@ -56,6 +56,20 @@ Currently using only [Empiric](https://empiric.network/) oracle, which returns t
 
 We're working on our own solution to make arbitrary timestamped data available on the blockchain, the [Chronos oracle](https://github.com/CarmineOptions/Chronos-Oracle).
 
+
+# Future Mainnet (for the purpose of an audit)
+
+Here are few notes that are mainly meant for audit, since the HEAD of master on github might not be 100% corresponding to the below "Development" chapter. The development chapter is targeted mainly on the Testnet contracts with are at the moment quite heavily behind the HEAD on master.
+
+Few notes:
+- The entire AMM is driven/updated/upgraded through Proxy contract and through an owner (Proxy.assert_only_admin). This will not be the case on mainnet, since the mainnet contracts will be updated by votes through governance. Ie the owner/admin (Proxy.assert_only_admin) is temporary thing.
+- There are things that are present in the codebase just to make sure the migrations on testnet work correctly. Which means that for fresh deployment those are not needed. These can be "if condition" up to entire external functions.
+- Withdraw capital can fail if there is not enough available capital in the pool. Ie if a lot of capital is locked in the sold options.
+- Withdraw and deposit of capital fails if the AMM is not able to price a single option. This can happen inside of Black-Scholes model and inside approximation of std. normal CDF, which works only for inputs between -8, 8. Which is sufficient in almost all cases, but once in a while it fails (just before option expiration, too distant strike price,...).
+- For the same reason in the approximation of std. normal CDF there can be options that are unavailable for trading.
+- Withdraw and deposit of capital is unavailable between option expiration and 2 hours before that. Those options that are just about to expire are not available for trading for the same reason for the last 2 hours before expiration.
+
+
 # Development
 
 ## Setup
