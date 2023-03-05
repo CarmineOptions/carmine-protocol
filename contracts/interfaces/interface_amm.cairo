@@ -94,13 +94,13 @@ namespace IAMM {
     }
 
 
-    func get_lptokens_for_underlying(pooled_token_addr: felt, underlying_amt: Uint256) -> (
+    func get_lptokens_for_underlying(pooled_token_addr: Address, underlying_amt: Uint256) -> (
         lpt_amt: Uint256
     ) {
     }
 
 
-    func get_underlying_for_lptokens(pooled_token_addr: felt, lpt_amt: Uint256) -> (
+    func get_underlying_for_lptokens(pooled_token_addr: Address, lpt_amt: Uint256) -> (
         underlying_amt: Uint256
     ) {
     }
@@ -277,7 +277,6 @@ namespace IAMM {
     func get_pool_volatility_auto(
         lptoken_address: Address, maturity: Int, strike_price: Math64x61_
     ) -> (pool_volatility: Math64x61_) {
-
     }
 
 
