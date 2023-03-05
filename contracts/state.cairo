@@ -9,8 +9,7 @@ func available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
 }
 
 
-// FIXME: typo in lptoken_addres - missing "s"
-// FIXME: rename this to lptoken_address_for_given_pool
+
 @storage_var
 func lptoken_addr_for_given_pooled_token(
     quote_token_address: Address,
@@ -567,7 +566,6 @@ func set_trading_halt{
 }(
     new_status: Bool
 ) -> () {
-    // FIXME check for reentrancy
     assert_nn(new_status);
     assert_le(new_status, 1);
     Proxy.assert_only_admin();
@@ -743,7 +741,6 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         maturity=maturity,
         strike_price=strike_price
     );
-    // FIXME: create unit test for this
     if (option_address == 0) {
         return (FALSE,);
     }
