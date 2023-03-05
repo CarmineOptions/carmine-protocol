@@ -398,6 +398,14 @@ func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 @external
 func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address, max_lpool_bal: Uint256) {
+
+        with_attr error_message("Max lpool balance can be set only by admin"){
+            Proxy.assert_only_admin();
+        }
+    
+        with_attr error_message("Max lpool balance can't be negative") {
+            assert_uint256_le(Uint256(0, 0), max_lpool_bal);
+        }
         max_lpool_balance.write(pooled_token_addr, max_lpool_bal);
         return ();
 }

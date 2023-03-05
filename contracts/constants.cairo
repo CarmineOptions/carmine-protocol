@@ -22,7 +22,8 @@ const ACCOUNT_BALANCE_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
 // The minimum and maximum volatility
 const VOLATILITY_LOWER_BOUND = 1;
 const VOLATILITY_UPPER_BOUND = 2 ** 64 * Math64x61.FRACT_PART;
-const MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD = 20;
+// Max option size per user as percentage of volatility adjustment speed
+const MAX_OPTION_SIZE_PERCENT_OF_VOLADJSPD = 100;
 // option_type
 const OPTION_CALL = 0;
 const OPTION_PUT = 1;
