@@ -102,9 +102,11 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
     // Add LPToken
     let five_eth_m64 = 11529215046068469760; //5 * 2 ** 61
     let five_k_usd_m64 = 11529215046068469760000; //5_000 * 2 ** 61
+    let ten_eth = Uint256(low = 10000000000000000000, high = 0);
+    let ten_thousand_usd = Uint256(low = 10000000000, high = 0);
 
-    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, lptoken_address=lpt_call_addr, volatility_adjustment_speed=five_eth_m64);
-    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, lptoken_address=lpt_put_addr, volatility_adjustment_speed=five_k_usd_m64);
+    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=0, lptoken_address=lpt_call_addr, pooled_token_addr=myeth_addr, volatility_adjustment_speed=five_eth_m64, max_lpool_bal=ten_eth);
+    IAMM.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, lptoken_address=lpt_put_addr, pooled_token_addr=myusd_addr, volatility_adjustment_speed=five_k_usd_m64, max_lpool_bal=ten_thousand_usd);
 
     // Approve myUSD and myETH for use by amm
 

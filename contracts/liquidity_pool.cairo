@@ -264,13 +264,18 @@ func get_underlying_for_lptokens{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // @param base_token_address: Address of the base token (ETH in ETH/USDC)
 // @param option_type: Type of the option 0 for Call, 1 for Put
 // @param lptoken_address: Address of the liquidity pool token
+// @param pooled_token_addr: Address of the pooled token
+// @param volatility_adjustment_speed: Constant that determines how fast the volatility is changing
+// @param max_lpool_bal: Maximum balance of the bool for giver pooled token
 @external
 func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr} (
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionType,
     lptoken_address: Address,
-    volatility_adjustment_speed: Math64x61_
+    pooled_token_addr: Address,
+    volatility_adjustment_speed: Math64x61_,
+    max_lpool_bal: Uint256
 ){
     alloc_locals;
 
@@ -325,8 +330,11 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
         set_underlying_token_address(lptoken_address, quote_token_address);
     }
 
-    // 4 Set the volality adjustment speed (same const across pool)
+    // 4) Set the volality adjustment speed (same const across pool)
     set_pool_volatility_adjustment_speed(lptoken_address, volatility_adjustment_speed);
+
+    // 5) Set max lpool balance
+    set_max_lpool_balance(pooled_token_addr, max_lpool_bal);
 
     return ();
 }

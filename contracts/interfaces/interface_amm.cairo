@@ -67,7 +67,9 @@ namespace IAMM {
         base_token_address: Address,
         option_type: OptionType,
         lptoken_address: Address,
-        volatility_adjustment_speed: Math64x61_
+        pooled_token_addr: Address,
+        volatility_adjustment_speed: Math64x61_,
+        max_lpool_bal: Uint256
     ){
     }
 
