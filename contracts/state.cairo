@@ -1,15 +1,30 @@
 %lang starknet
 
-// In this file live all storage_vars of the AMM and their getters and setters.
-// No @external functions, the state should be manipulated from their respective component files (e.g. liquidity_pool, amm)
 
-// lptoken_address serves also as an identifier of pool
+//
+// @title Internal state module
+// @notice In this file live all storage_vars of the AMM and their getters and setters.
+//      All code that changes state of the AMM is in this file.
+
+// @notice Stores all the lptoken addresses
+// @dev Stores the balances of each pot
+// @param order_i: from 0 to n, used as a key to get to a given address
+// @return lptoken_address: Address of given lp token. Which also serves as identifier
+//      for given pool.
 @storage_var
 func available_lptoken_addresses(order_i: Int) -> (lptoken_address: Address) {
 }
 
 
-
+// FIXME: typo in lptoken_addres - missing "s"
+// FIXME: rename this to lptoken_address_for_given_pool
+// @notice Stores lp token addresses with access based on pool specification.
+// @dev Stores lp token addresses with keys based on quote and base token addresses and option type
+// @param quote_token_address: address of quote token (USDC in case of ETH/USDC)
+// @param base_token_address: address of base token (ETH in case of ETH/USDC)
+// @param option_type: 0 for call option pool and 1 for put
+// @return lptoken_address: Address of given lp token. Which also serves as identifier
+//      for given pool.
 @storage_var
 func lptoken_addr_for_given_pooled_token(
     quote_token_address: Address,
@@ -24,45 +39,80 @@ func lptoken_addr_for_given_pooled_token(
 }
 
 
-// This is inverse to lptoken_addr_for_given_pooled_token
+// @notice For given lp token stores the information about the definition of the pool
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns Pool which is a struct of base token address, quote token address and option
+//      type.
 @storage_var
 func pool_definition_from_lptoken_address(lptoken_addres: Address) -> (pool: Pool) {
 }
 
 
-// Option type that this pool corresponds to.
+// @notice For given lp token stores the information about what option type is traded in given pool
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns option type (call or put) for given pool.
 @storage_var
 func option_type_(lptoken_address: Address) -> (option_type: OptionType) {
 }
 
 
-// Address of the underlying token (for example address of ETH or USD or...).
-// Will return base/quote according to option_type
+// @notice Stores address of the underlying token for given pool. Ie in which currency does given
+//      pool operate. For example ETH/USDC PUT pool works with USDC and ETH/USDC CALL pool works
+//      with ETH.
+// @param lptoken_addres: Address of given lp token. Which also serves as identifier
+//      for given pool.
+// @return Returns address of the token that the pool operates in.
 @storage_var
 func underlying_token_address(lptoken_address: Address) -> (res: Address) {
 }
 
 
-// Stores current value of volatility for given pool (option type) and maturity.
+// @notice Stores current value of volatility for given pool (option type) and maturity.
+// @dev WILL BE DEPRECATED - this will be removed with next upgrade of testnet and
+//      is not used at all if freshly deployed
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @return Returns volatility. Volatility in % and in Math64x61.
+//      So for example 184467440737095516160 is 80% volatility (184467440737095516160 / 2**61 = 80)
 @storage_var
 func pool_volatility(lptoken_address: Address, maturity: Int) -> (volatility: Math64x61_) {
 }
 
 
-// Stores volatility for given pool, maturity and strike_price combination.
+// @notice Stores current value of volatility for given pool (option type), maturity and strike.
+// @dev In past versions of testnet we were using same volatility for given maturity and
+//      option type.
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns volatility. Volatility in % and in Math64x61.
+//      So for example 184467440737095516160 is 80% volatility (184467440737095516160 / 2**61 = 80)
 @storage_var
 func pool_volatility_separate(lptoken_address: Address, maturity: Int, strike_price: Math64x61_) -> (volatility: Math64x61_) {
 }
 
 
-// List of available options (mapping from 1 to n to available strike x maturity,
-// for n+1 returns zeros). STARTS INDEXING AT 0.
+// @notice List of available options (mapping from 1 to n to available strike x maturity,
+//      for n+1 returns zeros). STARTS INDEXING AT 0.
+// @param lptoken_address: id of given pool (address of given pool's LP token).
+// @param order_i: from 0 to N. Just an index for getting the Option out. (N+1th element is all zeros).
+// @return Returns Option struct. Which contains option_side, maturity, strike_price,
+//      quote_token_address, base_token_address, option_type.
 @storage_var
 func available_options(lptoken_address: Address, order_i: Int) -> (Option) {
 }
 
 
-// Maping from option params to option address
+// @notice Maping from option params to option address.
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param option_side: 0 for long, 1 for short
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns address of given option's token.
 @storage_var
 func option_token_address(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -78,38 +128,55 @@ func max_lpool_balance(pooled_token_addr: Address) -> (res: Uint256) {
 func max_option_size_percent_of_voladjspd() -> (res: Int) {
 }
 
-// Mapping from option params to pool's position
-// Options held by the pool do not get their option tokens, which is why this storage_var exists.
+// @notice Mapping from option params to pool's position. Options held by the pool do not get their
+//      option tokens, which is why this storage_var exists.
+// @dev Notice the underscore at the end of the name. That is there because there was a migration
+// @param lptoken_addres: identifying to which pool this volatility belongs to
+// @param option_side: 0 for long, 1 for short
+// @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
+// @param strike_price: identifying to which maturity this volatility belongs to (in Math64x61
+//      so for example 3458764513820540928000 is strike price 1500 - 3458764513820540928000 /2**61)
+// @return Returns the position of pool in a given option. Is returned as Int, which means that if
+//      the pool has position 1.1 size in ETH/USDC then the returned number is 1.1*10**18
 @storage_var
 func option_position_(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Int
 ) -> (res: Int) {
 }
 
-// total balance of underlying in the pool (owned by the pool)
-// available balance for withdraw will be computed on-demand since
-// compute is cheap, storage is expensive on StarkNet currently
+
+// @notice Stores total balance of underlying in the pool (owned by the pool).
+// @dev Notice the underscore at the end of the name. That is there because there was a migration
+// @param lp_token_address: Identifier of given pool.
+// @return Returns total balance of underlying in the pool (owned by the pool).
 @storage_var
 func lpool_balance_(lptoken_address: Address) -> (res: Uint256) {
 }
 
 
-// Locked capital owned by the pool... above is lpool_balance describing total capital owned
-// by the pool. Ie lpool_balance = pool_locked_capital + pool's unlocked capital
-// Note: capital locked by users is not accounted for here.
-    // Simple example:
-    // - start pool with no position
-    // - user sells option (user locks capital), pool pays premia and does not lock capital
-    // - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unlocked capital"
+// @notice Stores amount of locked capital owned by the pool.
+//      (Total capital is in lpool_balance_)
+//      lpool_balance = pool_locked_capital + pool's unlocked capital
+//      Capital locked by users is not accounted for here.
+//      Simple example:
+//      - start pool with no position
+//      - user sells option (user locks capital), pool pays premia and does not lock capital
+//      - there is more "IERC20.balanceOf" in the pool than "pool's locked capital + unlocked capital"
+// @dev Notice the underscore at the end of the name. That is there because there was a migration
+// @param lp_token_address: Identifier of given pool.
+// @return Returns amount of locked capital owned by the pool.
 @storage_var
 func pool_locked_capital_(lptoken_address: Address) -> (res: Uint256) {
 }
 
+
+// @notice Used in volatility calculation. Updated by governance roughly according to pool size.
 @storage_var
 func pool_volatility_adjustment_speed(lptoken_address: Address) -> (res: Math64x61_) {
 }
 
 
+// @notice is trading halted? If yes, then status = 1.
 @storage_var
 func trading_halted() -> (status: Bool) {
 }
@@ -120,6 +187,9 @@ func trading_halted() -> (status: Bool) {
 // # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 
+// @notice Reads lptoken address at given index. Useful for e.g. retrieving all lptokens.
+// @dev Misleadingly named, should be get_lptoken_addresses since inclusion
+//      here only means that the lpool exists.
 @view
 func get_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     order_i: Int
@@ -129,6 +199,7 @@ func get_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuilt
 }
 
 
+// @notice Writes lptoken address at given index. Used by add_lptoken
 func set_available_lptoken_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     order_i: Int, lptoken_address: Address
 ) -> () {
@@ -179,7 +250,6 @@ func get_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 ) -> (
     option: Option
 ) {
-    alloc_locals;
     let (option) = available_options.read(lptoken_address, order_i);
     return (option,);
 }
@@ -326,7 +396,9 @@ func set_option_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
-// This shouldn't be used if SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1.
+// @notice Returns pool volatility for maturity-lptoken pair.
+//      Only applicable if SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0.
+//      Otherwise, use get_pool_volatility_separate. 
 @view
 func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int
@@ -336,8 +408,11 @@ func get_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return (pool_volatility_,);
 }
 
-
-// Is it an issue that this is a view fn that sometimes writes stuff? Probably not, since it almost never writes stuff.
+// @notice Returns pool volatility for maturity-lptoken-strike_price triple.
+// @dev This @view function sometimes writes to storage if the migration to pool volatilities
+//      for different strike prices is in progress. This is done to ensure a seamless migration.
+//      View function annotations are also currently not enforced by Starknet.
+//      There won't be writes from this function on mainnet.
 @view
 func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
@@ -356,8 +431,8 @@ func get_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 }
 
 
-// Automatically retrieves correct pool vol according to SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES flag
-// Eliminates branching, local allocations and revoked references in code elsewhere.
+// @notice Automatically retrieves correct pool vol according to SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES flag
+// @dev Eliminates branching, local allocations and revoked references in code elsewhere.
 @view
 func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_
@@ -369,7 +444,8 @@ func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     }
 }
 
-
+// @notice Returns the current maximum total balance of the pooled token. This is across all pools
+//      that pool a certain asset, so there is one limit for all USDC pools for example.
 @view
 func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address) -> (max_balance: Uint256) {
@@ -377,7 +453,8 @@ func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         return (maxbal, );
 }
 
-// External here is just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
+// @notice Directly sets max balance of pooled token across all pools.
+// @dev External here is just to make sure testnet migration can go through correctly. Will be deprecated later
 @external
 func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address, max_lpool_bal: Uint256) {
@@ -393,6 +470,8 @@ func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         return ();
 }
 
+
+// @notice Sets maximum total option size as a percentage of volatility adjustment speed.
 @external
 func set_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     max_opt_size_as_perc_of_vol_adjspd: Int
@@ -415,6 +494,8 @@ func get_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: 
     return (res, );
 }
 
+
+// @notice Returns the token that's underlying the given liquidity pool.
 @view
 func get_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -447,6 +528,9 @@ func set_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 }
 
 
+// @notice Sets pool volatility for maturity-lptoken pair.
+//      Only applicable if SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 0.
+//      Otherwise, use get_pool_volatility_separate.
 func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, volatility: Math64x61_
 ) {
@@ -464,6 +548,9 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return ();
 }
 
+
+// @notice Sets pool volatility for maturity-lptoken-strike triple.
+//      Only applicable if SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES = 1.
 func set_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_, volatility: Math64x61_
 ) {
@@ -491,14 +578,15 @@ func set_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return ();
 }
 
- 
+
+// @notice Returns capital that is unlocked for immediate extraction/use.
+//      This is for example ETH in case of ETH/USD CALL options.
+// @dev Computed as contract_balance - locked_capital
 @view
 func get_unlocked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
 ) -> (unlocked_capital: Uint256) {
     alloc_locals;
-    // Returns capital that is unlocked for immediate extraction/use.
-    // This is for example ETH in case of ETH/USD CALL options.
 
     // Capital locked by the pool
     let (locked_capital: Uint256) = get_pool_locked_capital(lptoken_address);
@@ -547,6 +635,9 @@ func set_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
 }
 
+
+// @notice Returns the given liqpool's position in a given option
+// @return option_position: felt. Has same amount of decimals as base token.
 @view
 func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -558,6 +649,8 @@ func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 }
 
 
+// @notice Returns the first free option index for the given lptoken address.
+// @dev Returns lowest index that does not contain any specified option (only zeros).
 @view
 func get_available_options_usable_index{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -565,7 +658,6 @@ func get_available_options_usable_index{
     lptoken_address: Address,
     starting_index: Int
 ) -> (usable_index: Int) {
-    // Returns lowest index that does not contain any specified option.
 
     alloc_locals;
 
@@ -584,13 +676,13 @@ func get_available_options_usable_index{
 }
 
 
+// @notice Returns lowest index that does not contain any specified lptoken_address.
 @view
 func get_available_lptoken_addresses_usable_index{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
     starting_index: Int
 ) -> (usable_index: Int) {
-    // Returns lowest index that does not contain any specified lptoken_address.
 
     alloc_locals;
 
@@ -606,6 +698,7 @@ func get_available_lptoken_addresses_usable_index{
 }
 
 
+// @notice Returns trading halt status. 1 = halted, 0 = not halted.
 @view
 func get_trading_halt{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -621,9 +714,9 @@ func set_trading_halt{
 }(
     new_status: Bool
 ) -> () {
+    Proxy.assert_only_admin();
     assert_nn(new_status);
     assert_le(new_status, 1);
-    Proxy.assert_only_admin();
     trading_halted.write(new_status);
     return ();
 }
@@ -655,7 +748,7 @@ func set_pool_volatility_adjustment_speed{
 }
 
 
-// Here just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
+// @dev Here just to make sure testnet's migration can go through correctly. Will be DEPRECATED later
 @external
 func set_pool_volatility_adjustment_speed_external{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -740,7 +833,7 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 }
 
 
-// inefficiency and wastefulness of this functions doesn't matter, since it will be axed before going to mainnet.
+// inefficiency and wastefulness of the functions below doesn't matter, since it will be axed before going to mainnet.
 // used only in removal of an option, which is something that will never happen
 func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
