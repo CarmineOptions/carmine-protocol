@@ -132,7 +132,7 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
     %}
     // Set max opt size - effectively turn it off
-    IAMM.set_max_opt_size_perc(amm_addr, 1000);
+    IAMM.set_max_option_size_percent_of_voladjspd(amm_addr, 1000);
     
     let five_eth = Uint256(low = 5000000000000000000, high = 0);
     let ten_eth = Uint256(low = 10000000000000000000, high = 0);

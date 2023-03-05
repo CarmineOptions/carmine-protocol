@@ -223,10 +223,10 @@ namespace IAMM {
     func getAdmin(){
     }
 
-    func set_max_opt_size_perc(max_opt_size_as_perc_of_vol_adjspd: Int){
+    func set_max_option_size_percent_of_voladjspd(max_opt_size_as_perc_of_vol_adjspd: Int){
     }
 
-    func get_max_opt_size_perc() -> (res: Int){
+    func get_max_option_size_percent_of_voladjspd() -> (res: Int){
     }
 
     func get_lpool_balance(lptoken_address: Address) -> (res: Uint256) {
