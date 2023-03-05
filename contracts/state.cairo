@@ -70,7 +70,7 @@ func underlying_token_address(lptoken_address: Address) -> (res: Address) {
 
 
 // @notice Stores current value of volatility for given pool (option type) and maturity.
-// @dev WILL BE DEPRICATED - this will be removed with next upgrade of testnet and
+// @dev WILL BE DEPRECIATED - this will be removed with next upgrade of testnet and
 //      is not used at all if freashly deployed
 // @param lptoken_addres: identifying to which pool this volatility belongs to
 // @param maturity: identifying to which maturity this volatility belongs to (unix timestamp)
@@ -441,7 +441,8 @@ func get_pool_volatility_auto{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
     }
 }
 
-
+// @notice Returns the current maximum total balance of the pooled token. This is across all pools
+//      that pool a certain asset, so there is one limit for all USDC pools for example.
 @view
 func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address) -> (max_balance: Uint256) {
@@ -449,7 +450,8 @@ func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         return (maxbal, );
 }
 
-// External here is just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
+// @notice Directly sets max balance of pooled token across all pools.
+// @dev External here is just to make sure testnet migration can go through correctly. Will be deprecated later
 @external
 func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address, max_lpool_bal: Uint256) {
@@ -465,6 +467,8 @@ func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         return ();
 }
 
+
+// @notice Sets maximum total option size as a percentage of volatility adjustment speed.
 @external
 func set_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     max_opt_size_as_perc_of_vol_adjspd: Int
@@ -487,6 +491,8 @@ func get_max_option_size_percent_of_voladjspd{syscall_ptr: felt*, pedersen_ptr: 
     return (res, );
 }
 
+
+// @notice Returns the token that's underlying the given liquidity pool.
 @view
 func get_underlying_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address
@@ -626,6 +632,9 @@ func set_option_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 
 }
 
+
+// @notice Returns the given liqpool's position in a given option
+// @return option_position: felt. Has same amount of decimals as base token.
 @view
 func get_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
@@ -686,6 +695,7 @@ func get_available_lptoken_addresses_usable_index{
 }
 
 
+// @notice Returns trading halt status. 1 = halted, 0 = not halted.
 @view
 func get_trading_halt{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -735,7 +745,7 @@ func set_pool_volatility_adjustment_speed{
 }
 
 
-// Here just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
+// @dev Here just to make sure testnet's migration can go through correctly. Will be DEPRECATED later
 @external
 func set_pool_volatility_adjustment_speed_external{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -820,7 +830,7 @@ func append_to_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 }
 
 
-// inefficiency and wastefulness of this functions doesn't matter, since it will be axed before going to mainnet.
+// inefficiency and wastefulness of the functions below doesn't matter, since it will be axed before going to mainnet.
 // used only in removal of an option, which is something that will never happen
 func remove_and_shift_available_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
