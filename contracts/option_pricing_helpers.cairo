@@ -134,10 +134,11 @@ func convert_amount_to_option_currency_from_base_uint256{
         with_attr error_message("Option size too low, quot {quotlow}"){
             assert_uint256_lt(Uint256(0,0), quot);
         }
-        let ACCEPTED_AMT_DISCARDED = Uint256(10000, 0); // one cent in case of ETH/USDC
+        let ACCEPTED_AMT_DISCARDED = Uint256(0, 0);
         local remlow = rem.low;
-        with_attr error_message("implied rounding higher than max allowed, rem {remlow}"){
-            assert_uint256_lt(rem, ACCEPTED_AMT_DISCARDED);
+        with_attr error_message("implied rounding higher than max allowed, rem {remlow} - please use quntized amount"){
+            assert rem.low = 0;
+            assert rem.high = 0;
         }
         return (converted_amount=quot);
     }

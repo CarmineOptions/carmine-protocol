@@ -286,6 +286,9 @@ func fail_if_existing_pool_definition_from_lptoken_address{
 }(
     lptoken_addres: Address
 ) {
+    // This function is here, because we need to check if given token has been already used or not,
+    // but getters are failing for "not used" since they don't find any token.
+
     alloc_locals;
 
     let (pool) = pool_definition_from_lptoken_address.read(lptoken_addres);
