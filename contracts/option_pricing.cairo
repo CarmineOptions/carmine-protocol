@@ -109,11 +109,12 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
 
 // @notice Helper function
 // @dev This is just "extracted" code from the main function so that it wouldn't be really long
-//      "noondle".
+//      "noodle".
 // @param is_frac: bool that determines whether the price to strike is actually price to strike
 //      or strike to price
 // @param ln_price_to_strike: ln(price/strike) or ln(strike/price) depending on "is_frac"
-// @param risk_plus_sigma_squared_half_time:
+// @param risk_plus_sigma_squared_half_time: "aggregated number" that is used inside
+//      of the Black-Scholes model.
 // @return Returns values that are needed for further computation.
 func _get_d1_d2_numerator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     is_frac: felt, ln_price_to_strike: felt, risk_plus_sigma_squared_half_time: felt
@@ -143,7 +144,7 @@ func _get_d1_d2_numerator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
 
 // @notice Helper function
 // @dev This is just "extracted" code from the main function so that it wouldn't be really long
-//      "noondle".
+//      "noodle".
 // @param is_pos_d1: "intermeidary" value needed inside of the Black-Scholes
 // @param d_1: "intermeidary" value needed inside of the Black-Scholes
 // @param denominator: "intermeidary" value needed inside of the Black-Scholes
