@@ -1,6 +1,9 @@
-// Helper function for pricing options
-
 %lang starknet
+
+//
+// @title Helper module for options pricing
+//
+
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_nn_le, assert_nn, assert_not_zero
@@ -26,6 +29,17 @@ from contracts.constants import (
 from contracts.types import (Math64x61_, OptionType, OptionSide, Int, Address)
 
 
+// @notice Selects value based on option type and if call adjusts the value to base tokens
+// @dev  Call and Put premia on input are in quote tokens (in USDC in case of ETH/USDC)
+//      This function puts them into their respective currency
+//      (and selects the premia based on option_type)
+//          - call premia into base token (ETH in case of ETH/USDC)
+//          - put premia stays the same, ie in quote tokens (USDC in case of ETH/USDC)
+// @param call_premia: Call premium
+// @param put_premia: Put premium
+// @param option_type: Option type - 0 for call and 1 for put
+// @param underlying_price: Price of the underlying (spot)
+// @return Select either put or call premium and if call adjust by price of underlying
 func select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     call_premia: Math64x61_,
     put_premia: Math64x61_,
@@ -48,6 +62,15 @@ func select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 }
 
 
+// @notice Converts amount to the currency used by the option
+// @dev Amount is in base tokens (in ETH in case of ETH/USDC)
+//      This function puts amount into the currency required by given option_type
+//          - for call into base token (ETH in case of ETH/USDC)
+//          - for put into quote token (USDC in case of ETH/USDC)
+// @param amount: Amount to be converted
+// @param option_type: Option type - 0 for call and 1 for put
+// @param strike_price: Strike price
+// @return Converted amount value
 func convert_amount_to_option_currency_from_base{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -70,6 +93,16 @@ func convert_amount_to_option_currency_from_base{
 }
 
 
+// @notice Converts amount to the currency used by the option
+// @dev Amount is in base tokens (in ETH in case of ETH/USDC)
+//      This function puts amount into the currency required by given option_type
+//          - for call into base token (ETH in case of ETH/USDC)
+//          - for put into quote token (USDC in case of ETH/USDC)
+// @param amount: Amount to be converted
+// @param option_type: Option type - 0 for call and 1 for put
+// @param strike_price: Strike price
+// @param base_token_address: Address of the base token
+// @return Converted amount value
 func convert_amount_to_option_currency_from_base_uint256{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 }(
@@ -112,6 +145,12 @@ func convert_amount_to_option_currency_from_base_uint256{
 }
 
 
+// @notice Gets time till maturity in years
+// @dev Calculates time till maturity in terms of Math64x61 type
+//      Inputted maturity if not in the same type -> has to converted... and it is number
+//      of seconds corresponding to unix timestamp
+// @param maturity: Maturity as unix timestamp
+// @return time till maturity
 func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) -> (
     time_till_maturity: Math64x61_
 ) {
@@ -138,6 +177,11 @@ func get_time_till_maturity{syscall_ptr: felt*, range_check_ptr}(maturity: Int) 
 }
 
 
+// @notice Adds premium and fees (for long add and for short diff)
+// @param side: 0 for long and 1 for short
+// @param total_premia_before_fees: premium in Math64x61
+// @param total_fees: fees in Math64x61
+// @return Premium adjusted for fees
 func add_premia_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     side: OptionSide, total_premia_before_fees: Math64x61_, total_fees: Math64x61_
 ) -> (total_premia: Math64x61_) {
@@ -156,18 +200,14 @@ func add_premia_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 }
 
 
-func _get_vol_update_denominator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    relative_option_size: Math64x61_, side: OptionSide
-) -> (relative_option_size: Math64x61_) {
-    if (side == TRADE_SIDE_LONG) {
-        let long_denominator = Math64x61.sub(Math64x61.ONE, relative_option_size);
-        return (long_denominator,);
-    }
-    let short_denominator = Math64x61.add(Math64x61.ONE, relative_option_size);
-    return (short_denominator,);
-}
-
-
+// @notice Calculates new volatility and trade volatility
+// @param current_volatility: Current volatility in Math64x61
+// @param option_size: Option size in Math64x61... for example 1.2 size is represented as 1.2*2**61
+// @param option_type: 0 for CALL and 1 for put
+// @param side: 0 for LONG and 1 for SHORT
+// @param strike_price: strike price in Math64x61
+// @param pool_volatility_adjustment_speed: parameter that determines speed of volatility adjustments
+// @return New volatility and trade volatility
 func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     current_volatility: Math64x61_,
     option_size: Math64x61_,
@@ -205,12 +245,22 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 }
 
 
+// @notice Converts option size into pool's currency
+// @dev for call it does no transform and for put it multiplies the size by strike
+// @param option_size: Option size to be converted
+// @param option_type: Option type - 0 for call and 1 for put
+// @param strike_price: Strike price
+// @return Converted size
 func _get_option_size_in_pool_currency{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(option_size: Math64x61_, option_type: OptionType, underlying_price: Math64x61_) -> (relative_option_size: Math64x61_) {
+}(
+    option_size: Math64x61_,
+    option_type: OptionType,
+    strike_price: Math64x61_
+) -> (relative_option_size: Math64x61_) {
     if (option_type == OPTION_CALL) {
         return (option_size,);
     }
-    let adjusted_option_size = Math64x61.mul(option_size, underlying_price);
+    let adjusted_option_size = Math64x61.mul(option_size, strike_price);
     return (adjusted_option_size,);
 }

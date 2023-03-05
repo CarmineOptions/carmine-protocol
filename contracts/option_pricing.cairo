@@ -3,6 +3,15 @@
 
 %lang starknet
 
+
+//
+// @title Module for options pricing
+// @notice Module with collection of functions that result in options being priced
+// @dev In reality the AMM is not pricing options through Black-Scholes model, but uses the model
+//      for price adjustments!!! This makes the standard problems of Black-Scholes model
+//      not important
+//
+
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import sign, assert_le, unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le
@@ -24,6 +33,10 @@ const INV_EXP_TEN = 104685105675288;
 
 
 
+// @notice Calculates 1/exp(x) for big x
+// @dev Leverages the fact that 1/exp(x+a) = 1/(exp(x)*exp(a))
+// @param x: number in Math64x61 form
+// @return Returns 1/exp(x) in Math64x61 form
 func inv_exp_big_x{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> (
     x: felt
 ) {
@@ -47,7 +60,13 @@ func inv_exp_big_x{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 }
 
 
-// Calculates approximate value of standard normal CDF
+// @notice Calculates approximate value of standard normal CDF
+// @dev The approximation works well between -8 and 8. Its not the best approximation out there,
+//      but its not iterative, its simple to compute and works well on a wide range of values.
+//      There is no need for perfect approximation since this is part of the Black-Scholes model
+//      and that is used for updating prices.
+// @param x: number in Math64x61 form
+// @return Returns std normal cdf value in Math64x61 form
 func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(x: felt) -> (
     res: felt
 ) {
@@ -66,6 +85,8 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     // Max value of x for standard normal distribution function is currently 8, since after that, 
     // Math64x61 runs out of precision and this function returns only 0, which is sub-optimal
     with_attr error_message("option_pricing.std_normal_cdf received X value higher than 8") {
+        // Only x < 8 is being checked and not -8 < x since this case is dealt with in the above
+        // "if condition"
         assert_le(x, EIGHT);
     }
 
@@ -85,6 +106,16 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     return (res=res);
 }
 
+
+// @notice Helper function
+// @dev This is just "extracted" code from the main function so that it wouldn't be really long
+//      "noodle".
+// @param is_frac: bool that determines whether the price to strike is actually price to strike
+//      or strike to price
+// @param ln_price_to_strike: ln(price/strike) or ln(strike/price) depending on "is_frac"
+// @param risk_plus_sigma_squared_half_time: "aggregated number" that is used inside
+//      of the Black-Scholes model.
+// @return Returns values that are needed for further computation.
 func _get_d1_d2_numerator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     is_frac: felt, ln_price_to_strike: felt, risk_plus_sigma_squared_half_time: felt
 ) -> (numerator: felt, is_pos_d_1: felt) {
@@ -110,6 +141,14 @@ func _get_d1_d2_numerator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     }
 }
 
+
+// @notice Helper function
+// @dev This is just "extracted" code from the main function so that it wouldn't be really long
+//      "noodle".
+// @param is_pos_d1: "intermeidary" value needed inside of the Black-Scholes
+// @param d_1: "intermeidary" value needed inside of the Black-Scholes
+// @param denominator: "intermeidary" value needed inside of the Black-Scholes
+// @return Returns values that are needed for further computation.
 func _get_d1_d2_d_2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     is_pos_d1: felt, d_1: felt, denominator: felt
 ) -> (d_2: felt, is_pos_d_2: felt) {
@@ -128,7 +167,14 @@ func _get_d1_d2_d_2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     }
 }
 
-// Calculates D_1 and D_2 for the Black-Scholes model
+
+// @notice Calculates D_1 and D_2 for the Black-Scholes model
+// @param sigma: sigma, used as volatility... 80% volatility is represented as 0.8*2**61
+// @param time_till_maturity_annualized: Annualized time till maturity represented as Math64x61
+// @param strike_price: strike in Math64x61
+// @param underlying_price: price of underlying asset in Math64x61
+// @param risk_free_rate_annualized: risk free rate that is annualized
+// @return Returns D1 and D2 needed in the Black Scholes model and their sign
 func d1_d2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     sigma: felt,
     time_till_maturity_annualized: felt,
@@ -179,6 +225,11 @@ func d1_d2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (d_1=d_1, is_pos_d_1=is_pos_d1, d_2=d_2, is_pos_d_2=is_pos_d_2);
 }
 
+
+// @notice Calculates STD normal CDF
+// @param d: d value (either d_1 or d_2) in the BS model
+// @param is_pos: sign of d
+// @return Returns the std normal CDF value of D
 func adjusted_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     d: felt, is_pos: felt
 ) -> (res: felt) {
@@ -192,7 +243,14 @@ func adjusted_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     }
 }
 
-// Calculates value for Black Scholes
+
+// @notice Calculates value for Black Scholes
+// @param sigma: sigma, used as volatility... 80% volatility is represented as 0.8*2**61
+// @param time_till_maturity_annualized: Annualized time till maturity represented as Math64x61
+// @param strike_price: strike in Math64x61
+// @param underlying_price: price of underlying asset in Math64x61
+// @param risk_free_rate_annualized: risk free rate that is annualized
+// @return Returns call and put option premium
 @view
 func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     sigma: felt,
