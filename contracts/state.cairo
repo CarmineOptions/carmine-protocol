@@ -215,7 +215,7 @@ func set_lptoken_address_for_given_option{
         assert_not_zero(lptoken_address);
     }
     with_attr error_message(
-        "Definition of pool (option type) for set_lptoken_address_for_given_option"
+        "Unknown option_type: {option_type}, ie option_type is neither a PUT or CALL in set_lptoken_address_for_given_option"
     ){
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }
