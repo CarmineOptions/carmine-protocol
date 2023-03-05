@@ -32,18 +32,13 @@ from starkware.starknet.common.syscalls import get_block_timestamp
 @external
 func __setup__{syscall_ptr: felt*, range_check_ptr}(){
     // Makefile takes care of generation of build/ammcontract.cairo. Proxy is mocked.
-    // TODO use dict notation in contract constructors
-
     deploy_setup();
-
     return ();
 }
 
 
 @external
 func test_lpt_attrs{syscall_ptr: felt*, range_check_ptr}() {
-    // FIXME: missing tests for the state storage_vars in AMM (that the opt tokens were correctly
-    // added)
     AdditionOfLPTokens.lpt_attrs();
     return ();
 }
@@ -93,7 +88,6 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
     return ();
 }
 
-// FIXME: This needs to be fixed, more info in the test itself
 @external
 func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
     // test what happens when more capital is withdrawn than there is unlocked
@@ -115,7 +109,6 @@ func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check
 //     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_put();
 //     return ();
 // }
-
 
 // FIXME: This is also broken somewhere in the expire_option_token
 // @external

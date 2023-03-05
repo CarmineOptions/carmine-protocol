@@ -765,7 +765,7 @@ namespace SeriesOfTrades {
             )
         %}
 
-        %{ expect_revert(error_message = 'SafeUint256: subtraction overflow')%} // FIXME: Should we add our own checks here?
+        %{ expect_revert(error_message = 'SafeUint256: subtraction overflow')%} 
 
         // CLOSE LONG CALL
         let (_) = IAMM.trade_close(
