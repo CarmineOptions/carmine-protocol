@@ -225,6 +225,11 @@ namespace IAMM {
     func get_lpool_balance(lptoken_address: Address) -> (res: Uint256) {
     }
 
+    func get_max_lpool_balance(pooled_token_addr: Address) -> (max_balance: Uint256){
+    }
+
+    func set_max_lpool_balance(pooled_token_addr: Address, max_lpool_bal: Uint256){
+    }
 
     func get_pool_locked_capital(lptoken_address: Address) -> (res: Uint256) {
     }

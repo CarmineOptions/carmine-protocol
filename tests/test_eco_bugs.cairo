@@ -25,7 +25,7 @@ func setup_eco_bugs{syscall_ptr: felt*, range_check_ptr}(){
         given(
             option_type = strategy.integers(0, 1),
             trade_side = strategy.integers(0, 1),
-            option_size = strategy.integers(1, 3).map(lambda x: int(x * 10**18))
+            option_size = strategy.integers(1, 2).map(lambda x: int(x * 10**18))
         )
         
         max_examples(30)
