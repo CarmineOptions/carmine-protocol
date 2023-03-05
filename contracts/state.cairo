@@ -75,30 +75,6 @@ func max_lpool_balance(pooled_token_addr: Address) -> (res: Uint256) {
 }
 
 
-@external
-func migrate_option_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) {
-    alloc_locals;
-    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
-    let (lpool_underlying_token: Address) = get_underlying_token_address(lptoken_address);
-
-    let (currval: Math64x61_) = option_position.read(lptoken_address, option_side, maturity, strike_price);
-    let newval: Int = toInt_balance(currval, lpool_underlying_token);
-
-    set_option_position(lptoken_address, option_side, maturity, strike_price, newval);
-    return ();
-}
-
-
-// DEPRECATED
-@storage_var
-func option_position(
-    lptoken_address: Address, option_side: OptionSide, maturity: Int, strike_price: Math64x61_
-) -> (res: Math64x61_) {
-}
-
-
 // Mapping from option params to pool's position
 // Options held by the pool do not get their option tokens, which is why this storage_var exists.
 @storage_var
