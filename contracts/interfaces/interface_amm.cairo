@@ -2,7 +2,7 @@
 
 from contracts.types import (
     Address, OptionType, Math64x61_, OptionSide, Int, Option, Bool, OptionWithPremia, PoolInfo,
-    UserPoolInfo
+    UserPoolInfo, Pool
 )
 from starkware.cairo.common.uint256 import Uint256
 
@@ -134,7 +134,23 @@ namespace IAMM {
     }
 
 
+    func get_value_of_position(
+        option: Option,
+        position_size: Math64x61_,
+        option_type: OptionType,
+        current_volatility: Math64x61_
+    ) -> (position_value: Math64x61_){
+    }
+
+
     func get_all_poolinfo() -> (pool_info_len: felt, pool_info: PoolInfo*) {
+    }
+
+
+    func get_option_info_from_addresses(
+        lptoken_address: Address,
+        option_token_address: Address
+    ) -> (option: Option) {
     }
 
 
@@ -169,48 +185,6 @@ namespace IAMM {
     }
 
 
-    func mint_option_token(
-        currency_address: felt,
-        option_token_address: felt,
-        amount: felt,
-        option_side: felt,
-        option_type: felt,
-        maturity: felt,
-        strike: felt,
-        premia: felt,
-        fees: felt,
-        underlying_price: felt,
-    ) {
-    }
-
-
-    func burn_option_token(
-        option_token_address: felt,
-        amount: felt,
-        option_side: felt,
-        option_type: felt,
-        maturity: felt,
-        strike: felt,
-        premia: felt,
-        fees: felt,
-        underlying_price: felt,
-    ) {
-    }
-
-
-    func expire_option_token(
-        currency_address: felt,
-        option_token_address: felt,
-        option_type: felt,
-        option_side: felt,
-        strike_price: felt,
-        underlying_price: felt,
-        amount: felt,
-        maturity: felt,
-    ) {
-    }
-
-
     func expire_option_token_for_pool(
         lptoken_address: Address,
         option_side: OptionSide,
@@ -239,6 +213,58 @@ namespace IAMM {
     }
 
     func get_pool_locked_capital(lptoken_address: Address) -> (res: Uint256) {
+    }
+
+
+    func get_available_options(lptoken_address: Address, order_i: Int) -> (option: Option) {
+    }
+
+
+    func get_available_options_usable_index(lptoken_address: Address, starting_index: Int) -> (
+        usable_index: Int
+    ) {
+    }
+
+
+    func get_lptoken_address_for_given_option(
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionType
+    ) -> (lptoken_address: Address) {
+    }
+
+
+    func get_pool_definition_from_lptoken_address(lptoken_addres: Address) -> (pool: Pool) {
+    }
+
+
+    func get_option_type(lptoken_address: Address) -> (option_type: OptionType) {
+    }
+
+
+    func get_pool_volatility_separate(
+        lptoken_address: Address, maturity: Int, strike_price: Math64x61_
+    ) -> (pool_volatility: Math64x61_) {
+    }
+
+
+    func get_underlying_token_address(lptoken_address: Address) -> (
+        underlying_token_address_: Address
+    ) {
+    }
+
+
+    func get_available_lptoken_addresses_usable_index(starting_index: Int) -> (usable_index: Int) {
+    }
+
+
+    func get_pool_volatility_adjustment_speed(lptoken_address: Address) -> (res: Math64x61_) {
+    }
+
+
+    func set_pool_volatility_adjustment_speed_external(
+        lptoken_address: Address, new_speed: Math64x61_
+    ) -> () {
     }
 
 
@@ -274,8 +300,33 @@ namespace IAMM {
     }
 
 
-    func set_pool_volatility_adjustment_speed(
-        lptoken_address: Address, new_speed: Math64x61_
-    ) -> () {
+    func black_scholes(
+        sigma: felt,
+        time_till_maturity_annualized: felt,
+        strike_price: felt,
+        underlying_price: felt,
+        risk_free_rate_annualized: felt,
+    ) -> (call_premia: felt, put_premia: felt) {
     }
+
+
+    func empiric_median_price(key: felt) -> (price: Math64x61_) {
+    }
+
+
+    func initializer(proxy_admin: felt) {
+    }
+
+
+    func upgrade(new_implementation: felt) {
+    }
+
+
+    func setAdmin(address: felt) {
+    }
+
+
+    func getImplementationHash() -> (implementation_hash: felt) {
+    }
+
 }

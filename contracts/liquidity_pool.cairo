@@ -161,6 +161,7 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
 // @param underlying_amt: Amount of underlying tokens, in Uint256!!!
 // @return lpt_amt: How many LP tokens correspond to the given amount of underlying token
 //      in Uint256!!!
+@view
 func get_lptokens_for_underlying{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address,
     underlying_amt: Uint256
