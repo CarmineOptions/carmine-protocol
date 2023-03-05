@@ -74,6 +74,10 @@ func option_token_address(
 func max_lpool_balance(pooled_token_addr: Address) -> (res: Uint256) {
 }
 
+// Max option size per user as percentage of volatility adjustment speed
+@storage_var
+func max_option_size_percent_of_voladjspd() -> (res: Int) {
+}
 
 // Mapping from option params to pool's position
 // Options held by the pool do not get their option tokens, which is why this storage_var exists.
@@ -371,6 +375,7 @@ func get_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         return (maxbal, );
 }
 
+// External here is just to make sure testnet's migration can go through correctly. Will be DEPRICATED later
 @external
 func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pooled_token_addr: Address, max_lpool_bal: Uint256) {
@@ -379,11 +384,33 @@ func set_max_lpool_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
             Proxy.assert_only_admin();
         }
     
-        with_attr error_message("Max lpool balance can't be negative") {
+        with_attr error_message("max lpool balance can't be negative") {
             assert_uint256_le(Uint256(0, 0), max_lpool_bal);
         }
         max_lpool_balance.write(pooled_token_addr, max_lpool_bal);
         return ();
+}
+
+@external
+func set_max_opt_size_perc{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    max_opt_size_as_perc_of_vol_adjspd: Int
+){
+    with_attr error_message("Max opt size perc can be set only by admin"){
+        Proxy.assert_only_admin();
+    }
+    with_attr error_message("Max opt size perc can't be negative") {
+        assert_nn(max_opt_size_as_perc_of_vol_adjspd);
+    }
+
+    max_option_size_percent_of_voladjspd.write(max_opt_size_as_perc_of_vol_adjspd);
+    
+    return ();
+}
+
+@view
+func get_max_opt_size_perc{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: Int){
+    let (res) = max_option_size_percent_of_voladjspd.read();
+    return (res, );
 }
 
 @view
