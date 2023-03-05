@@ -7,6 +7,7 @@ from types import Math64x61_
 from constants import EMPIRIC_ORACLE_ADDRESS
 from tests.itest_specs.setup import deploy_setup
 from tests.itest_specs.basic_round_trip.long_put import LongPutRoundTrip
+from tests.itest_specs.basic_round_trip.bla import BLA
 from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip
 from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
 from tests.itest_specs.basic_round_trip.short_call import ShortCallRoundTrip
@@ -92,6 +93,12 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
     // test what happens when more capital is withdrawn than there is unlocked
     WithdrawLiquidity.withdraw_liquidity_not_enough_unlocked();
+    return ();
+}
+
+@external
+func test_bla{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    BLA.bla();
     return ();
 }
 
