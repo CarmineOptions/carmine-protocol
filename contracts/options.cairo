@@ -5,8 +5,6 @@
 // @notice Module that deals with minting, burning and expirying options for users.
 //
 
-from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
-
 // Functions related to option token minting, option accouting, ...
 
 

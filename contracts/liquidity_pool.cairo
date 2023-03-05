@@ -279,6 +279,9 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 ){
     alloc_locals;
 
+    // 1) Check that owner (and no other entity) is adding the lptoken
+    Proxy.assert_only_admin();
+
     with_attr error_message("Received unknown option type(={option_type}) in add_lptoken"){
         assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
     }
@@ -296,9 +299,6 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     with_attr error_message("Quote token has total supply lower than 1"){
         assert_uint256_le(Uint256(1, 0), supply_quote);
     }
-
-    // 1) Check that owner (and no other entity) is adding the lptoken
-    Proxy.assert_only_admin();
 
     // 2) Add lptoken_address into a storage_var of lptoken_addresses
     let (lptoken_usable_index) = get_available_lptoken_addresses_usable_index(0);
@@ -334,6 +334,7 @@ func add_lptoken{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     set_pool_volatility_adjustment_speed(lptoken_address, volatility_adjustment_speed);
 
     // 5) Set max lpool balance
+    // Overwrites the balance for all other pools with the same underlying token.
     set_max_lpool_balance(pooled_token_addr, max_lpool_bal);
 
     return ();
