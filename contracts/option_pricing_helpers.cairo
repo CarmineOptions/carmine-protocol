@@ -228,7 +228,7 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     );
 
     let _relative_option_size = Math64x61.div(option_size_in_pool_currency, pool_volatility_adjustment_speed);
-    let hundred = Math64x61.fromFelt(100);
+    const hundred = 230584300921369395200; // Math64x61.fromFelt(100);
     let relative_option_size = Math64x61.mul(_relative_option_size, hundred);
 
     if (side == TRADE_SIDE_LONG) {
