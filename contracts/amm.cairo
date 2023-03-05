@@ -10,6 +10,7 @@ from starkware.cairo.common.uint256 import assert_uint256_le
 from starkware.starknet.common.syscalls import get_block_timestamp, get_caller_address
 from math64x61 import Math64x61
 from lib.pow import pow10
+from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
 
 from contracts.constants import (
     SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES,
@@ -88,6 +89,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
     alloc_locals;
 
+    ReentrancyGuard.start();
     with_attr error_message("do_trade premia calculation and updates failed") {
         // 0) Helper values
         with_attr error_message("conversions failed in do_trade"){
@@ -209,6 +211,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         underlying_price=underlying_price,
     );
 
+    ReentrancyGuard.end();
     return (premia=premia);
 }
 
@@ -245,7 +248,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // to acquiring the option token.
 
     alloc_locals;
-
+    ReentrancyGuard.start();
     // 0) Helper values
     with_attr error_message("conversions failed in close_position"){
         let (opposite_side) = get_opposite_side(side);
@@ -346,6 +349,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
             underlying_price=underlying_price
         );
     }
+    ReentrancyGuard.end();
     
     return (premia=premia);
 }

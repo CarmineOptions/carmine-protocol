@@ -876,7 +876,6 @@ func is_option_available{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         maturity=maturity,
         strike_price=strike_price
     );
-    // FIXME: create unit test for this
     if (option_address == 0) {
         return (FALSE,);
     }
