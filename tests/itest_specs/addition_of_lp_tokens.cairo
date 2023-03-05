@@ -4,8 +4,8 @@ from interfaces.interface_lptoken import ILPToken
 from interfaces.interface_amm import IAMM
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.cairo.common.uint256 import Uint256
 from math64x61 import Math64x61
-
 
 namespace AdditionOfLPTokens {
     func lpt_attrs{syscall_ptr: felt*, range_check_ptr}() {
@@ -123,7 +123,9 @@ namespace AdditionOfLPTokens {
             base_token_address=myeth_addr,
             option_type=2, // option with type '2' does not exist
             lptoken_address=lpt_call_addr,
-            volatility_adjustment_speed = 1 // Does not matter here
+            pooled_token_addr=myeth_addr,
+            volatility_adjustment_speed = 1, // Does not matter here
+            max_lpool_bal = Uint256(0, 0)
         );
 
         return ();
