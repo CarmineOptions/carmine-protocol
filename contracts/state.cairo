@@ -459,7 +459,6 @@ func set_pool_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     return ();
 }
 
-@external
 func set_pool_volatility_separate{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     lptoken_address: Address, maturity: Int, strike_price: Math64x61_, volatility: Math64x61_
 ) {
