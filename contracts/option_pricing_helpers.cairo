@@ -70,37 +70,6 @@ func select_and_adjust_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
 // @param amount: Amount to be converted
 // @param option_type: Option type - 0 for call and 1 for put
 // @param strike_price: Strike price
-// @return Converted amount value
-func convert_amount_to_option_currency_from_base{
-    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-}(
-    amount: Math64x61_,
-    option_type: OptionType,
-    strike_price: Math64x61_
-) -> (converted_amount: Math64x61_) {
-    // Amount is in base tokens (in ETH in case of ETH/USDC)
-    // This function puts amount into the currency required by given option_type
-    //  - for call into base token (ETH in case of ETH/USDC)
-    //  - for put into quote token (USDC in case of ETH/USDC)
-
-    assert (option_type - OPTION_CALL) * (option_type - OPTION_PUT) = 0;
-
-    if (option_type == OPTION_PUT) {
-        let adjusted_amount = Math64x61.mul(amount, strike_price);
-        return (converted_amount=adjusted_amount);
-    }
-    return (converted_amount=amount);
-}
-
-
-// @notice Converts amount to the currency used by the option
-// @dev Amount is in base tokens (in ETH in case of ETH/USDC)
-//      This function puts amount into the currency required by given option_type
-//          - for call into base token (ETH in case of ETH/USDC)
-//          - for put into quote token (USDC in case of ETH/USDC)
-// @param amount: Amount to be converted
-// @param option_type: Option type - 0 for call and 1 for put
-// @param strike_price: Strike price
 // @param base_token_address: Address of the base token
 // @return Converted amount value
 func convert_amount_to_option_currency_from_base_uint256{
@@ -134,9 +103,8 @@ func convert_amount_to_option_currency_from_base_uint256{
         with_attr error_message("Option size too low, quot {quotlow}"){
             assert_uint256_lt(Uint256(0,0), quot);
         }
-        let ACCEPTED_AMT_DISCARDED = Uint256(0, 0);
         local remlow = rem.low;
-        with_attr error_message("implied rounding higher than max allowed, rem {remlow} - please use quntized amount"){
+        with_attr error_message("implied rounding, rem {remlow} - please use qauntized amount"){
             assert rem.low = 0;
             assert rem.high = 0;
         }

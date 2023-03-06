@@ -67,7 +67,6 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     }
     
     // 2) Update following
-    let hundred = Math64x61.fromFelt(100);
     set_pool_volatility_separate(
         lptoken_address=lptoken_address,
         maturity=maturity,
@@ -191,7 +190,7 @@ func mint_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
             let (max_opt_perc) = get_max_option_size_percent_of_voladjspd();
             let max_opt_perc_math = Math64x61.fromFelt(max_opt_perc);
-            let hundred = Math64x61.fromFelt(100);
+            const hundred = 230584300921369395200; // Math64x61.fromFelt(100);
             let ratio = Math64x61.div(max_opt_perc_math, hundred);
 
             let max_optsize_m64x61 = Math64x61.mul(ratio, adjspd);
@@ -474,6 +473,7 @@ func _mint_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         );
         let size_to_increase_long_position = option_size - size_to_be_unlocked_in_base;
         let new_pools_long_position = pools_long_position + size_to_increase_long_position;
+        assert_nn(new_pools_long_position);
         set_option_position(
             lptoken_address, TRADE_SIDE_LONG, maturity, strike_price, new_pools_long_position
         );
@@ -607,7 +607,7 @@ func burn_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
         let (max_opt_perc) = get_max_option_size_percent_of_voladjspd();
         let max_opt_perc_math = Math64x61.fromFelt(max_opt_perc);
-        let hundred = Math64x61.fromFelt(100);
+        const hundred = 230584300921369395200; // Math64x61.fromFelt(100);
         let ratio = Math64x61.div(max_opt_perc_math, hundred);
 
         let max_optsize_m64x61 = Math64x61.mul(ratio, adjspd);

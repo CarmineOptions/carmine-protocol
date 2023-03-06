@@ -152,7 +152,7 @@ func _get_premia_before_fees{
 
     // 5) Get premia
     with_attr error_message("helpers._get_premia_before_fees getting premia FAILED"){
-        let HUNDRED = Math64x61.fromFelt(100);
+        const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
@@ -195,6 +195,7 @@ func _get_premia_before_fees{
 // @dev options_size is always denominated in the lowest possible unit of base tokens (ETH in case
 //      of ETH/USDC), e.g. wei in case of ETH.
 //      Option size of 1 ETH would be 10**18 since 1 ETH = 10**18 wei.
+//      Here, however, we use Math64x61, which means that 1 ETH is represented as 1*2**61.
 // @param option_type: Type of the option 0 for Call, 1 for Put
 // @param option_side: Side of the option 0 for Long, 1 for Short
 // @param option_size: Size to be traded, denominated in Math64x61, which means that size 1.1 is

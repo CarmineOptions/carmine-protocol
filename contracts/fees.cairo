@@ -21,7 +21,7 @@ func get_fees{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     value: Math64x61_
 ) -> (fees: Math64x61_) {
     let fee_proportion = Math64x61.fromFelt(FEE_PROPORTION_PERCENT);
-    let hundred = Math64x61.fromFelt(100);
+    const hundred = 230584300921369395200; // Math64x61.fromFelt(100);
     let fee_proportion = Math64x61.div(fee_proportion, hundred);
     let fees = Math64x61.mul(fee_proportion, value);
     return (fees,);

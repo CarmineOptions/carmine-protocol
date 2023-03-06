@@ -111,7 +111,6 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     // Both scaled by the size of position.
     // option position is measured in base token (ETH in case of ETH/USD) that's why
     // the fromUint256_balance uses option.base_token_address
-    let (pool: Pool) = get_pool_definition_from_lptoken_address(lptoken_address);
     let (_option_position) = get_option_position(
         lptoken_address,
         option.option_side,

@@ -81,7 +81,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     quote_token_address: Address,
     base_token_address: Address,
     lptoken_address: Address,
-    limit_total_premia: Math64x61_, // Is be total premia including fees
+    limit_total_premia: Math64x61_,
 ) -> (premia: Math64x61_) {
     // options_size is always denominated in the lowest possible unit of BASE tokens (ETH in case of ETH/USDC),
     // e.g. wei in case of ETH.
@@ -158,7 +158,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         // 7) Get premia
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("error while calculating premia") {
-            let HUNDRED = Math64x61.fromFelt(100);
+            const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
             let sigma = Math64x61.div(trade_volatility, HUNDRED);
             let (call_premia, put_premia) = black_scholes(
                 sigma=sigma,
@@ -301,7 +301,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 7) Get premia
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
-    let HUNDRED = Math64x61.fromFelt(100);
+    const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
     let sigma = Math64x61.div(trade_volatility, HUNDRED);
     let (call_premia, put_premia) = black_scholes(
         sigma=sigma,
