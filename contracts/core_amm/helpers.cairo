@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.constants import (
+from constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
@@ -10,17 +10,17 @@ from contracts.constants import (
     get_opposite_side,
     get_decimal
 )
-from contracts.fees import get_fees
-from contracts.option_pricing import black_scholes
-from contracts.oracles import empiric_median_price, get_terminal_price
-from contracts.option_pricing_helpers import (
+from fees import get_fees
+from option_pricing import black_scholes
+from oracles import empiric_median_price, get_terminal_price
+from option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
     add_premia_fees,
     get_new_volatility
 )
 
-from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide, Bool
+from types import Option, Math64x61_, Address, OptionType, Int, OptionSide
 
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le

@@ -12,7 +12,7 @@ from math64x61 import Math64x61
 from lib.pow import pow10
 from openzeppelin.security.reentrancyguard.library import ReentrancyGuard
 
-from contracts.constants import (
+from constants import (
     SEPARATE_VOLATILITIES_FOR_DIFFERENT_STRIKES,
     VOLATILITY_LOWER_BOUND,
     VOLATILITY_UPPER_BOUND,
@@ -26,7 +26,7 @@ from contracts.constants import (
     get_empiric_key,
     get_opposite_side,
 )
-from contracts.events import (
+from events import (
     TradeOpen,
     TradeClose,
     TradeSettle,
@@ -34,14 +34,14 @@ from contracts.events import (
     WithdrawLiquidity,
     ExpireOptionTokenForPool
 )
-from contracts.fees import get_fees
-from contracts.option_pricing import black_scholes
-from contracts.oracles import empiric_median_price, get_terminal_price
-from contracts.types import (
+from fees import get_fees
+from option_pricing import black_scholes
+from oracles import empiric_median_price, get_terminal_price
+from types import (
     Bool, Math64x61_, OptionType, OptionSide, Int, Address, Option, Pool, PoolInfo,
     OptionWithPremia, UserPoolInfo
 )
-from contracts.option_pricing_helpers import (
+from option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
     add_premia_fees,

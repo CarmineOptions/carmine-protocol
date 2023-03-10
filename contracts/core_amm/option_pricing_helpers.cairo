@@ -19,14 +19,14 @@ from starkware.cairo.common.uint256 import (
 from math64x61 import Math64x61
 from lib.pow import pow10
 
-from contracts.constants import (
+from constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
     TRADE_SIDE_SHORT,
     get_decimal,
 )
-from contracts.types import (Math64x61_, OptionType, OptionSide, Int, Address)
+from types import (Math64x61_, OptionType, OptionSide, Int, Address)
 
 
 // @notice Selects value based on option type and if call adjusts the value to base tokens
