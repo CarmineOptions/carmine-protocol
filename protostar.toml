@@ -5,19 +5,20 @@ cairo-path = [
     "./lib/cairo_contracts/src",
     "./lib/cairo_math_64x61/contracts/cairo_math_64x61",
     "contracts/",
+    "contracts/core_amm/",
     "contracts/erc20_tokens/",
     "contracts/interfaces/",
-    "contracts/views_from_outside/"
+    "contracts/core_amm/views_from_outside/"
 ]
 
 [contracts]
 amm = [
-    "./contracts/amm.cairo",
-    "./contracts/liquidity_pool.cairo",
-    "./contracts/options.cairo",
-    "./contracts/state.cairo",
-    "./contracts/views_from_outside/view.cairo",
-    "./contracts/proxy_utils.cairo"
+    "./contracts/core_amm/amm.cairo",
+    "./contracts/core_amm/liquidity_pool.cairo",
+    "./contracts/core_amm/options.cairo",
+    "./contracts/core_amm/state.cairo",
+    "./contracts/core_amm/views_from_outside/view.cairo",
+    "./contracts/core_amm/proxy_utils.cairo"
 ]
 lptoken = ["contracts/erc20_tokens/lptoken.cairo"]
 option_token = ["contracts/erc20_tokens/option_token.cairo"]

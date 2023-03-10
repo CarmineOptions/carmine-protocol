@@ -1,7 +1,7 @@
 %lang starknet
 
-from contracts.helpers import _get_premia_before_fees
-from contracts.types import OptionWithUsersPosition
+from helpers import _get_premia_before_fees
+from types import OptionWithUsersPosition
 
 //
 // @title View Functions

@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.types import (
+from types import (
     Address, OptionType, Math64x61_, OptionSide, Int, Option, Bool, OptionWithPremia, PoolInfo,
     UserPoolInfo, Pool
 )

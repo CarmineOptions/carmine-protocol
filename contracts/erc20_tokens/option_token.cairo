@@ -21,14 +21,14 @@ from starkware.starknet.common.syscalls import get_block_timestamp
 from openzeppelin.access.ownable.library import Ownable
 from openzeppelin.token.erc20.library import ERC20
 
-from contracts.constants import (
+from constants import (
     OPTION_CALL,
     OPTION_PUT,
     TRADE_SIDE_LONG,
     TRADE_SIDE_SHORT,
     get_opposite_side,
 )
-from contracts.helpers import max
+from helpers import max
 from types import (Bool, Math64x61_, OptionType, OptionSide, Int, Address, Option)
 
 

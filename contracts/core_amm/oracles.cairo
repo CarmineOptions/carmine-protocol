@@ -10,8 +10,8 @@ from starkware.cairo.common.bool import TRUE, FALSE
 
 from math64x61 import Math64x61
 
-from contracts.constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
-from contracts.types import Int, Math64x61_
+from constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
+from types import Int, Math64x61_
 from lib.math_64x61_extended import Math64x61_div_imprecise
 from lib.pow import pow10
 
