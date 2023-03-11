@@ -5,8 +5,8 @@ from interfaces.interface_lptoken import ILPToken
 @external
 func __setup__() {
     %{
-        context.main_addr = deploy_contract("./contracts/liquidity_pool.cairo").contract_address
-        context.lpt_addr = deploy_contract("./contracts/lptoken.cairo", 
+        context.main_addr = deploy_contract("./liquidity_pool.cairo").contract_address
+        context.lpt_addr = deploy_contract("./lptoken.cairo", 
             { "name": "LPToken", "symbol": "LPT", "decimals": 18, "initial_supply": 0}) }
         }).contract_address
     %}

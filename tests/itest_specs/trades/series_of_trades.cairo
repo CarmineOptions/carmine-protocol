@@ -1,7 +1,7 @@
 %lang starknet
 
-from contracts.interfaces.interface_amm import IAMM
-from contracts.interfaces.interface_lptoken import ILPToken
+from interfaces.interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from types import Math64x61_

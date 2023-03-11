@@ -7,11 +7,11 @@ from starkware.cairo.common.pow import pow
 from math64x61 import Math64x61
 from lib.math_64x61_extended import Math64x61_div_imprecise
 
-from contracts.helpers import _get_value_of_position
-from contracts.constants import (
+from helpers import _get_value_of_position
+from constants import (
     EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMPIRIC_AGGREGATION_MODE
 )
-from contracts.types import Option
+from types import Option
 
 
 @external

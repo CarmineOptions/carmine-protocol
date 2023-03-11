@@ -11,8 +11,8 @@ from interfaces.interface_option_token import IOptionToken
 from interfaces.interface_amm import IAMM
 
 from constants import EMPIRIC_ORACLE_ADDRESS, TRADE_SIDE_LONG
-from contracts.option_pricing_helpers import get_new_volatility
-from contracts.types import Option
+from option_pricing_helpers import get_new_volatility
+from types import Option
 from tests.itest_specs.setup import deploy_setup
 
 
