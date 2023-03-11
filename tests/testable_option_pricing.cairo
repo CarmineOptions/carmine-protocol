@@ -1,11 +1,11 @@
-// Wrapper for non viewed functions in contracts/option_pricing.cairo
+// Wrapper for non viewed functions in option_pricing.cairo
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
-from contracts.option_pricing import std_normal_cdf, d1_d2
+from option_pricing import std_normal_cdf, d1_d2
 
-// wrapper for contracts.option_pricing.std_normal_cdf for purpose of unit testing
+// wrapper for option_pricing.std_normal_cdf for purpose of unit testing
 @view
 func testable_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     x: felt
@@ -14,7 +14,7 @@ func testable_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     return (res=res);
 }
 
-// wrapper for contracts.option_pricing.d1_d2 for purpose of unit testing
+// wrapper for option_pricing.d1_d2 for purpose of unit testing
 @view
 func testable_d1_d2{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     sigma: felt,

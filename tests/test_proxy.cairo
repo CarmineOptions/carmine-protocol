@@ -38,7 +38,7 @@ func __setup__{syscall_ptr: felt*, range_check_ptr}(){
 
 // Main test for testing the proxy
 // Basic description:
-//      There are some mock contracts containing DummyStruct
+//      There are some mock containing DummyStruct
 //      Each contract contains the Struct, but with slightly different fields
 //      I deploy one contract and try to read the Struct from the storage var,
 //      Then upgrade it to some other contract with slightly different Struct and see what happens

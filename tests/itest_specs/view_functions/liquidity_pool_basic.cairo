@@ -3,7 +3,7 @@
 from constants import EMPIRIC_ORACLE_ADDRESS
 from interfaces.interface_lptoken import ILPToken
 from interfaces.interface_amm import IAMM
-from contracts.types import Option
+from types import Option
 
 from math64x61 import Math64x61
 from openzeppelin.token.erc20.IERC20 import IERC20

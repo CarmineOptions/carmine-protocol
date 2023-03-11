@@ -1,8 +1,8 @@
 %lang starknet
 
-from contracts.interfaces.interface_option_token import IOptionToken
-from contracts.interfaces.interface_amm import IAMM
-from contracts.interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
 from math64x61 import Math64x61
 
 

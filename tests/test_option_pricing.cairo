@@ -1,9 +1,9 @@
-// Wrapper for non viewed functions in contracts/option_pricing.cairo
+// Wrapper for non viewed functions in option_pricing.cairo
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 
-from contracts.option_pricing import std_normal_cdf, d1_d2, black_scholes
+from option_pricing import std_normal_cdf, d1_d2, black_scholes
 
 
 

@@ -5,9 +5,9 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from tests.itest_specs.itest_utils import Stats, StatsInput, get_stats, print_stats
 from starkware.cairo.common.uint256 import Uint256
 from openzeppelin.token.erc20.IERC20 import IERC20
-from contracts.interfaces.interface_lptoken import ILPToken
-from contracts.interfaces.interface_option_token import IOptionToken
-from contracts.interfaces.interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 from math64x61 import Math64x61
 
 namespace ExpireOptionTokenForPool {
