@@ -1,0 +1,1 @@
+const PROPOSAL_VOTING_TIME_BLOCKS = 200; // TODO what is the blocktime on mainnet precisely? 30 mins? any commitment from Starkware?
