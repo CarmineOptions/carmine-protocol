@@ -13,7 +13,9 @@ using OptionType = felt;
 using OptionSide = felt; // Is enum, has 0 and 1 values.
 using Int = felt; // Is integer, ie "felt(1) = int(1)... felt(100) = int(100)"... for example maturity
 using Address = felt;
-
+using ContractType = felt; // 0 = amm, 1 = governance, 2 = CARM token
+using BlockNumber = felt;
+using VoteStatus = felt; // 0 = not voted, 1 = yay, 2 = nay
 
 //////////////////
 // Structs
@@ -62,4 +64,9 @@ struct UserPoolInfo {
     value_of_user_stake: Uint256,
     size_of_users_tokens: Uint256,
     pool_info: PoolInfo,
+}
+
+struct PropDetails {
+    impl_hash: felt,
+    to_upgrade: ContractType,
 }

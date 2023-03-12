@@ -8,7 +8,8 @@ cairo-path = [
     "contracts/core_amm/",
     "contracts/erc20_tokens/",
     "contracts/interfaces/",
-    "contracts/core_amm/views_from_outside/"
+    "contracts/core_amm/views_from_outside/",
+    "contracts/governance/"
 ]
 
 [contracts]
@@ -23,3 +24,7 @@ amm = [
 lptoken = ["contracts/erc20_tokens/lptoken.cairo"]
 option_token = ["contracts/erc20_tokens/option_token.cairo"]
 proxy = ["contracts/proxy_contract/proxy.cairo"]
+governance = [
+    "contracts/governance/proposals.cairo",
+    "contracts/governance/upgrades.cairo"
+]
