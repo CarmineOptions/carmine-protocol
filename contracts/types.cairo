@@ -15,7 +15,7 @@ using Int = felt; // Is integer, ie "felt(1) = int(1)... felt(100) = int(100)"..
 using Address = felt;
 using ContractType = felt; // 0 = amm, 1 = governance, 2 = CARM token
 using BlockNumber = felt;
-using VoteStatus = felt; // 0 = not voted, 1 = yay, 2 = nay
+using VoteStatus = felt; // 0 = not voted, 1 = yay, -1 = nay
 
 //////////////////
 // Structs
