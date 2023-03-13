@@ -1,11 +1,13 @@
 %lang starknet
 
 from starkware.starknet.common.syscalls import get_block_number, get_caller_address
-from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt
-from starkware.cairo.common.math import assert_nn_le, assert_not_zero, assert_le
+from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt
+from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn
+from starkware.cairo.common.math_cmp import is_le, is_nn
 
 from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType
-from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, GOV_TOKEN_ADDRESS, TOKEN_SHARE_REQUIRED_FOR_PROPOSAL
+from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, GOV_TOKEN_ADDRESS, NEW_PROPOSAL_QUORUM, QUORUM
+from gov_helpers import intToUint256
 from openzeppelin.token.erc20.IERC20 import IERC20
 
 @event
@@ -51,7 +53,7 @@ func _get_free_prop_id{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
 
 func assert_correct_contract_type{range_check_ptr}(contract_type: ContractType) {
-    assert_nn_le(contract_type, 2); // either 0, 1 or 2
+    assert_le(contract_type, 2); // either 0, 1 or 2
     return ();
 }
 
@@ -68,7 +70,7 @@ func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     let (total_supply) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
 
     with_attr error_message("Not enough tokens to submit proposal") {
-        let share = Uint256(low = TOKEN_SHARE_REQUIRED_FOR_PROPOSAL, high = 0);
+        let share = Uint256(low = NEW_PROPOSAL_QUORUM, high = 0);
         let (caller_balance_multiplied, carry) = uint256_mul(caller_balance, share);
         assert carry.low = 0;
         assert carry.high = 0;
@@ -95,7 +97,7 @@ func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
 
 // @notice Casts vote for the calling token holder
 // @param prop_id
-// @param opinion: 0 = not voted, 1 = yay, -1 = nay
+// @param opinion: 1 = yay, -1 = nay, 0 not allowed
 @external
 func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     prop_id: felt,
@@ -124,7 +126,10 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (end_block_number) = proposal_vote_ends.read(prop_id);
     let (curr_block_number) = get_block_number();
     with_attr error_message("voting already concluded"){
-        assert_le(curr_block_number, end_block_number);
+        // yes truly no assert_lt in Cairo 0.10.
+        let block_diff = curr_block_number - end_block_number;
+        assert_not_zero(block_diff);
+        assert_nn(block_diff);
     }
 
     // Cast vote
@@ -132,11 +137,68 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     if(opinion == -1){
         let (curr_votes) = proposal_total_nay.read(prop_id);
         let new_votes = curr_votes + caller_balance.low;
+        assert_nn(new_votes);
         proposal_total_nay.write(prop_id, new_votes);
     }else{
         let (curr_votes) = proposal_total_yay.read(prop_id);
         let new_votes = curr_votes + caller_balance.low;
+        assert_nn(new_votes);
         proposal_total_yay.write(prop_id, new_votes);
     }
     return ();
+}
+
+
+@view 
+func get_proposal_details{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt
+) -> (res: PropDetails) {
+    let (res) = proposal_details.read(prop_id);
+    return (res=res);
+}
+
+
+// @notice Returns proposal status – passed = 1, rejected = -1, voting = 0.
+// rejected due to not enough votes (didn't meet quorum) = -1
+// @dev fails if proposal doesn't exist
+@view
+func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt
+) -> (res: felt) {
+    let (end_block_number) = proposal_vote_ends.read(prop_id);
+    let (curr_block_number) = get_block_number();
+    let block_cmp = is_le(curr_block_number, end_block_number);
+    if (block_cmp == 1){
+        return (res=0);
+    }
+
+    let (nay_tally) = proposal_total_yay.read(prop_id);
+    let (yay_tally) = proposal_total_nay.read(prop_id);
+    let total_tally = yay_tally + nay_tally;
+    let total_tally_uint256 = intToUint256(total_tally);
+
+    with_attr error_message("unable to check quorum"){
+        let share = Uint256(low = QUORUM, high = 0);
+        let (tally_multiplied, carry) = uint256_mul(total_tally_uint256, share);
+        assert carry.low = 0;
+        assert carry.high = 0;
+        let (total_eligible_votes) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
+    }
+
+    let (cmp_res) = uint256_lt(total_eligible_votes, tally_multiplied);
+    if (cmp_res == 0) {
+        return (res=-1); // didn't meet quorum
+    }
+
+    let yay_or_nay = yay_tally - nay_tally;
+    if (yay_or_nay == 0){
+        return (res=-1); // yay_tally = nay_tally
+    }
+    
+    let nn = is_nn(yay_or_nay);
+    if (nn == 1) {
+        return (res=1); // yay_tally > nay_tally
+    }else{
+        return (res=0); // yay_tally < nay_tally
+    }
 }
