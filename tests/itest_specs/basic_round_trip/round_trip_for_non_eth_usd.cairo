@@ -4,10 +4,9 @@ from constants import EMPIRIC_ORACLE_ADDRESS
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from openzeppelin.token.erc20.IERC20 import IERC20
-from interface_lptoken import ILPToken
-from interface_liquidity_pool import ILiquidityPool
-from interface_option_token import IOptionToken
-from interface_amm import IAMM
+from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
+from interfaces.interface_amm import IAMM
 from types import Math64x61_
 from math64x61 import Math64x61
 from tests.itest_specs.itest_utils import Stats, StatsInput, print_stats, get_stats
@@ -38,8 +37,8 @@ namespace NonEthRoundTrip {
         let strike_price_doge = 230584300921369408; // 0.1 * 2**61
         %{
             admin_address = 123456
-            context.lpt_call_addr_doge = deploy_contract("./contracts/lptoken.cairo", [112, 12, 18, 0, 0, admin_address, context.amm_addr]).contract_address
-            context.lpt_call_addr_btc = deploy_contract("./contracts/lptoken.cairo", [113, 13, 18, 0, 0, admin_address, context.amm_addr]).contract_address 
+            context.lpt_call_addr_doge = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [112, 12, 18, 0, 0, admin_address, context.amm_addr]).contract_address
+            context.lpt_call_addr_btc = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [113, 13, 18, 0, 0, admin_address, context.amm_addr]).contract_address 
             
             # doge has 8 decimals
             # mints 100k myDoge to admin address
@@ -58,11 +57,11 @@ namespace NonEthRoundTrip {
             PUT = 1
             optype_put = PUT
             
-            context.opt_long_call_addr_doge = deploy_contract("./contracts/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_long]).contract_address
-            context.opt_short_call_addr_doge = deploy_contract("./contracts/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_short]).contract_address
+            context.opt_long_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_long]).contract_address
+            context.opt_short_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_short]).contract_address
             
-            context.opt_long_call_addr_btc = deploy_contract("./contracts/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_long]).contract_address
-            context.opt_short_call_addr_btc = deploy_contract("./contracts/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_short]).contract_address
+            context.opt_long_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_long]).contract_address
+            context.opt_short_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_short]).contract_address
             
             ids.expiry = expiry
             ids.optype_call = optype_call
@@ -92,9 +91,33 @@ namespace NonEthRoundTrip {
         let (baldoge) = IERC20.balanceOf(contract_address=mydoge_addr, account=admin_addr);
         assert baldoge.low = 10000000000000;
             
+        let fifty_k_doge_math64 = 115292150460684697600000;
+        let half_btc_math64 = 1152921504606846976;
+
+        let fifty_k_doge_math64 = 115292150460684697600000;
+
+        
         // Deploy LP Tokens
-        ILiquidityPool.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=mybtc_addr, option_type=0, lptoken_address=lpt_call_addr_btc);
-        ILiquidityPool.add_lptoken(contract_address=amm_addr, quote_token_address=myusd_addr, base_token_address=mydoge_addr, option_type=0, lptoken_address=lpt_call_addr_doge);
+        IAMM.add_lptoken(
+            contract_address=amm_addr, 
+            quote_token_address=myusd_addr, 
+            base_token_address=mybtc_addr, 
+            option_type=0, 
+            lptoken_address=lpt_call_addr_btc,
+            pooled_token_addr = mybtc_addr,
+            volatility_adjustment_speed = fifty_k_doge_math64,
+            max_lpool_bal = Uint256(10000000000000, 0)
+        );
+        IAMM.add_lptoken(
+            contract_address=amm_addr, 
+            quote_token_address=myusd_addr, 
+            base_token_address=mydoge_addr, 
+            option_type=0, 
+            lptoken_address=lpt_call_addr_doge,
+            pooled_token_addr = mydoge_addr,
+            volatility_adjustment_speed = half_btc_math64,
+            max_lpool_bal = Uint256(10000000000000, 0)
+        );
 
         // Approve funds to spend
         let max_127bit_number = 0x80000000000000000000000000000000;
@@ -116,20 +139,20 @@ namespace NonEthRoundTrip {
         %}
         // Deposit 50k Doge
         let fifty_k_doge = Uint256(low = 5000000000000, high = 0);
-        ILiquidityPool.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=mydoge_addr, quote_token_address=myusd_addr, base_token_address=mydoge_addr, option_type=0, amount=fifty_k_doge);
+        IAMM.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=mydoge_addr, quote_token_address=myusd_addr, base_token_address=mydoge_addr, option_type=0, amount=fifty_k_doge);
         let (bal_doge_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_call_addr_doge, account=admin_addr);
         assert bal_doge_lpt.low = 5000000000000;
 
         // Deposit 0.5 BTC
         let half_btc = Uint256(low = 50000000, high = 0);
-        ILiquidityPool.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=mybtc_addr, quote_token_address=myusd_addr, base_token_address=mybtc_addr, option_type=0, amount=half_btc);
+        IAMM.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=mybtc_addr, quote_token_address=myusd_addr, base_token_address=mybtc_addr, option_type=0, amount=half_btc);
         let (bal_btc_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_call_addr_btc, account=admin_addr);
         assert bal_btc_lpt.low = 50000000;
 
         // Add the options
         let hundred_m64x61 = Math64x61.fromFelt(100);
         // Add long call options
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=side_long,
             maturity=expiry,
@@ -141,7 +164,7 @@ namespace NonEthRoundTrip {
             option_token_address_=opt_long_call_addr_btc,
             initial_volatility=hundred_m64x61
         );
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=side_long,
             maturity=expiry,
@@ -154,7 +177,7 @@ namespace NonEthRoundTrip {
             initial_volatility=hundred_m64x61
         );
         // Add short call option
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=side_short,
             maturity=expiry,
@@ -166,7 +189,7 @@ namespace NonEthRoundTrip {
             option_token_address_=opt_short_call_addr_btc,
             initial_volatility=hundred_m64x61
         );
-        ILiquidityPool.add_option(
+        IAMM.add_option(
             contract_address=amm_addr,
             option_side=side_short,
             maturity=expiry,
@@ -370,9 +393,11 @@ namespace NonEthRoundTrip {
             option_side = 0,
             option_size = tenth,
             quote_token_address = myusd_addr,
-            base_token_address = mybtc_addr
+            base_token_address = mybtc_addr,
+            limit_total_premia = 230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
-        assert btc_long_premia = 115392769136953499; // 1050.9163642941874 USD 
+        assert btc_long_premia = 113462839217324380; // 1050.9163642941874 USD 
 
         let (res_long_btc_2) = get_stats(input_long_btc);
         let (res_short_btc_2) = get_stats(input_short_btc);
@@ -391,7 +416,9 @@ namespace NonEthRoundTrip {
             option_side = 0,
             option_size = ten_k,
             quote_token_address = myusd_addr,
-            base_token_address = mydoge_addr
+            base_token_address = mydoge_addr,
+            limit_total_premia = 230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
         assert doge_long_premia = 209967107235339564; // Approx 0.1 USD
         
@@ -504,7 +531,7 @@ namespace NonEthRoundTrip {
             )
         %}
         let tenth_btc = Uint256(low = 10000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=mybtc_addr,
             quote_token_address=myusd_addr,
@@ -523,7 +550,7 @@ namespace NonEthRoundTrip {
         %}
         
         let ten_k_doge = Uint256(low = 1000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=mydoge_addr,
             quote_token_address=myusd_addr,
@@ -650,7 +677,9 @@ namespace NonEthRoundTrip {
             option_side = 0,
             option_size = twentieth,
             quote_token_address = myusd_addr,
-            base_token_address = mybtc_addr
+            base_token_address = mybtc_addr,
+            limit_total_premia = -230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         );
         assert btc_long_premia = 115392769136953499; // 1050.9163642941874 USD 
 
@@ -671,7 +700,9 @@ namespace NonEthRoundTrip {
             option_side = 0,
             option_size = five_k,
             quote_token_address = myusd_addr,
-            base_token_address = mydoge_addr
+            base_token_address = mydoge_addr,
+            limit_total_premia = -230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
         assert doge_long_premia = 209967107235339564; // Approx 0.1 USD
         
@@ -790,7 +821,9 @@ namespace NonEthRoundTrip {
             option_side = 1,
             option_size = tenth,
             quote_token_address = myusd_addr,
-            base_token_address = mybtc_addr
+            base_token_address = mybtc_addr,
+            limit_total_premia = 230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
         assert btc_long_premia_4 = 115170306509226492; // 1050.9163642941874 USD 
 
@@ -811,7 +844,9 @@ namespace NonEthRoundTrip {
             option_side = 1,
             option_size = ten_k,
             quote_token_address = myusd_addr,
-            base_token_address = mydoge_addr
+            base_token_address = mydoge_addr,
+            limit_total_premia = 230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
         assert doge_long_premia = 209967107235339564; // Approx 0.1 USD
         
@@ -925,7 +960,7 @@ namespace NonEthRoundTrip {
             )
         %}
         let tenth_btc = Uint256(low = 10000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=mybtc_addr,
             quote_token_address=myusd_addr,
@@ -944,7 +979,7 @@ namespace NonEthRoundTrip {
         %}
         
         let ten_k_doge = Uint256(low = 1000000000000, high = 0);
-        ILiquidityPool.withdraw_liquidity(
+        IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=mydoge_addr,
             quote_token_address=myusd_addr,
@@ -1029,7 +1064,9 @@ namespace NonEthRoundTrip {
             option_side = 1,
             option_size = twentieth,
             quote_token_address = myusd_addr,
-            base_token_address = mybtc_addr
+            base_token_address = mybtc_addr,
+            limit_total_premia = -230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         );
         assert btc_long_premia_5 = 114524868591061853;
 
@@ -1050,7 +1087,9 @@ namespace NonEthRoundTrip {
             option_side = 1,
             option_size = five_k,
             quote_token_address = myusd_addr,
-            base_token_address = mydoge_addr
+            base_token_address = mydoge_addr,
+            limit_total_premia = -230584300921369395200000, // 100_000 to disable it
+            tx_deadline = 9999999999999999 // Disable deadline
         ); 
         assert doge_long_premia_5 = 209861521746171936;
         
@@ -1165,14 +1204,14 @@ namespace NonEthRoundTrip {
             )
         %}
 
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr_btc,
             option_side=0,
             strike_price=strike_price_btc,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr_btc,
             option_side=1,
@@ -1191,14 +1230,14 @@ namespace NonEthRoundTrip {
             )
         %}
         
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr_doge,
             option_side=0,
             strike_price=strike_price_doge,
             maturity=expiry,
         );
-        ILiquidityPool.expire_option_token_for_pool(
+        IAMM.expire_option_token_for_pool(
             contract_address=amm_addr,
             lptoken_address=lpt_call_addr_doge,
             option_side=1,

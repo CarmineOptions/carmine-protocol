@@ -11,7 +11,7 @@ from tests.itest_specs.basic_round_trip.long_call import LongCallRoundTrip
 from tests.itest_specs.basic_round_trip.short_put import ShortPutRoundTrip
 from tests.itest_specs.basic_round_trip.short_call import ShortCallRoundTrip
 from tests.itest_specs.expire_option_token_for_pool import ExpireOptionTokenForPool
-// from tests.itest_specs.basic_round_trip.round_trip_for_non_eth_usd import NonEthRoundTrip
+from tests.itest_specs.basic_round_trip.round_trip_for_non_eth_usd import NonEthRoundTrip
 from tests.itest_specs.deposit_liquidity import DepositLiquidity
 from tests.itest_specs.withdraw_liquidity import WithdrawLiquidity
 from tests.itest_specs.trades.series_of_trades import SeriesOfTrades
@@ -111,14 +111,14 @@ func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check
 // }
 
 // FIXME: This is also broken somewhere in the expire_option_token
-// @external
-// func test_non_eth_round_trip{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
-//     // test
-//     // buy call and put option
-//     // withde
-//     NonEthRoundTrip.min_round_trip_non_eth();
-//     return ();
-// }
+@external
+func test_non_eth_round_trip{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
+    // test
+    // buy call and put option
+    // withde
+    NonEthRoundTrip.min_round_trip_non_eth();
+    return ();
+}
 
 @external
 func test_deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
