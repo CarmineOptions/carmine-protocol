@@ -35,3 +35,18 @@ func getImplementationHash{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     let (implementation_hash) = Proxy.get_implementation_hash();
     return (implementation_hash = implementation_hash);
 }
+
+@external
+func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(prop_id: felt) {
+    let (status) = get_proposal_status(prop_id=prop_id);
+    with_attr error_message("Proposal not passed") {
+        assert status = 1;
+    }
+    let (prop_details) = get_proposal_details(prop_id=prop_id);
+    with_attr error_message("Invalid contract type for upgrade") {
+        assert prop_details.to_upgrade = 1;
+    }
+
+    Proxy._set_implementation_hash(new_implementation=prop_details.impl_hash);
+    return ();
+}
