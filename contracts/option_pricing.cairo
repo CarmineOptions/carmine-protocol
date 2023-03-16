@@ -258,7 +258,8 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     strike_price: felt,
     underlying_price: felt,
     risk_free_rate_annualized: felt,
-) -> (call_premia: felt, put_premia: felt) {
+    is_working_for_withdraw_or_deposit: Bool
+) -> (call_premia: felt, put_premia: felt, is_calculated_by_BS: Bool) {
     // C(S_t, t) = N(d_1)S_t - N(d_2)Ke^{-r(T-t)}
     // P(S_t, t) = Ke^{-r(T-t)}-S_t+C(S_t, t)
 
@@ -280,6 +281,12 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         underlying_price,
         risk_free_rate_annualized,
     );
+
+    if is_working_for_withdraw_or_deposit == TRUE {
+        if (d_1 > 8 & is_pos_d_1 != True){
+            return
+        }
+    }
     
     with_attr error_message("Black scholes function failed when calculating d_1"){
         let (normal_d_1) = adjusted_std_normal_cdf(d_1, is_pos_d_1);
@@ -301,6 +308,8 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     let put_option_value = Math64x61.add(
         strike_e_neg_risk_time_till_maturity, neg_underlying_price_call_value
     );
+
+    ...
 
     return (call_premia=call_option_value, put_premia=put_option_value);
 }
