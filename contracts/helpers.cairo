@@ -156,13 +156,20 @@ func _get_premia_before_fees{
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
-            let (call_premia, put_premia) = black_scholes(
+            let (call_premia, put_premia, is_extremely_high, is_extremely_low) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
             );
+
+            if (is_extremely_high == TRUE) {
+                call_premia = min(0, current_price - strike) + 0.01;
+            }
+            if (is_extremely_low...) {
+                call_premia = 0.01;
+            }
         }
     }
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
@@ -187,7 +194,7 @@ func _get_premia_before_fees{
         assert_nn(total_premia_before_fees);
     }
 
-    return (total_premia_before_fees,);
+    return (total_premia_before_fees,is_extremely_high, is_extremely_low);
 }
 
 
@@ -311,14 +318,27 @@ func _get_value_of_position{
         );
     }
 
+
     with_attr error_message("helpers._get_value_of_position failed on getting premium") {
-        let (total_premia_before_fees) = _get_premia_before_fees(
+        let (total_premia_before_fees, is_extremely_high) = _get_premia_before_fees(
             option=option,
             position_size=option_size_m64x61,
             option_type=option_type,
             current_volatility=current_volatility,
             pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
         );
+    }
+    if (is_extremely_high == TRUE) {
+        if option.option_side == long
+            total_premia_before_fees = 0.01
+        else:
+            total_premia_before_fees = 0
+
+        underlying_price >> strike
+            if option.option_side == long
+                total_premia_before_fees = underlying - strike + 0.01
+            else:
+                total_premia_before_fees = underlying - strike
     }
 
     // Get fees and total premia
