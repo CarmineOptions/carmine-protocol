@@ -6,8 +6,9 @@ from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
 from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType
-from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, GOV_TOKEN_ADDRESS, NEW_PROPOSAL_QUORUM, QUORUM
+from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, GOV_TOKEN_ADDRESS, NEW_PROPOSAL_QUORUM, QUORUM, TEAM_MULTISIG_ADDR
 from gov_helpers import intToUint256
+
 from openzeppelin.token.erc20.IERC20 import IERC20
 
 @event
@@ -34,6 +35,18 @@ func proposal_total_yay(prop_id: felt) -> (res: felt) {
 @storage_var
 func proposal_total_nay(prop_id: felt) -> (res: felt) {
 }
+
+// One investors voting power RELATIVE to other investors, not absolute.
+// Absolute voting power depends on totalSupply - balanceOf(TEAM_MULTISIG_ADDR), see vote_investor
+@storage_var
+func investor_voting_power(address: felt) -> (res: felt) {
+}
+
+// Sum of all investor_voting_power
+@storage_var
+func total_investor_distributed_power() -> (res: felt) {
+}
+
 
 func get_free_prop_id{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> (freeid: felt) {
@@ -199,6 +212,12 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     if (nn == 1) {
         return (res=1); // yay_tally > nay_tally
     }else{
-        return (res=0); // yay_tally < nay_tally
+        return (res=-1); // yay_tally < nay_tally
     }
 }
+
+
+// @notice Investors don't hold tokens as of launch. They can vote only from whitelisted addresses.
+// When investor votes, the real voting power of all investors is equivalent to totalSupply - balanceOf(TEAM_MULTISIG_ADDR).
+// The real voting power is calculated in this function. Voting power of community : team : investors is 2:1:1.
+// @dev TEAM_MULTISIG_ADDR holds the team's tokens. 
