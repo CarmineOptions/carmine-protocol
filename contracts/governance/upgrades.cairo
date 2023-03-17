@@ -4,14 +4,53 @@
 %lang starknet
 
 from proxy_library import Proxy
+from interface_governance_token import IGovernanceToken
+
 from starkware.cairo.common.cairo_builtins import HashBuiltin
+from starkware.starknet.common.syscalls import get_contract_address
 
 // Initializer
 
+// Storage_var to store the governance token address
+@storage_var
+func governance_token_address() -> (addr: felt) {
+}
+
+
+@view
+func get_governance_token_address{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (res: felt) {
+    let (addr) = governance_token_address.read();
+    return (addr,);
+}
+
+
+
 @external
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    governance_token_addr: felt,
 ) {
+    // Initialize the proxy and assert it's not yet init'd
     Proxy.initializer();
+    // This means we can't change the governance token address once the Proxy is deployed
+    // (Unless we use a different storage_var)
+
+    governance_token_address.write(governance_token_addr);
+
+    // Initialize gov token, mint the governance tokens
+
+    let initial_supply_team = Uint256(1000000000000000000, 0); // 10**18
+    // TODO add all recipients
+    let (governance_address) = get_contract_address();
+    IGovernanceToken.initializer(
+        contract_address=governance_token_addr,
+        name='Carmine development gov token',
+        symbol='CARMDEV',
+        decimals=18,
+        initial_supply=initial_supply_team,
+        recipient=TEAM_MULTISIG_ADDR,
+        proxy_admin=governance_address
+    );
+
     return ();
 }
 
@@ -49,4 +88,12 @@ func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 
     Proxy._set_implementation_hash(new_implementation=prop_details.impl_hash);
     return ();
+}
+
+@view
+func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+    version: felt
+) {
+    let version = '0.0.1';
+    return (version = version);
 }

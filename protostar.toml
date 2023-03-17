@@ -29,3 +29,4 @@ governance = [
     "contracts/governance/upgrades.cairo"
 ]
 governance_proxy = ["contracts/governance/proxy_contract_custom.cairo"]
+governance_token = ["contracts/erc20_tokens/governance_token.cairo"]

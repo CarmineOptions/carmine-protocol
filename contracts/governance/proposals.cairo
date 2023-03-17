@@ -6,7 +6,7 @@ from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
 from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType
-from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, GOV_TOKEN_ADDRESS, NEW_PROPOSAL_QUORUM, QUORUM, TEAM_MULTISIG_ADDR
+from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, NEW_PROPOSAL_QUORUM, QUORUM, TEAM_MULTISIG_ADDR
 from gov_helpers import intToUint256
 
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -77,10 +77,11 @@ func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     // Checks
 
     assert_correct_contract_type(to_upgrade);
+    let (gov_token_addr) = governance_token_address.read();
     let (caller_addr) = get_caller_address();
-    
-    let (caller_balance) = IERC20.balanceOf(contract_address=GOV_TOKEN_ADDRESS, account=caller_addr);
-    let (total_supply) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
+
+    let (caller_balance) = IERC20.balanceOf(contract_address=gov_token_addr, account=caller_addr);
+    let (total_supply) = IERC20.totalSupply(contract_address=gov_token_addr);
 
     with_attr error_message("Not enough tokens to submit proposal") {
         let share = Uint256(low = NEW_PROPOSAL_QUORUM, high = 0);
@@ -122,14 +123,14 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         assert_le(opinion, 1);
         assert_le(-1, opinion);
     }
-
+    let (gov_token_addr) = governance_token_address.read();
     let (caller_addr) = get_caller_address();
     let (curr_votestatus) = proposal_voted_by.read(prop_id, caller_addr);
     with_attr error_message("already voted"){
         assert curr_votestatus = 0;
     }
-
-    let (caller_balance) = IERC20.balanceOf(contract_address=GOV_TOKEN_ADDRESS, account=caller_addr);
+    
+    let (caller_balance) = IERC20.balanceOf(contract_address=gov_token_addr, account=caller_addr);
     with_attr error_message("governance token balance is zero or erroneous"){
         assert caller_balance.high = 0; // we store votes in felts, conversions will be done with C1.0 rewrite
         assert_not_zero(caller_balance.low);
@@ -184,18 +185,20 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     if (block_cmp == 1){
         return (res=0);
     }
-
+    
+    let (gov_token_addr) = governance_token_address.read();
     let (nay_tally) = proposal_total_yay.read(prop_id);
     let (yay_tally) = proposal_total_nay.read(prop_id);
     let total_tally = yay_tally + nay_tally;
     let total_tally_uint256 = intToUint256(total_tally);
+    
 
     with_attr error_message("unable to check quorum"){
         let share = Uint256(low = QUORUM, high = 0);
         let (tally_multiplied, carry) = uint256_mul(total_tally_uint256, share);
         assert carry.low = 0;
         assert carry.high = 0;
-        let (total_eligible_votes) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
+        let (total_eligible_votes) = IERC20.totalSupply(contract_address=gov_token_addr);
     }
 
     let (cmp_res) = uint256_lt(total_eligible_votes, tally_multiplied);
