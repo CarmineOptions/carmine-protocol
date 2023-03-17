@@ -4,6 +4,9 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import library_call, library_call_l1_handler
 from proxy_library import Proxy
 
+// Identical to OZ Proxy contract, but with our custom library that has no Admin storage_var and OwnerChanged event.
+// Probably can be removed and not deployed, IF we don't want any functions that hardwired into the proxy and impossible to remove. Which we don't before C1.0
+
 // @param implementation_hash the implementation contract hash
 // @param selector the implementation initializer function selector
 // @param calldata_len the calldata length for the initializer
@@ -66,4 +69,12 @@ func __l1_default__{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
         calldata=calldata,
     );
     return ();
+}
+
+// test, TODO remove
+@external
+func hello_world_from_proxy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+) -> (res: felt) {
+    const message = 'Hello world from proxy';
+    return (message,);
 }
