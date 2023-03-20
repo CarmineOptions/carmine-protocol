@@ -94,6 +94,11 @@ func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
     version: felt
 ) {
-    let version = '0.0.1';
+    // 0.0.1 first deployed
+    // 0.0.2 unsuccessful upgrade due to bug
+    // 0.0.3 deploy anew with vote() fixed
+    // 0.0.4 only changed the version, no changes to the code, deployed via governance! = 0x4357a4586ec2437f013dd071bd04451ac641191b5666203ff1c82c052d92dce
+    // 0.0.5 PROPOSAL_VOTING_TIME_BLOCKS = 50 (from 200), not yet deployed
+    let version = '0.0.4';
     return (version = version);
 }

@@ -41,7 +41,7 @@ async def declare_contract(filename: str):
     declare_transaction = await account.sign_declare_transaction(
         compiled_contract=bytecode, max_fee=int(1e16)
     )
-    print("Prepared declare transaction")
+    print(f'Prepared declare transaction for {filename}'.format())
     resp = await account.client.declare(transaction=declare_transaction)
     print(f'Sent declare transaction {hex(resp.transaction_hash)}'.format())
     await account.client.wait_for_tx(resp.transaction_hash)
@@ -107,7 +107,7 @@ async def deploy_everything(
 
 def main():
     asyncio.run(deploy_everything(
-       governance_class_hash=0x52889d82e15f35693b23ab2e65fa14f5b10c860e5ad655dd0bcdfbbee8d2669,
+       governance_class_hash=0x5234aa86c95c15b04ed53d54ed4ca9eb960d4739040ce79447f48fc117ec1b6, # 0.0.4 0x4357a4586ec2437f013dd071bd04451ac641191b5666203ff1c82c052d92dce
        governance_proxy_class_hash=0x3c28875512f9abeb60bab6c928dd725f074063987082cb6d7d6a7ed4d203601,
        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
        governance_token_class_hash=0x1b555006a1646575886d7eb73b6939a5105c668bdbc4e9ed33ab120ca6b60b2,

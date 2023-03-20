@@ -141,7 +141,7 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     let (curr_block_number) = get_block_number();
     with_attr error_message("voting already concluded"){
         // yes truly no assert_lt in Cairo 0.10.
-        let block_diff = curr_block_number - end_block_number;
+        let block_diff = end_block_number - curr_block_number;
         assert_not_zero(block_diff);
         assert_nn(block_diff);
     }
