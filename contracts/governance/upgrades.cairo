@@ -51,6 +51,10 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
         proxy_admin=governance_address
     );
 
+    // TODO initialize AMM, deploy option tokens, LP tokens, etc
+
+    // TODO set investor_voting_power, total_investor_distributed_power
+
     return ();
 }
 
@@ -99,6 +103,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.0.3 deploy anew with vote() fixed
     // 0.0.4 only changed the version, no changes to the code, deployed via governance! = 0x4357a4586ec2437f013dd071bd04451ac641191b5666203ff1c82c052d92dce
     // 0.0.5 PROPOSAL_VOTING_TIME_BLOCKS = 50 (from 200), not yet deployed
-    let version = '0.0.4';
+    // 0.0.6 vote_investor added
+    let version = '0.0.6';
     return (version = version);
 }
