@@ -224,3 +224,64 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 // When investor votes, the real voting power of all investors is equivalent to totalSupply - balanceOf(TEAM_MULTISIG_ADDR).
 // The real voting power is calculated in this function. Voting power of community : team : investors is 2:1:1.
 // @dev TEAM_MULTISIG_ADDR holds the team's tokens. 
+@external
+func vote_investor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt,
+    opinion: felt
+) {
+    alloc_locals;
+
+    // Checks
+    with_attr error_message("opinion must be either 1 = yay or -1 = nay"){
+        assert_not_zero(opinion);
+        assert_le(opinion, 1);
+        assert_le(-1, opinion);
+    }
+
+    let (caller_addr) = get_caller_address();
+    let (investor_voting_power_l) = investor_voting_power.read(caller_addr);
+    local investor_voting_power_local = investor_voting_power_l;
+    with_attr error_message("caller not a whitelisted investor"){
+        assert_not_zero(investor_voting_power_local);
+    }
+
+    let (curr_votestatus) = proposal_voted_by.read(prop_id, caller_addr);
+    with_attr error_message("already voted"){
+        assert curr_votestatus = 0;
+    }
+
+    let (end_block_number) = proposal_vote_ends.read(prop_id);
+    let (curr_block_number) = get_block_number();
+    with_attr error_message("voting already concluded"){
+        let block_diff = curr_block_number - end_block_number;
+        assert_not_zero(block_diff);
+        assert_nn(block_diff);
+    }
+
+    // Calculate real voting power
+    let (GOV_TOKEN_ADDRESS) = governance_token_address.read();
+    let (team_balance) = IERC20.balanceOf(contract_address=GOV_TOKEN_ADDRESS, account=TEAM_MULTISIG_ADDR);
+    let (total_supply) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
+    let total_supply_felt = total_supply.low;
+    let team_balance_felt = team_balance.low;
+    let real_investor_voting_power = total_supply_felt - team_balance_felt;
+
+    let (total_distributed_power) = total_investor_distributed_power.read();
+    let intermediate_vote_power = real_investor_voting_power * investor_voting_power_local;
+    let vote_power = intermediate_vote_power / total_distributed_power;
+
+    // Cast vote
+    proposal_voted_by.write(prop_id, caller_addr, opinion);
+    if(opinion == -1){
+        let (curr_votes) = proposal_total_nay.read(prop_id);
+        let new_votes = curr_votes + vote_power;
+        assert_nn(new_votes);
+        proposal_total_nay.write(prop_id, new_votes);
+    }else{
+        let (curr_votes) = proposal_total_yay.read(prop_id);
+        let new_votes = curr_votes + vote_power;
+        assert_nn(new_votes);
+        proposal_total_yay.write(prop_id, new_votes);
+    }
+    return ();
+}
