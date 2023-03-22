@@ -2,17 +2,21 @@
 
 from starkware.starknet.common.syscalls import get_block_number, get_caller_address
 from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt
-from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn
+from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn, unsigned_div_rem
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
-from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType
-from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, NEW_PROPOSAL_QUORUM, QUORUM, TEAM_MULTISIG_ADDR
+from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType, VoteCounts
+from gov_constants import PROPOSAL_VOTING_TIME_BLOCKS, NEW_PROPOSAL_QUORUM, QUORUM, TEAM_TOKEN_BALANCE
 from gov_helpers import intToUint256
 
 from openzeppelin.token.erc20.IERC20 import IERC20
 
 @event
 func Proposed(prop_id: felt, impl_hash: felt, to_upgrade: ContractType) {
+}
+
+@event
+func Voted(prop_id: felt, voter: Address, opinion: VoteStatus) {
 }
 
 @storage_var
@@ -37,7 +41,7 @@ func proposal_total_nay(prop_id: felt) -> (res: felt) {
 }
 
 // One investors voting power RELATIVE to other investors, not absolute.
-// Absolute voting power depends on totalSupply - balanceOf(TEAM_MULTISIG_ADDR), see vote_investor
+// Absolute voting power depends on totalSupply - TEAM_TOKEN_BALANCE, see vote_investor
 @storage_var
 func investor_voting_power(address: felt) -> (res: felt) {
 }
@@ -45,6 +49,23 @@ func investor_voting_power(address: felt) -> (res: felt) {
 // Sum of all investor_voting_power
 @storage_var
 func total_investor_distributed_power() -> (res: felt) {
+}
+
+@view 
+func get_proposal_details{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt
+) -> (res: PropDetails) {
+    let (res) = proposal_details.read(prop_id);
+    return (res=res);
+}
+
+@view
+func get_vote_counts{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt
+) -> (res: VoteCounts) {
+    let (yay) = proposal_total_yay.read(prop_id);
+    let (nay) = proposal_total_nay.read(prop_id);
+    return (res=VoteCounts(yay=yay, nay=nay));
 }
 
 
@@ -159,16 +180,8 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         assert_nn(new_votes);
         proposal_total_yay.write(prop_id, new_votes);
     }
+    Voted.emit(prop_id, caller_addr, opinion);
     return ();
-}
-
-
-@view 
-func get_proposal_details{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    prop_id: felt
-) -> (res: PropDetails) {
-    let (res) = proposal_details.read(prop_id);
-    return (res=res);
 }
 
 
@@ -185,13 +198,13 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     if (block_cmp == 1){
         return (res=0);
     }
-    
+
     let (gov_token_addr) = governance_token_address.read();
-    let (nay_tally) = proposal_total_yay.read(prop_id);
-    let (yay_tally) = proposal_total_nay.read(prop_id);
+    let (nay_tally) = proposal_total_nay.read(prop_id);
+    let (yay_tally) = proposal_total_yay.read(prop_id);
     let total_tally = yay_tally + nay_tally;
     let total_tally_uint256 = intToUint256(total_tally);
-    
+
 
     with_attr error_message("unable to check quorum"){
         let share = Uint256(low = QUORUM, high = 0);
@@ -221,9 +234,8 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
 
 
 // @notice Investors don't hold tokens as of launch. They can vote only from whitelisted addresses.
-// When investor votes, the real voting power of all investors is equivalent to totalSupply - balanceOf(TEAM_MULTISIG_ADDR).
+// When investor votes, the real voting power of all investors is equivalent to totalSupply - TEAM_TOKEN_BALANCE.
 // The real voting power is calculated in this function. Voting power of community : team : investors is 2:1:1.
-// @dev TEAM_MULTISIG_ADDR holds the team's tokens. 
 @external
 func vote_investor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     prop_id: felt,
@@ -260,15 +272,13 @@ func vote_investor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 
     // Calculate real voting power
     let (GOV_TOKEN_ADDRESS) = governance_token_address.read();
-    let (team_balance) = IERC20.balanceOf(contract_address=GOV_TOKEN_ADDRESS, account=TEAM_MULTISIG_ADDR);
     let (total_supply) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
     let total_supply_felt = total_supply.low;
-    let team_balance_felt = team_balance.low;
-    let real_investor_voting_power = total_supply_felt - team_balance_felt;
+    let real_investor_voting_power = total_supply_felt - TEAM_TOKEN_BALANCE;
 
     let (total_distributed_power) = total_investor_distributed_power.read();
     let intermediate_vote_power = real_investor_voting_power * investor_voting_power_local;
-    let vote_power = intermediate_vote_power / total_distributed_power;
+    let (vote_power, vote_power_rem) = unsigned_div_rem(intermediate_vote_power, total_distributed_power);
 
     // Cast vote
     proposal_voted_by.write(prop_id, caller_addr, opinion);
