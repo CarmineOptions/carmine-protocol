@@ -70,3 +70,8 @@ struct PropDetails {
     impl_hash: felt,
     to_upgrade: ContractType,
 }
+
+struct VoteCounts {
+    yay: felt,
+    nay: felt,
+}

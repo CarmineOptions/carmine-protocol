@@ -78,6 +78,9 @@ async def deploy_everything(
     governance_proxy_class_hash=None,
     governance_token_class_hash=None,
     generic_proxy_class_hash=None,
+    amm_class_hash=None,
+    lptoken_class_hash=None,
+    option_token_class_hash=None,
 ):
     # declare all contracts
 
@@ -93,24 +96,42 @@ async def deploy_everything(
     if governance_token_class_hash is None:
         governance_token_class_hash = await declare_contract("build/governance_token.json")
         print(f'Declared governance token contract {hex(governance_token_class_hash)}'.format())
+    if amm_class_hash is None:
+        amm_class_hash = await declare_contract("build/amm.json")
+        print(f'Declared AMM contract {hex(amm_class_hash)}'.format())
+    if lptoken_class_hash is None:
+        lptoken_class_hash = await declare_contract("build/lptoken.json")
+        print(f'Declared LP token contract {hex(lptoken_class_hash)}'.format())
+    if option_token_class_hash is None:
+        option_token_class_hash = await declare_contract("build/option_token.json")
+        print(f'Declared option token contract {hex(option_token_class_hash)}'.format())
 
     # deploy gov token
 
     gov_token_contract = await deploy_new_proxy(generic_proxy_class_hash, governance_token_class_hash, "build/proxy_abi.json", call_initializer=False)
     print(f'Deployed governance token at {hex(gov_token_contract.address)}'.format())
-    # governance contract initializer initalizes the governance token. This could be called in a multicall to prevent "frontrunning", though there is no MEV in this case.
+    # governance contract initializer initalizes the governance token (calls its initializer...). This could be called in a multicall to prevent "frontrunning", though there is no MEV in this case.
     gov_token_contract_address = gov_token_contract.address
 
-    governance_contract = await deploy_new_proxy(governance_proxy_class_hash, governance_class_hash, "build/governance_proxy_abi.json", calldata=[gov_token_contract_address])
+    # deploy AMM
+    amm_contract = await deploy_new_proxy(generic_proxy_class_hash, amm_class_hash, "build/amm_abi.json", call_initializer=False)
+    print(f'Deployed AMM at {hex(amm_contract.address)}'.format())
+    amm_contract_address = amm_contract.address
+
+    governance_init_calldata = [gov_token_contract_address, amm_contract_address]
+    governance_contract = await deploy_new_proxy(governance_proxy_class_hash, governance_class_hash, "build/governance_proxy_abi.json", calldata=governance_init_calldata)
     print(f'Deployed governance at {hex(governance_contract.address)}'.format())
 
 
 def main():
     asyncio.run(deploy_everything(
-       governance_class_hash=0x5234aa86c95c15b04ed53d54ed4ca9eb960d4739040ce79447f48fc117ec1b6, # 0.0.4 0x4357a4586ec2437f013dd071bd04451ac641191b5666203ff1c82c052d92dce
+       #governance_class_hash=0x73aa0bd03bbe7d40981283592014f0179cd0a19f26aa46be62dc09db70639ab,
        governance_proxy_class_hash=0x3c28875512f9abeb60bab6c928dd725f074063987082cb6d7d6a7ed4d203601,
        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
        governance_token_class_hash=0x1b555006a1646575886d7eb73b6939a5105c668bdbc4e9ed33ab120ca6b60b2,
+       amm_class_hash=0x2571df9988d465812bb456930491f4b9d01c1f568b0a0fa7625c41d59d1b6ab,
+       lptoken_class_hash='DONOTDECLARE',
+       option_token_class_hash='DONOTDECLARE',
     ))
 
 if __name__ == "__main__":
