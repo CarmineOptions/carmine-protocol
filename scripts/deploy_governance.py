@@ -51,7 +51,7 @@ async def declare_contract(filename: str):
 
 async def deploy_new_proxy(proxy_class_hash: int, implementation_hash: int, proxy_abi_filename: str, call_initializer: bool = True, calldata: List[Any] = []) -> Contract:
     with open(proxy_abi_filename) as f:
-        gov_proxy_abi = json.load(f)
+        proxy_abi = json.load(f)
 
     if call_initializer:
         constructor_args = {"implementation_hash": implementation_hash, "selector": ContractFunction.get_selector("initializer"), "calldata": calldata}
@@ -62,7 +62,7 @@ async def deploy_new_proxy(proxy_class_hash: int, implementation_hash: int, prox
     deploy_result = await Contract.deploy_contract(
         account=account,
         class_hash=proxy_class_hash,
-        abi=gov_proxy_abi,
+        abi=proxy_abi,
         constructor_args=constructor_args,
         max_fee=int(1e16),
     )

@@ -126,6 +126,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.0.5 PROPOSAL_VOTING_TIME_BLOCKS = 50 (from 200), not yet deployed
     // 0.0.6 vote_investor added
     // 0.1 whole team test on testnet
-    let version = '0.1';
+    // 0.2. whole team votes to upgrade to this version
+    let version = '0.2';
     return (version = version);
 }
