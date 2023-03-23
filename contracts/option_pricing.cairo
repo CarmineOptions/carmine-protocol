@@ -100,14 +100,6 @@ func std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     with_attr error_message("option_pricing.std_normal_cdf received X value higher than 8") {
         // Only x < 8 is being checked and not -8 < x since this case is dealt with in the above
         // "if condition"
-
-        %{
-            print("=================================================")
-            print(ids.EIGHT)
-            print(ids.x)
-            print("=================================================")
-        %}
-
         assert_le(x, EIGHT);
     }
 
@@ -271,6 +263,7 @@ func adjusted_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 // @param strike_price: strike in Math64x61
 // @param underlying_price: price of underlying asset in Math64x61
 // @param risk_free_rate_annualized: risk free rate that is annualized
+// @param is_for_trade: whether pricing is for trading or other(withdraw/deposit etc.)
 // @return Returns call and put option premium
 @view
 func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -279,7 +272,7 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     strike_price: felt,
     underlying_price: felt,
     risk_free_rate_annualized: felt,
-    is_for_trade: Bool // We want it to work for anythin but trading
+    is_for_trade: Bool // We want it to work for anything but trading
 ) -> (call_premia: felt, put_premia: felt, is_usable: Bool) {
     // C(S_t, t) = N(d_1)S_t - N(d_2)Ke^{-r(T-t)}
     // P(S_t, t) = Ke^{-r(T-t)}-S_t+C(S_t, t)
@@ -308,7 +301,7 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     // If the pricing is for trade, let it fail in case of extreme ds
     if (is_for_trade != TRUE) {
         if (is_d_extreme == TRUE){
-            return _bs_not_for_trade_extreme(sigma, time_till_maturity_annualized, strike_price, underlying_price, risk_free_rate_annualized, is_for_trade);
+            return _premia_extreme_d(strike_price, underlying_price);
         }
     }
 
@@ -334,27 +327,15 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         strike_e_neg_risk_time_till_maturity, neg_underlying_price_call_value
     ); 
 
-    let is_usable = TRUE;
-
-    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = is_usable);
+    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = TRUE);
 }
 
-func _bs_not_for_trade_extreme{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    sigma: felt,
-    time_till_maturity_annualized: felt,
+func _premia_extreme_d{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     strike_price: felt,
     underlying_price: felt,
-    risk_free_rate_annualized: felt,
-    is_for_trade: Bool // We want it to work for anythin but trading
 ) -> (call_premia: felt, put_premia: felt, is_usable: Bool) {
-    %{
-        print("###########################################################3333")
-        print(str(ids.d_1))
-        print(str(ids.abs_d))
-        print(str(ids.is_d_extreme))
-        print("###########################################################3333")
-    %}
-
+    
+    // More readable this way imho, will be probably changed when optimizing for gas
     let price_diff_call = Math64x61.sub(underlying_price, strike_price);
     let price_diff_put = Math64x61.sub(strike_price, underlying_price);
 
@@ -366,7 +347,5 @@ func _bs_not_for_trade_extreme{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, r
     let (_put_premia) = max(0, price_diff_put);
     let put_option_value = Math64x61.add(_put_premia, cent);
 
-    let is_usable = FALSE;
-
-    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = is_usable);
+    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = FALSE);
 }

@@ -305,6 +305,7 @@ namespace IAMM {
         strike_price: felt,
         underlying_price: felt,
         risk_free_rate_annualized: felt,
+        is_for_trade: Bool,
     ) -> (call_premia: felt, put_premia: felt) {
     }
 
