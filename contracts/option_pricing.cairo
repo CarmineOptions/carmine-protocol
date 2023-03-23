@@ -303,42 +303,15 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         risk_free_rate_annualized,
     );
 
-    tempvar range_check_ptr1: felt = range_check_ptr;
+    let abs_d = abs_value(d_1);
+    let is_d_extreme = is_le(EIGHT, abs_d);
     // If the pricing is for trade, let it fail in case of extreme ds
     if (is_for_trade != TRUE) {
-        let abs_d = abs_value(d_1);
-        let is_d_extreme = is_le(EIGHT, abs_d);
-
         if (is_d_extreme == TRUE){
-            tempvar range_check_ptr: felt = range_check_ptr;
-            %{
-                print("###########################################################3333")
-                print(str(ids.d_1))
-                print(str(ids.abs_d))
-                print(str(ids.is_d_extreme))
-                print("###########################################################3333")
-            %}
-
-            let price_diff_call = Math64x61.sub(underlying_price, strike_price);
-            let price_diff_put = Math64x61.sub(strike_price, underlying_price);
-
-            let cent = 23058430092136940; // 0.01 * 2**61
-
-            let (_call_premia) = max(0, price_diff_call);
-            let call_option_value = Math64x61.add(_call_premia, cent);
-
-            let (_put_premia) = max(0, price_diff_put);
-            let put_option_value = Math64x61.add(_put_premia, cent);
-
-            let is_usable = FALSE;
-            tempvar range_check_ptr: felt = range_check_ptr;
-
-            return (call_premia=call_option_value, put_premia=put_option_value, is_usable = is_usable);
+            return _bs_not_for_trade_extreme(sigma, time_till_maturity_annualized, strike_price, underlying_price, risk_free_rate_annualized, is_for_trade);
         }
-        tempvar range_check_ptr: felt = range_check_ptr;
     }
 
-    tempvar range_check_ptr: felt = range_check_ptr1;
 
     with_attr error_message("Black scholes function failed when calculating d_1"){
         let (normal_d_1) = adjusted_std_normal_cdf(d_1, is_pos_d_1);
@@ -362,6 +335,38 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     ); 
 
     let is_usable = TRUE;
+
+    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = is_usable);
+}
+
+func _bs_not_for_trade_extreme{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    sigma: felt,
+    time_till_maturity_annualized: felt,
+    strike_price: felt,
+    underlying_price: felt,
+    risk_free_rate_annualized: felt,
+    is_for_trade: Bool // We want it to work for anythin but trading
+) -> (call_premia: felt, put_premia: felt, is_usable: Bool) {
+    %{
+        print("###########################################################3333")
+        print(str(ids.d_1))
+        print(str(ids.abs_d))
+        print(str(ids.is_d_extreme))
+        print("###########################################################3333")
+    %}
+
+    let price_diff_call = Math64x61.sub(underlying_price, strike_price);
+    let price_diff_put = Math64x61.sub(strike_price, underlying_price);
+
+    let cent = 23058430092136940; // 0.01 * 2**61
+
+    let (_call_premia) = max(0, price_diff_call);
+    let call_option_value = Math64x61.add(_call_premia, cent);
+
+    let (_put_premia) = max(0, price_diff_put);
+    let put_option_value = Math64x61.add(_put_premia, cent);
+
+    let is_usable = FALSE;
 
     return (call_premia=call_option_value, put_premia=put_option_value, is_usable = is_usable);
 }
