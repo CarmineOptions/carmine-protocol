@@ -30,6 +30,7 @@ from starkware.cairo.common.math_cmp import is_le, is_nn
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bitwise import bitwise_and
 from starkware.starknet.common.syscalls import get_block_timestamp
+from starkware.cairo.common.bool import FALSE
 
 
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -156,22 +157,33 @@ func _get_premia_before_fees{
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
-            let (call_premia, put_premia, is_extremely_high, is_extremely_low) = black_scholes(
+            let (call_premia, put_premia, is_usable) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
+                is_for_trade=0,
             );
 
-            if (is_extremely_high == TRUE) {
-                call_premia = min(0, current_price - strike) + 0.01;
-            }
-            if (is_extremely_low...) {
-                call_premia = 0.01;
-            }
+            // if (is_usable == FALSE) {
+            //     // More readable if they're calculated separately IMHO
+            //     // Probably will be changed when optimizing for gas
+            //     let price_diff_call = Math64x61.sub(underlying_price, strike_price);
+            //     let price_diff_put = Math64x61.sub(strike_price, underlying_price);
+
+            //     let cent = 23058430092136940; // 0.01 * 2**61
+
+            //     let (_call_premia) = max(0, price_diff_call);
+            //     let call_premia = Math64x61.add(_call_premia, cent);
+
+            //     let (_put_premia) = max(0, price_diff_put);
+            //     let put_premia = Math64x61.add(_put_premia, cent);
+
+            // }
         }
     }
+
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
         assert_nn(call_premia);
         assert_nn(put_premia);
@@ -194,7 +206,7 @@ func _get_premia_before_fees{
         assert_nn(total_premia_before_fees);
     }
 
-    return (total_premia_before_fees,is_extremely_high, is_extremely_low);
+    return (total_premia_before_fees=total_premia_before_fees);
 }
 
 
@@ -320,7 +332,7 @@ func _get_value_of_position{
 
 
     with_attr error_message("helpers._get_value_of_position failed on getting premium") {
-        let (total_premia_before_fees, is_extremely_high) = _get_premia_before_fees(
+        let (total_premia_before_fees) = _get_premia_before_fees(
             option=option,
             position_size=option_size_m64x61,
             option_type=option_type,
@@ -328,18 +340,18 @@ func _get_value_of_position{
             pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
         );
     }
-    if (is_extremely_high == TRUE) {
-        if option.option_side == long
-            total_premia_before_fees = 0.01
-        else:
-            total_premia_before_fees = 0
+    // if (is_extremely_high == TRUE) {
+    //     if option.option_side == long
+    //         total_premia_before_fees = 0.01
+    //     else:
+    //         total_premia_before_fees = 0
 
-        underlying_price >> strike
-            if option.option_side == long
-                total_premia_before_fees = underlying - strike + 0.01
-            else:
-                total_premia_before_fees = underlying - strike
-    }
+    //     underlying_price >> strike
+    //         if option.option_side == long
+    //             total_premia_before_fees = underlying - strike + 0.01
+    //         else:
+    //             total_premia_before_fees = underlying - strike
+    // }
 
     // Get fees and total premia
     with_attr error_message("helpers._get_value_of_position getting fees FAILED"){
