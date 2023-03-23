@@ -20,7 +20,7 @@ from contracts.option_pricing_helpers import (
     get_new_volatility
 )
 
-from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide
+from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide, Bool
 
 
 from starkware.cairo.common.bool import TRUE
@@ -107,6 +107,7 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 // @param current_volatility: Current volatility of given option.
 // @param pool_volatility_adjustment_speed: Determines how fast the volatility would be updated if
 //      the position was executed.
+// @param is_for_trade: whether pricing is for trading or other(withdraw/deposit etc.)
 // @return total_premia_before_fees: Calculated premia without fees
 func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -116,6 +117,7 @@ func _get_premia_before_fees{
     option_type: OptionType,
     current_volatility: Math64x61_,
     pool_volatility_adjustment_speed: Math64x61_,
+    is_for_trade: Bool
 ) -> (total_premia_before_fees: Math64x61_){
 
     alloc_locals;
@@ -163,24 +165,8 @@ func _get_premia_before_fees{
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
-                is_for_trade=0,
+                is_for_trade = is_for_trade,
             );
-
-            // if (is_usable == FALSE) {
-            //     // More readable if they're calculated separately IMHO
-            //     // Probably will be changed when optimizing for gas
-            //     let price_diff_call = Math64x61.sub(underlying_price, strike_price);
-            //     let price_diff_put = Math64x61.sub(strike_price, underlying_price);
-
-            //     let cent = 23058430092136940; // 0.01 * 2**61
-
-            //     let (_call_premia) = max(0, price_diff_call);
-            //     let call_premia = Math64x61.add(_call_premia, cent);
-
-            //     let (_put_premia) = max(0, price_diff_put);
-            //     let put_premia = Math64x61.add(_put_premia, cent);
-
-            // }
         }
     }
 
@@ -288,7 +274,7 @@ func _get_value_of_position{
     position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    pool_volatility_adjustment_speed: Math64x61_
+    pool_volatility_adjustment_speed: Math64x61_,
 ) -> (position_value: Math64x61_){
     alloc_locals;
 
@@ -337,21 +323,10 @@ func _get_value_of_position{
             position_size=option_size_m64x61,
             option_type=option_type,
             current_volatility=current_volatility,
-            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
+            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed,
+            is_for_trade = FALSE // Fetching value of position definitely isn't a trade
         );
     }
-    // if (is_extremely_high == TRUE) {
-    //     if option.option_side == long
-    //         total_premia_before_fees = 0.01
-    //     else:
-    //         total_premia_before_fees = 0
-
-    //     underlying_price >> strike
-    //         if option.option_side == long
-    //             total_premia_before_fees = underlying - strike + 0.01
-    //         else:
-    //             total_premia_before_fees = underlying - strike
-    // }
 
     // Get fees and total premia
     with_attr error_message("helpers._get_value_of_position getting fees FAILED"){
@@ -437,7 +412,8 @@ func _get_premia_with_fees{
         position_size=position_size,
         option_type=option_type,
         current_volatility=current_volatility,
-        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
+        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed,
+        is_for_trade = FALSE,
     );
 
     // Get fees and total premia

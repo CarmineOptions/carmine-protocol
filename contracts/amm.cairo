@@ -166,7 +166,7 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
-                is_for_trade=1,
+                is_for_trade=1, // Trades currently fail for extreme d's in std_norm
             );
             // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CURRENCY OF CORRESPONDING POOL
             // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
@@ -310,7 +310,7 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         strike_price=strike_price,
         underlying_price=underlying_price,
         risk_free_rate_annualized=risk_free_rate_annualized,
-        is_for_trade=1,
+        is_for_trade=1, // Trades currently fail for extreme d's in std_norm
     );
     // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
