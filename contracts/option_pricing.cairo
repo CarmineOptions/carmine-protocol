@@ -330,6 +330,11 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     return (call_premia=call_option_value, put_premia=put_option_value, is_usable = TRUE);
 }
 
+// @notice Calculates premia for ds in BS that are outside of usability of our standard normal CDF approximation
+// @dev Returns either zero or diff of strike and underlying, both  plus cent
+// @param strike_price: Strike price of the option
+// @param underlying_price: Current price of the underlying
+// @returns Call and Put premia, plus variable indicating whether it was calculated by BS or not
 func _premia_extreme_d{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     strike_price: felt,
     underlying_price: felt,
