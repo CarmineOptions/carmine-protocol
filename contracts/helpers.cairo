@@ -22,15 +22,13 @@ from contracts.option_pricing_helpers import (
 
 from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide, Bool
 
-
-from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le, is_nn
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bitwise import bitwise_and
 from starkware.starknet.common.syscalls import get_block_timestamp
-from starkware.cairo.common.bool import FALSE
 
 
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -159,7 +157,7 @@ func _get_premia_before_fees{
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
-            let (call_premia, put_premia, is_usable) = black_scholes(
+            let (call_premia, put_premia, _) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,

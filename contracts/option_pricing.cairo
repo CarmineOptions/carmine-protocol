@@ -22,16 +22,6 @@ from math64x61 import Math64x61
 
 from contracts.types import Bool
 
-func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    value_a: felt, value_b: felt
-) -> (max_value: felt) {
-    let a_smaller_b = is_le(value_a, value_b);
-
-    if (a_smaller_b == TRUE) {
-        return (value_b,);
-    }
-    return (value_a,);
-}
 
 
 const HALF = 1152921504606846976;
@@ -328,6 +318,21 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     ); 
 
     return (call_premia=call_option_value, put_premia=put_option_value, is_usable = TRUE);
+}
+
+// @notice Returns greater of the two values
+// @dev If value_a == value_b, returns value_a
+// @param value_a: First value
+// @param value_b: Second value
+// @return max_value: Greater of the two values
+func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    value_a: felt, value_b: felt
+) -> (max_value: felt) {
+    let a_smaller_b = is_le(value_a, value_b);
+    if (a_smaller_b == TRUE) {
+        return (value_b,);
+    }
+    return (value_a,);
 }
 
 // @notice Calculates premia for ds in BS that are outside of usability of our standard normal CDF approximation
