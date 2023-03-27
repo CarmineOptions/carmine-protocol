@@ -91,11 +91,31 @@ func assert_correct_contract_type{range_check_ptr}(contract_type: ContractType) 
     return ();
 }
 
+func assert_voting_in_progress{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(prop_id: felt){
+    let (end_block_number) = proposal_vote_ends.read(prop_id);
+    with_attr error_message("voting not yet started, prop_id not found"){
+        assert_not_zero(end_block_number);
+    }
+    let (curr_block_number) = get_block_number();
+    with_attr error_message("voting already concluded"){
+        // yes truly no assert_lt in Cairo 0.10.
+        let block_diff = end_block_number - curr_block_number;
+        assert_not_zero(block_diff);
+        assert_nn(block_diff);
+    }
+    return ();
+}
+
 @external
 func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     impl_hash: felt, to_upgrade: ContractType
 ) -> (prop_id: felt) {
     // Checks
+
+    // 2**237, basic impl_hash sanity check
+    // this fails with one in approximately 10000 hashes, but a proposer can always do minor changes to the contract and get a new hash
+    const IMPL_HASH_MIN_VALUE = 0x200000000000000000000000000000000000000000000000000000000000;
+    assert_le(IMPL_HASH_MIN_VALUE, impl_hash);
 
     assert_correct_contract_type(to_upgrade);
     let (gov_token_addr) = governance_token_address.read();
@@ -158,14 +178,7 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     }
 
     
-    let (end_block_number) = proposal_vote_ends.read(prop_id);
-    let (curr_block_number) = get_block_number();
-    with_attr error_message("voting already concluded"){
-        // yes truly no assert_lt in Cairo 0.10.
-        let block_diff = end_block_number - curr_block_number;
-        assert_not_zero(block_diff);
-        assert_nn(block_diff);
-    }
+    assert_voting_in_progress(prop_id);
 
     // Cast vote
     proposal_voted_by.write(prop_id, caller_addr, opinion);
@@ -262,23 +275,27 @@ func vote_investor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         assert curr_votestatus = 0;
     }
 
-    let (end_block_number) = proposal_vote_ends.read(prop_id);
-    let (curr_block_number) = get_block_number();
-    with_attr error_message("voting already concluded"){
-        let block_diff = curr_block_number - end_block_number;
-        assert_not_zero(block_diff);
-        assert_nn(block_diff);
-    }
+    assert_voting_in_progress(prop_id);
 
     // Calculate real voting power
     let (GOV_TOKEN_ADDRESS) = governance_token_address.read();
     let (total_supply) = IERC20.totalSupply(contract_address=GOV_TOKEN_ADDRESS);
     let total_supply_felt = total_supply.low;
+    assert total_supply.high = 0;
     let real_investor_voting_power = total_supply_felt - TEAM_TOKEN_BALANCE;
 
-    let (total_distributed_power) = total_investor_distributed_power.read();
-    let intermediate_vote_power = real_investor_voting_power * investor_voting_power_local;
-    let (vote_power, vote_power_rem) = unsigned_div_rem(intermediate_vote_power, total_distributed_power);
+    // doesn't work because it needs non-int math
+    // real_vote_power = all_investor_real_voting_power * (this_investor_invpower / total_distributed_invpower)
+    // so we do
+    // real_vote_power = (all_investor_real_voting_power * this_investor_invpower) / total_distributed_invpower
+    // mul_div_mod or sth like this exists for uint256, but not felts AFAIK
+    let (total_distributed_power) = total_investor_distributed_power.read(); // total distributed among investors
+    let intermediate = real_investor_voting_power * investor_voting_power_local;
+    assert_nn(intermediate);
+    let (vote_power, vote_power_rem) = unsigned_div_rem(intermediate, total_distributed_power);
+    with_attr error_message("vote power calculation failed"){
+        assert_not_zero(vote_power);
+    }
 
     // Cast vote
     proposal_voted_by.write(prop_id, caller_addr, opinion);
