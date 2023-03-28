@@ -2,7 +2,7 @@ build: contracts/*
 	protostar build
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
-	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests/
+	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests
 
 testa: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
 	~/.protostar/dist/protostar/protostar test -x --seed 18000000 ./tests/test_get_value_of_pool_position.cairo

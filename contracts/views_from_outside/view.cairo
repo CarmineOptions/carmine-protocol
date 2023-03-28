@@ -614,7 +614,8 @@ func get_total_premia{
             position_size=position_size_m64x61,
             option_type=option.option_type,
             current_volatility=current_volatility,
-            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
+            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed,
+            is_for_trade = TRUE, // We want this to fail since it won't be available for trading anyway
         );
     }
     

@@ -160,12 +160,13 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         with_attr error_message("error while calculating premia") {
             const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
             let sigma = Math64x61.div(trade_volatility, HUNDRED);
-            let (call_premia, put_premia) = black_scholes(
+            let (call_premia, put_premia, _) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
+                is_for_trade=1, // Trades currently fail for extreme d's in std_norm
             );
             // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CURRENCY OF CORRESPONDING POOL
             // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)
@@ -303,12 +304,13 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
     const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
     let sigma = Math64x61.div(trade_volatility, HUNDRED);
-    let (call_premia, put_premia) = black_scholes(
+    let (call_premia, put_premia, _) = black_scholes(
         sigma=sigma,
         time_till_maturity_annualized=time_till_maturity,
         strike_price=strike_price,
         underlying_price=underlying_price,
         risk_free_rate_annualized=risk_free_rate_annualized,
+        is_for_trade=1, // Trades currently fail for extreme d's in std_norm
     );
     // AFTER THE LINE BELOW, THE PREMIA IS IN TERMS OF CORRESPONDING POOL
     // Ie in case of call option, the premia is in base (ETH in case ETH/USDC)

@@ -20,10 +20,9 @@ from contracts.option_pricing_helpers import (
     get_new_volatility
 )
 
-from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide
+from contracts.types import Option, Math64x61_, Address, OptionType, Int, OptionSide, Bool
 
-
-from starkware.cairo.common.bool import TRUE
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le, is_nn
@@ -106,6 +105,7 @@ func min{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 // @param current_volatility: Current volatility of given option.
 // @param pool_volatility_adjustment_speed: Determines how fast the volatility would be updated if
 //      the position was executed.
+// @param is_for_trade: whether pricing is for trading or other(withdraw/deposit etc.)
 // @return total_premia_before_fees: Calculated premia without fees
 func _get_premia_before_fees{
     syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
@@ -115,6 +115,7 @@ func _get_premia_before_fees{
     option_type: OptionType,
     current_volatility: Math64x61_,
     pool_volatility_adjustment_speed: Math64x61_,
+    is_for_trade: Bool
 ) -> (total_premia_before_fees: Math64x61_){
 
     alloc_locals;
@@ -156,15 +157,17 @@ func _get_premia_before_fees{
         let sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
-            let (call_premia, put_premia) = black_scholes(
+            let (call_premia, put_premia, _) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,
                 underlying_price=underlying_price,
                 risk_free_rate_annualized=risk_free_rate_annualized,
+                is_for_trade = is_for_trade,
             );
         }
     }
+
     with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
         assert_nn(call_premia);
         assert_nn(put_premia);
@@ -187,7 +190,7 @@ func _get_premia_before_fees{
         assert_nn(total_premia_before_fees);
     }
 
-    return (total_premia_before_fees,);
+    return (total_premia_before_fees=total_premia_before_fees);
 }
 
 
@@ -269,7 +272,7 @@ func _get_value_of_position{
     position_size: Int,
     option_type: OptionType,
     current_volatility: Math64x61_,
-    pool_volatility_adjustment_speed: Math64x61_
+    pool_volatility_adjustment_speed: Math64x61_,
 ) -> (position_value: Math64x61_){
     alloc_locals;
 
@@ -311,13 +314,15 @@ func _get_value_of_position{
         );
     }
 
+
     with_attr error_message("helpers._get_value_of_position failed on getting premium") {
         let (total_premia_before_fees) = _get_premia_before_fees(
             option=option,
             position_size=option_size_m64x61,
             option_type=option_type,
             current_volatility=current_volatility,
-            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
+            pool_volatility_adjustment_speed=pool_volatility_adjustment_speed,
+            is_for_trade = FALSE // Fetching value of position definitely isn't a trade
         );
     }
 
@@ -405,7 +410,8 @@ func _get_premia_with_fees{
         position_size=position_size,
         option_type=option_type,
         current_volatility=current_volatility,
-        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed
+        pool_volatility_adjustment_speed=pool_volatility_adjustment_speed,
+        is_for_trade = FALSE,
     );
 
     // Get fees and total premia

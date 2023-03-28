@@ -13,11 +13,14 @@
 //
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import sign, assert_le, unsigned_div_rem
+from starkware.cairo.common.math import sign, assert_le, unsigned_div_rem, abs_value
 from starkware.cairo.common.math_cmp import is_le
+from starkware.cairo.common.bool import TRUE, FALSE
 
 // Third party imports. Was copy pasted to this repo.
 from math64x61 import Math64x61
+
+from contracts.types import Bool
 
 
 
@@ -250,6 +253,7 @@ func adjusted_std_normal_cdf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 // @param strike_price: strike in Math64x61
 // @param underlying_price: price of underlying asset in Math64x61
 // @param risk_free_rate_annualized: risk free rate that is annualized
+// @param is_for_trade: whether pricing is for trading or other(withdraw/deposit etc.)
 // @return Returns call and put option premium
 @view
 func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -258,7 +262,8 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     strike_price: felt,
     underlying_price: felt,
     risk_free_rate_annualized: felt,
-) -> (call_premia: felt, put_premia: felt) {
+    is_for_trade: Bool // We want it to work for anything but trading
+) -> (call_premia: felt, put_premia: felt, is_usable: Bool) {
     // C(S_t, t) = N(d_1)S_t - N(d_2)Ke^{-r(T-t)}
     // P(S_t, t) = Ke^{-r(T-t)}-S_t+C(S_t, t)
 
@@ -280,7 +285,17 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
         underlying_price,
         risk_free_rate_annualized,
     );
-    
+
+    let abs_d = abs_value(d_1);
+    let is_d_extreme = is_le(EIGHT, abs_d);
+    // If the pricing is for trade, let it fail in case of extreme ds
+    if (is_for_trade != TRUE) {
+        if (is_d_extreme == TRUE){
+            return _premia_extreme_d(strike_price, underlying_price);
+        }
+    }
+
+
     with_attr error_message("Black scholes function failed when calculating d_1"){
         let (normal_d_1) = adjusted_std_normal_cdf(d_1, is_pos_d_1);
     }
@@ -300,7 +315,47 @@ func black_scholes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     let neg_underlying_price_call_value = Math64x61.sub(call_option_value, underlying_price);
     let put_option_value = Math64x61.add(
         strike_e_neg_risk_time_till_maturity, neg_underlying_price_call_value
-    );
+    ); 
 
-    return (call_premia=call_option_value, put_premia=put_option_value);
+    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = TRUE);
+}
+
+// @notice Returns greater of the two values
+// @dev If value_a == value_b, returns value_a
+// @param value_a: First value
+// @param value_b: Second value
+// @return max_value: Greater of the two values
+func max{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    value_a: felt, value_b: felt
+) -> (max_value: felt) {
+    let a_smaller_b = is_le(value_a, value_b);
+    if (a_smaller_b == TRUE) {
+        return (value_b,);
+    }
+    return (value_a,);
+}
+
+// @notice Calculates premia for ds in BS that are outside of usability of our standard normal CDF approximation
+// @dev Returns either zero or diff of strike and underlying, both  plus cent
+// @param strike_price: Strike price of the option
+// @param underlying_price: Current price of the underlying
+// @returns Call and Put premia, plus variable indicating whether it was calculated by BS or not
+func _premia_extreme_d{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    strike_price: felt,
+    underlying_price: felt,
+) -> (call_premia: felt, put_premia: felt, is_usable: Bool) {
+    
+    // More readable this way imho, will be probably changed when optimizing for gas
+    let price_diff_call = Math64x61.sub(underlying_price, strike_price);
+    let price_diff_put = Math64x61.sub(strike_price, underlying_price);
+
+    let cent = 23058430092136940; // 0.01 * 2**61
+
+    let (_call_premia) = max(0, price_diff_call);
+    let call_option_value = Math64x61.add(_call_premia, cent);
+
+    let (_put_premia) = max(0, price_diff_put);
+    let put_option_value = Math64x61.add(_put_premia, cent);
+
+    return (call_premia=call_option_value, put_premia=put_option_value, is_usable = FALSE);
 }
