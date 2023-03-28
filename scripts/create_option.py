@@ -44,11 +44,12 @@ strike_1900 = 4381101717506018508800
 strike_2000 = 4611686018427387904000
 # maturity = 1675987199
 # maturity = 1677196799
-maturity = 1678406399
+# maturity = 1678406399
+# maturity = 1679615999
+maturity = 1680825599 # Thu Apr 06 2023 23:59:59 GMT+0000
 options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
-
     # {'option_type': 0, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
@@ -60,16 +61,18 @@ options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
 
+    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
     # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 1},
 ]
 
 async def main():
