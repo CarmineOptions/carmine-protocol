@@ -154,10 +154,11 @@ func _get_premia_before_fees{
     // 5) Get premia
     with_attr error_message("helpers._get_premia_before_fees getting premia FAILED"){
         const HUNDRED = 230584300921369395200; // Math64x61.fromFelt(100);
-        let sigma = Math64x61.div(trade_volatility, HUNDRED);
+        local sigma = Math64x61.div(trade_volatility, HUNDRED);
         // call_premia, put_premia in quote tokens (USDC in case of ETH/USDC)
         with_attr error_message("black scholes time until maturity {time_till_maturity} strike{strike_price} underlying_price{underlying_price} trade volatility{tradevol} current volatility{current_volatility}"){
-            let (call_premia, put_premia, _) = black_scholes(
+
+            let (local call_premia, local put_premia, local is_usable) = black_scholes(
                 sigma=sigma,
                 time_till_maturity_annualized=time_till_maturity,
                 strike_price=strike_price,
@@ -168,7 +169,7 @@ func _get_premia_before_fees{
         }
     }
 
-    with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
+    with_attr error_message("helpers._get_premia_before_fees call/put premia is negative FAILED, is_usable: {is_usable}, call_premia: {call_premia}, put_premia: {put_premia}, sigma: {sigma}, time_till_maturity_annualized: {time_till_maturity}, strike_price: {strike_price}, underlying_price: {underlying_price}, risk_free_rate_annualized: {risk_free_rate_annualized}"){
         assert_nn(call_premia);
         assert_nn(put_premia);
     }
