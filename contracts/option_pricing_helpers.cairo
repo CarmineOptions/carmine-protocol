@@ -192,18 +192,24 @@ func get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 
     alloc_locals;
 
-    let (option_size_in_pool_currency) = _get_option_size_in_pool_currency(
+    let (local option_size_in_pool_currency) = _get_option_size_in_pool_currency(
         option_size, option_type, strike_price
     );
 
     let _relative_option_size = Math64x61.div(option_size_in_pool_currency, pool_volatility_adjustment_speed);
     const hundred = 230584300921369395200; // Math64x61.fromFelt(100);
-    let relative_option_size = Math64x61.mul(_relative_option_size, hundred);
+    local relative_option_size = Math64x61.mul(_relative_option_size, hundred);
 
     if (side == TRADE_SIDE_LONG) {
         let new_volatility = Math64x61.add(current_volatility, relative_option_size);
     } else {
         let new_volatility = Math64x61.add(current_volatility, -relative_option_size);
+    }
+
+    local newvol = new_volatility;
+    local _pool_vol_adj_spd = pool_volatility_adjustment_speed;
+    with_attr error_message("New volatility in get_new_volatility is negative: new_volatility={newvol}, relative_option_size={relative_option_size}, option_size_in_pool_currency={option_size_in_pool_currency}, pool_vol_adj_spd={_pool_vol_adj_spd}") {
+        assert_nn(new_volatility);
     }
 
     let volsum = Math64x61.add(current_volatility, new_volatility);
