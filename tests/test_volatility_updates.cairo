@@ -20,12 +20,10 @@ from tests.itest_specs.setup import deploy_setup
 func setup_get_new_volatility{syscall_ptr: felt*, range_check_ptr}(){
 
     %{
-        # TODO: Add fuzzy pool_vol_adj_spd as well
         given(
             option_type = strategy.integers(0, 1),
             trade_side = strategy.integers(0, 1),
             option_size = strategy.integers(1, 100).map(lambda x: int(((x / 10) * 10**18))),
-           _pool_balance = strategy.integers(200, 1000).map(lambda x: int((x / 10) * 2**61)),
             volatility = strategy.integers(1, 100).map(lambda x: int((x / 10) * 2**61))
         )
         max_examples(100)
@@ -39,7 +37,6 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
     option_type: felt,
     trade_side: felt,
     option_size: felt,
-    _pool_balance: felt,
     volatility: felt
 ) {
     alloc_locals;
@@ -53,14 +50,13 @@ func test_get_new_volatility{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
         ids.option_size = ids.half_size * 2 # To prevent rounding errors I guess
 
         if ids.option_type == 0: 
-            ids.pool_volatility_adjustment_speed = int(5 * 2**61)
+            ids.pool_volatility_adjustment_speed = int(10_000 * 2**61)
 
         elif ids.option_type == 1: 
-            ids.pool_volatility_adjustment_speed = int(5_000 * 2**61)
+            ids.pool_volatility_adjustment_speed = int(10_000_000 * 2**61)
 
         else:
             raise ValueError(f"Unknown option type: {ids.option_type}")
-
    %}
 
     //////////////////////////////////////
