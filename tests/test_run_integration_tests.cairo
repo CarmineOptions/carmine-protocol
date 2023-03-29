@@ -96,19 +96,19 @@ func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check
 }
 
 
-// @external
-// func test_withdraw_liquidity_not_enough_lptokens_call{syscall_ptr: felt*, range_check_ptr}() {
-//     // test what happens when more capital is withdrawn than there is unlocked
-//     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_call();
-//     return ();
-// }
+@external
+func test_withdraw_liquidity_not_enough_lptokens_call{syscall_ptr: felt*, range_check_ptr}() {
+    // test what happens when more capital is withdrawn than there is unlocked
+    WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_call();
+    return ();
+}
 
-// @external
-// func test_withdraw_liquidity_not_enough_lptokens_put{syscall_ptr: felt*, range_check_ptr}() {
-//     // test what happens when more capital is withdrawn than there is unlocked
-//     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_put();
-//     return ();
-// }
+@external
+func test_withdraw_liquidity_not_enough_lptokens_put{syscall_ptr: felt*, range_check_ptr}() {
+    // test what happens when more capital is withdrawn than there is unlocked
+    WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_put();
+    return ();
+}
 
 // FIXME: This is also broken somewhere in the expire_option_token
 @external

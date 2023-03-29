@@ -228,26 +228,44 @@ namespace WithdrawLiquidity {
         local amm_addr;
         local myusd_addr;
         local myeth_addr;
+        local lpt_call_addr;
         %{
             ids.amm_addr = context.amm_addr
             ids.myusd_addr = context.myusd_address
             ids.myeth_addr = context.myeth_address
+            ids.lpt_call_addr = context.lpt_call_addr
 
-            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
 
-            expect_revert(error_message = 'Failed to transfer token from pool to account in withdraw_liquidity')
+            expect_revert(error_message = 'ERC20: burn amount exceeds balance')
         %}
 
-        let six_lptokens = Uint256(low = 6000000000000000000, high = 0);
+        %{
+            stop_prank_lpt = start_prank(context.admin_address, context.lpt_call_addr)
+        %}
+        // Burn some tokens
+        let four_lptokens = Uint256(low = 4000000000000000000, high = 0);
+        ILPToken.transfer(
+            contract_address = lpt_call_addr,
+            recipient = 42069,
+            amount = four_lptokens
+        );
+
+        %{
+            stop_prank_lpt()
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+        %}
+
+        let two_lptokens = Uint256(low = 2000000000000000000, high = 0);
         IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myeth_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=0,
-            lp_token_amount=six_lptokens
+            lp_token_amount=two_lptokens
         );
         return ();
+
     }
 
     func withdraw_liquidity_not_enough_lptokens_put{syscall_ptr: felt*, range_check_ptr}() {
@@ -256,24 +274,41 @@ namespace WithdrawLiquidity {
         local amm_addr;
         local myusd_addr;
         local myeth_addr;
+        local lpt_put_addr;
         %{
             ids.amm_addr = context.amm_addr
             ids.myusd_addr = context.myusd_address
             ids.myeth_addr = context.myeth_address
+            ids.lpt_put_addr = context.lpt_put_addr
 
-            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
 
-            expect_revert(error_message = 'Failed to transfer token from pool to account in withdraw_liquidity')
+            expect_revert(error_message = 'ERC20: burn amount exceeds balance')
         %}
 
-        let six_thousand_usd = Uint256(low = 6000000000, high = 0);
+        %{
+            stop_prank_lpt = start_prank(context.admin_address, context.lpt_put_addr)
+        %}
+        // Burn some tokens
+        let four_thousand_usd = Uint256(low = 4000000000, high = 0);
+        ILPToken.transfer(
+            contract_address = lpt_put_addr,
+            recipient = 42069,
+            amount = four_thousand_usd
+        );
+
+        %{
+            stop_prank_lpt()
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+        %}
+
+        let two_thousand_usd = Uint256(low = 2000000000, high = 0);
         IAMM.withdraw_liquidity(
             contract_address=amm_addr,
             pooled_token_addr=myusd_addr,
             quote_token_address=myusd_addr,
             base_token_address=myeth_addr,
             option_type=1,
-            lp_token_amount=six_thousand_usd
+            lp_token_amount=two_thousand_usd
         );
         return ();
 
