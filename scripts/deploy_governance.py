@@ -71,7 +71,6 @@ async def deploy_new_proxy(proxy_class_hash: int, implementation_hash: int, prox
     print(f'Deployed an impl via new proxy at {hex(deploy_result.deployed_contract.address)}'.format())
     return deploy_result.deployed_contract
 
-# TODO upgrade_via_proxy, should also fetch ABI from future impl class hash to ensure we won't kill the proxy
 
 async def deploy_everything(
     governance_class_hash=None,
@@ -108,30 +107,20 @@ async def deploy_everything(
 
     # deploy gov token
 
-    gov_token_contract = await deploy_new_proxy(generic_proxy_class_hash, governance_token_class_hash, "build/proxy_abi.json", call_initializer=False)
-    print(f'Deployed governance token at {hex(gov_token_contract.address)}'.format())
-    # governance contract initializer initalizes the governance token (calls its initializer...). This could be called in a multicall to prevent "frontrunning", though there is no MEV in this case.
-    gov_token_contract_address = gov_token_contract.address
-
-    # deploy AMM
-    amm_contract = await deploy_new_proxy(generic_proxy_class_hash, amm_class_hash, "build/amm_abi.json", call_initializer=False)
-    print(f'Deployed AMM at {hex(amm_contract.address)}'.format())
-    amm_contract_address = amm_contract.address
-
-    governance_init_calldata = [gov_token_contract_address, amm_contract_address]
+    governance_init_calldata = [generic_proxy_class_hash, governance_token_class_hash, amm_class_hash, lptoken_class_hash, option_token_class_hash]
     governance_contract = await deploy_new_proxy(governance_proxy_class_hash, governance_class_hash, "build/governance_proxy_abi.json", calldata=governance_init_calldata)
     print(f'Deployed governance at {hex(governance_contract.address)}'.format())
 
 
 def main():
     asyncio.run(deploy_everything(
-       #governance_class_hash=0x73aa0bd03bbe7d40981283592014f0179cd0a19f26aa46be62dc09db70639ab,
-       governance_proxy_class_hash=0x3c28875512f9abeb60bab6c928dd725f074063987082cb6d7d6a7ed4d203601,
+       #governance_class_hash=0x13502fa564e3fa2f3fdee9770b69f33c5648199b3ffe576656c7ef339ff8712,
+       governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
        governance_token_class_hash=0x1b555006a1646575886d7eb73b6939a5105c668bdbc4e9ed33ab120ca6b60b2,
-       amm_class_hash=0x2571df9988d465812bb456930491f4b9d01c1f568b0a0fa7625c41d59d1b6ab,
-       lptoken_class_hash='DONOTDECLARE',
-       option_token_class_hash='DONOTDECLARE',
+       amm_class_hash=0x59acc8f2965f512e45f48f29dc72efb7a601b799bc908751b94e82c53311f19,
+       lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
+       option_token_class_hash=0x84f58cb1bae6c71e3fa654b5cf56ee3203ec8bc85f4360ed1dfef651a0ae4c,
     ))
 
 if __name__ == "__main__":
