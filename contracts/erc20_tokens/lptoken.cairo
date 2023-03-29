@@ -20,13 +20,9 @@ from openzeppelin.token.erc20.library import ERC20
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     name: felt,
     symbol: felt,
-    decimals: felt,
-    initial_supply: Uint256,
-    recipient: felt,
     proxy_admin: felt,
 ) {
-    ERC20.initializer(name, symbol, decimals);
-    ERC20._mint(recipient, initial_supply);
+    ERC20.initializer(name, symbol, 18);
     Proxy.initializer(proxy_admin);
     return ();
 }
