@@ -97,6 +97,21 @@ func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check
 
 
 @external
+func test_withdraw_liquidity_zero_unlocked{syscall_ptr: felt*, range_check_ptr}() {
+    // test what happens when more capital is withdrawn than there is unlocked
+    WithdrawLiquidity.withdraw_liquidity_zero_unlocked();
+    return ();
+}
+
+
+@external
+func test_withdraw_liquidity_zero_unlocked_and_locked{syscall_ptr: felt*, range_check_ptr}() {
+    // test what happens when more capital is withdrawn than there is unlocked
+    WithdrawLiquidity.withdraw_liquidity_zero_unlocked_and_locked();
+    return ();
+}
+
+@external
 func test_withdraw_liquidity_not_enough_lptokens_call{syscall_ptr: felt*, range_check_ptr}() {
     // test what happens when more capital is withdrawn than there is unlocked
     WithdrawLiquidity.withdraw_liquidity_not_enough_lptokens_call();

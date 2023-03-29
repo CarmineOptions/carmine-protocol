@@ -315,16 +315,138 @@ namespace WithdrawLiquidity {
     }
 
     func withdraw_liquidity_zero_unlocked{syscall_ptr: felt*, range_check_ptr}() {
-        // FIXME: TODO
-        // scenario when there is 0 unlocked capital
-        // How to have zero unlocked? Trades will always generate at least some fees.
+
+        alloc_locals;
+
+        local lpt_call_addr;
+        local lpt_put_addr;
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        local admin_addr;
+        local strike_price;
+        local expiry;
+        local tmp_address = EMPIRIC_ORACLE_ADDRESS;
+        %{
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+            ids.expiry = context.expiry_0
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            )
+
+            var_locked = store(
+                ids.amm_addr,
+                "pool_locked_capital_",
+                [1000000000000000000, 0],
+                key=[ids.lpt_call_addr]
+            )   
+
+            var_lpool_bal = store(
+                ids.amm_addr,
+                "lpool_balance_",
+                [1000000000000000000, 0],
+                key=[ids.lpt_call_addr]
+            )   
+            expect_revert(error_message="Not enough 'cash' available funds in pool. Wait for it to be released from locked capital in withdraw_liquidity")
+        %}
+
+        let (lpool_bal) = IAMM.get_lpool_balance(
+            amm_addr,
+            lpt_call_addr
+        );
+        assert lpool_bal.low = 1000000000000000000;
+
+        let (locked_capital) = IAMM.get_pool_locked_capital(
+            amm_addr,
+            lpt_call_addr
+        );
+        assert locked_capital.low = 1000000000000000000;
+
+        let two_lptokens = Uint256(low = 2000000000000000000, high = 0);
+        IAMM.withdraw_liquidity(
+            contract_address = amm_addr,
+            pooled_token_addr = myeth_addr,
+            quote_token_address = myusd_addr,
+            base_token_address = myeth_addr,
+            option_type = 0,
+            lp_token_amount = two_lptokens
+        );
+
         return ();
     }
 
     func withdraw_liquidity_zero_unlocked_and_locked{syscall_ptr: felt*, range_check_ptr}() {
-        // FIXME: TODO
-        // scenario when there is both 0 of unlocked capital and locked capital
-        // How to have zero unlocked and locked AND have some lptokens in account?
+
+        alloc_locals;
+
+        local lpt_call_addr;
+        local lpt_put_addr;
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        local admin_addr;
+        local strike_price;
+        local expiry;
+        local tmp_address = EMPIRIC_ORACLE_ADDRESS;
+        %{
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+            ids.expiry = context.expiry_0
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            )
+
+            var_locked = store(
+                ids.amm_addr,
+                "pool_locked_capital_",
+                [0, 0],
+                key=[ids.lpt_call_addr]
+            )   
+
+            var_lpool_bal = store(
+                ids.amm_addr,
+                "lpool_balance_",
+                [0, 0],
+                key=[ids.lpt_call_addr]
+            )   
+            expect_revert(error_message="Not enough 'cash' available funds in pool. Wait for it to be released from locked capital in withdraw_liquidity")
+        %}
+
+        let (lpool_bal) = IAMM.get_lpool_balance(
+            amm_addr,
+            lpt_call_addr
+        );
+        assert lpool_bal.low = 0;
+
+        let (locked_capital) = IAMM.get_pool_locked_capital(
+            amm_addr,
+            lpt_call_addr
+        );
+        assert locked_capital.low = 0;
+
+        let two_lptokens = Uint256(low = 2000000000000000000, high = 0);
+        IAMM.withdraw_liquidity(
+            contract_address = amm_addr,
+            pooled_token_addr = myeth_addr,
+            quote_token_address = myusd_addr,
+            base_token_address = myeth_addr,
+            option_type = 0,
+            lp_token_amount = two_lptokens
+        );
+
         return ();
     }
 }
