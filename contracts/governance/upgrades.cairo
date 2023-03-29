@@ -100,6 +100,7 @@ func getImplementationHash{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     return (implementation_hash = implementation_hash);
 }
 
+// @dev 0 = amm, 1 = governance, 2 = CARM token
 @external
 func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(prop_id: felt) {
     let (status) = get_proposal_status(prop_id=prop_id);
@@ -107,11 +108,19 @@ func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
         assert status = 1;
     }
     let (prop_details) = get_proposal_details(prop_id=prop_id);
+    let contract_type = prop_details.to_upgrade;
     with_attr error_message("Invalid contract type for upgrade") {
-        assert prop_details.to_upgrade = 1;
+        assert_nn_le(contract_type, 2);
     }
-
-    Proxy._set_implementation_hash(new_implementation=prop_details.impl_hash);
+    if(contract_type == 1){
+        Proxy._set_implementation_hash(new_implementation=prop_details.impl_hash);
+    }else{if(contract_type == 2){
+        let govtoken_addr = governance_token_address.read();
+        IGovernanceToken.upgrade(contract_address=govtoken_addr, new_implementation=prop_details.impl_hash);
+    }else{if(contract_type == 0){
+        let amm_addr = amm_address.read();
+        IAMM.upgrade(contract_address=amm_addr, new_implementation=prop_details.impl_hash);
+    }}}
     return ();
 }
 
@@ -127,6 +136,8 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.0.6 vote_investor added
     // 0.1 whole team test on testnet
     // 0.2. whole team votes to upgrade to this version
-    let version = '0.2';
+    // 0.2.1 attempt to upgrade to it with test of investor voting, proposal didn't meet quorum (only 1 voter)
+    // 0.3 prop 3 really fix investor voting = 0x1205e5c9ecef26004ce6b416bcc6a17ab5839ad39bd9fcb4c183758122feb3e
+    let version = '0.3';
     return (version = version);
 }
