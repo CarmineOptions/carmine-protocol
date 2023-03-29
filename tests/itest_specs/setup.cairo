@@ -147,7 +147,6 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
     let ten_thousand_usd = Uint256(low = 10000000000, high = 0);
     IAMM.set_max_lpool_balance(contract_address=amm_addr, pooled_token_addr=myusd_addr, max_lpool_bal=ten_thousand_usd);
     IAMM.deposit_liquidity(contract_address=amm_addr, pooled_token_addr=myusd_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=1, amount=five_thousand_usd);
-    // FIXME lpt_call_addr should be lpt_put_addr
     let (bal_usd_lpt: Uint256) = ILPToken.balanceOf(contract_address=lpt_put_addr, account=admin_addr);
     assert bal_usd_lpt.low = 5000000000;
 
