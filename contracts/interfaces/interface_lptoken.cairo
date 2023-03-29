@@ -8,6 +8,13 @@ from starkware.cairo.common.uint256 import Uint256
 
 @contract_interface
 namespace ILPToken {
+    func initializer(
+        name: felt,
+        symbol: felt,
+        proxy_admin: felt,
+    ) {
+    }
+
     func name() -> (name: felt) {
     }
 
