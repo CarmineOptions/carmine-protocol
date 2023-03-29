@@ -8,6 +8,7 @@
 // It is also adjusted for the purpose of being options
 // Notes
 // - transfering any capital happens outside of this token (on the AMM contract side)
+// - Ownable replaced with Proxy Admin
 
 
 %lang starknet
@@ -17,8 +18,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.uint256 import Uint256
 from starkware.starknet.common.syscalls import get_block_timestamp
-
-from openzeppelin.access.ownable.library import Ownable
+from openzeppelin.upgrades.library import Proxy
 from openzeppelin.token.erc20.library import ERC20
 
 from constants import (
@@ -57,14 +57,14 @@ func option_token_side() -> (side: felt) {
 }
 
 // owner should be main contract
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+@external
+func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     name: felt,
     symbol: felt,
     decimals: felt,
     initial_supply: Uint256,
     recipient: felt,
-    owner: felt,
+    proxy_admin: felt,
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionSide,
@@ -72,10 +72,10 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     maturity: Int,
     side: OptionSide,
 ) {
-    // inputs bellow owner are inputs needed for the option definition
+    // inputs below admin are inputs needed for the option definition
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    Ownable.initializer(owner);
+    Proxy.initializer(proxy_admin);
 
     option_token_quote_token_address.write(quote_token_address);
     option_token_base_token_address.write(base_token_address);
@@ -83,6 +83,15 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     option_token_strike_price.write(strike_price);
     option_token_maturity.write(maturity);
     option_token_side.write(side);
+    return ();
+}
+
+@external
+func upgrade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    new_implementation: felt
+) {
+    Proxy.assert_only_admin();
+    Proxy._set_implementation_hash(new_implementation);
     return ();
 }
 
@@ -234,7 +243,7 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     to: felt, amount: Uint256
 ) {
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
     ERC20._mint(to, amount);
     return ();
 }
@@ -243,21 +252,7 @@ func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, amount: Uint256
 ) {
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
     ERC20._burn(account, amount);
-    return ();
-}
-
-@external
-func transferOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    newOwner: felt
-) {
-    Ownable.transfer_ownership(newOwner);
-    return ();
-}
-
-@external
-func renounceOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-    Ownable.renounce_ownership();
     return ();
 }
