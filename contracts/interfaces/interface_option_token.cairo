@@ -5,9 +5,23 @@
 %lang starknet
 
 from starkware.cairo.common.uint256 import Uint256
+from types import Address, Int, OptionSide, Math64x61_
 
 @contract_interface
 namespace IOptionToken {
+    func initializer(
+        name: felt,
+        symbol: felt,
+        proxy_admin: felt,
+        quote_token_address: Address,
+        base_token_address: Address,
+        option_type: OptionSide,
+        strike_price: Math64x61_,
+        maturity: Int,
+        side: OptionSide,
+    ) {
+    }
+
     func name() -> (name: felt) {
     }
 

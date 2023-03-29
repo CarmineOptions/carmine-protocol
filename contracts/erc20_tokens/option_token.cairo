@@ -61,9 +61,6 @@ func option_token_side() -> (side: felt) {
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     name: felt,
     symbol: felt,
-    decimals: felt,
-    initial_supply: Uint256,
-    recipient: felt,
     proxy_admin: felt,
     quote_token_address: Address,
     base_token_address: Address,
@@ -73,8 +70,7 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     side: OptionSide,
 ) {
     // inputs below admin are inputs needed for the option definition
-    ERC20.initializer(name, symbol, decimals);
-    ERC20._mint(recipient, initial_supply);
+    ERC20.initializer(name, symbol, 18);
     Proxy.initializer(proxy_admin);
 
     option_token_quote_token_address.write(quote_token_address);
@@ -143,12 +139,6 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) -> (remaining: Uint256) {
     let (remaining: Uint256) = ERC20.allowance(owner, spender);
     return (remaining,);
-}
-
-@view
-func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (owner: felt) {
-    let (owner: felt) = Ownable.owner();
-    return (owner,);
 }
 
 @view
