@@ -11,23 +11,32 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.bool import TRUE
 
-from openzeppelin.access.ownable.library import Ownable
+from openzeppelin.upgrades.library import Proxy
 from openzeppelin.token.erc20.library import ERC20
 
 
 // owner should be main contract
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+@external
+func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     name: felt,
     symbol: felt,
     decimals: felt,
     initial_supply: Uint256,
     recipient: felt,
-    owner: felt,
+    proxy_admin: felt,
 ) {
     ERC20.initializer(name, symbol, decimals);
     ERC20._mint(recipient, initial_supply);
-    Ownable.initializer(owner);
+    Proxy.initializer(proxy_admin);
+    return ();
+}
+
+@external
+func upgrade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    new_implementation: felt
+) {
+    Proxy.assert_only_admin();
+    Proxy._set_implementation_hash(new_implementation);
     return ();
 }
 
@@ -81,12 +90,6 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (remaining,);
 }
 
-@view
-func owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (owner: felt) {
-    let (owner: felt) = Ownable.owner();
-    return (owner,);
-}
-
 //
 // Externals
 //
@@ -135,7 +138,7 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     to: felt, amount: Uint256
 ) {
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
     ERC20._mint(to, amount);
     return ();
 }
@@ -144,21 +147,7 @@ func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, amount: Uint256
 ) {
-    Ownable.assert_only_owner();
+    Proxy.assert_only_admin();
     ERC20._burn(account, amount);
-    return ();
-}
-
-@external
-func transferOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    newOwner: felt
-) {
-    Ownable.transfer_ownership(newOwner);
-    return ();
-}
-
-@external
-func renounceOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-    Ownable.renounce_ownership();
     return ();
 }
