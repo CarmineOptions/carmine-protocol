@@ -2,7 +2,7 @@
 
 from starkware.starknet.common.syscalls import get_block_number, get_caller_address
 from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt
-from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn, unsigned_div_rem
+from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn, unsigned_div_rem, assert_nn_le
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
 from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType, VoteCounts
@@ -39,6 +39,12 @@ func proposal_total_yay(prop_id: felt) -> (res: felt) {
 @storage_var
 func proposal_total_nay(prop_id: felt) -> (res: felt) {
 }
+
+// FALSE = not applied, TRUE = applied
+@storage_var
+func proposal_applied(prop_id: felt) -> (res: felt) {
+}
+
 
 // One investors voting power RELATIVE to other investors, not absolute.
 // Absolute voting power depends on totalSupply - TEAM_TOKEN_BALANCE, see vote_investor
@@ -87,7 +93,9 @@ func _get_free_prop_id{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 
 
 func assert_correct_contract_type{range_check_ptr}(contract_type: ContractType) {
-    assert_le(contract_type, 2); // either 0, 1 or 2
+    with_attr error_message("wrong contract type, must be 0, 1 or 2"){
+        assert_nn_le(contract_type, 2); // either 0, 1 or 2
+    }
     return ();
 }
 
@@ -115,7 +123,9 @@ func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     // 2**237, basic impl_hash sanity check
     // this fails with one in approximately 10000 hashes, but a proposer can always do minor changes to the contract and get a new hash
     const IMPL_HASH_MIN_VALUE = 0x200000000000000000000000000000000000000000000000000000000000;
-    assert_le(IMPL_HASH_MIN_VALUE, impl_hash);
+    with_attr error_message("impl_hash too small, is it really a class hash?"){
+        assert_le(IMPL_HASH_MIN_VALUE, impl_hash);
+    }
 
     assert_correct_contract_type(to_upgrade);
     let (gov_token_addr) = governance_token_address.read();

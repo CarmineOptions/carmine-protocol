@@ -70,11 +70,3 @@ func __l1_default__{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     );
     return ();
 }
-
-// test, TODO remove
-@external
-func hello_world_from_proxy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-) -> (res: felt) {
-    const message = 'Hello world from proxy';
-    return (message,);
-}
