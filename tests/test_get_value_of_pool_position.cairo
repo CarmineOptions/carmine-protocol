@@ -481,7 +481,6 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
     );
     // Locked capital - premia - fees -> User is long, pool is short
     // 3 * 1500 - 846.1417797601932 - 846.1417797601932 * 0.03
-    // assert pools_pos_val_put_8 = 7845567041530712729340; FIXME: NEW VALUE IS WAY HIGHER
     assert pools_pos_val_put_8 = 9586136352483524982406;
    
     %{
