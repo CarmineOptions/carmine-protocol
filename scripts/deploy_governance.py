@@ -1,19 +1,16 @@
 import asyncio
 import json
-import time
 from os import getenv
 from typing import List, Any
 
-from starknet_py.abi import AbiParser
 from starknet_py.contract import Contract
-from starknet_py.net import AccountClient, KeyPair
+from starknet_py.net import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models.chains import StarknetChainId
 from starknet_py.contract import ContractFunction
 
 # This script deploys the governance contract to the StarkNet network.
-# TODO multicalls, maybe, though it can save us 10 dollars at most?
 
 client = GatewayClient(net="testnet")
 address = getenv("GOV_ADDRESS")
@@ -64,7 +61,7 @@ async def deploy_new_proxy(proxy_class_hash: int, implementation_hash: int, prox
         class_hash=proxy_class_hash,
         abi=proxy_abi,
         constructor_args=constructor_args,
-        max_fee=int(1e16),
+        max_fee=int(5e16),
     )
     print(f'Deploying an impl via new {proxy_abi_filename} in tx {hex(deploy_result.hash)}'.format())
     await deploy_result.wait_for_acceptance()
@@ -114,7 +111,7 @@ async def deploy_everything(
 
 def main():
     asyncio.run(deploy_everything(
-       #governance_class_hash=0x13502fa564e3fa2f3fdee9770b69f33c5648199b3ffe576656c7ef339ff8712,
+       governance_class_hash=0x4cf07b47c6b655a2b5634eeffba68eeb75f655f3c37c2e055b42c5c7f246af9,
        governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
        governance_token_class_hash=0x1b555006a1646575886d7eb73b6939a5105c668bdbc4e9ed33ab120ca6b60b2,
