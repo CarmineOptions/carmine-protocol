@@ -1,7 +1,7 @@
 %lang starknet
 
 from starkware.starknet.common.syscalls import get_block_number, get_caller_address
-from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt
+from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt, uint256_unsigned_div_rem
 from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn, unsigned_div_rem, assert_nn_le
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
@@ -207,6 +207,35 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return ();
 }
 
+// @notice returns 0 if the proposal is still being voted on, 1 if it passed due to yay by >50 % of votes
+// @dev assumes (doesn't check!) that voting is still in progress
+func check_proposal_passed_express{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    prop_id: felt
+) -> (res: felt) {
+    alloc_locals;
+    let (gov_token_addr) = governance_token_address.read();
+    let (yay_tally) = proposal_total_yay.read(prop_id);
+
+    // not only tokenholders are eligible, but investors as well, they hold 1/4th of the voting power.
+    let (total_eligible_votes_from_tokenholders) = IERC20.totalSupply(contract_address=gov_token_addr);
+    // so we must calculate 5/4 of the total supply
+    // and from that 1/2, because that's 50 %. so 5/8 of the total supply
+    let FIVE = Uint256(low = 5, high = 0);
+    let (intermediate, carry) = uint256_mul(total_eligible_votes_from_tokenholders, FIVE);
+    with_attr error_message("check_proposal_passed_express: overflow"){ 
+        assert carry.low = 0;
+        assert carry.high = 0;
+    }
+    let EIGHT = Uint256(low = 8, high = 0);
+    let (minimum_for_express, _) = uint256_unsigned_div_rem(intermediate, EIGHT);
+
+    let yay_tally_uint256 = intToUint256(yay_tally);
+    let (cmp_res) = uint256_lt(minimum_for_express, yay_tally_uint256);
+    if(cmp_res == 1){
+        return (res=1);
+    }
+    return (res=0);
+}
 
 // @notice Returns proposal status – passed = 1, rejected = -1, voting = 0.
 // rejected due to not enough votes (didn't meet quorum) = -1
@@ -219,7 +248,7 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
     let (curr_block_number) = get_block_number();
     let block_cmp = is_le(curr_block_number, end_block_number);
     if (block_cmp == 1){
-        return (res=0);
+        return check_proposal_passed_express(prop_id);
     }
 
     let (gov_token_addr) = governance_token_address.read();
@@ -234,6 +263,7 @@ func get_proposal_status{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         let (tally_multiplied, carry) = uint256_mul(total_tally_uint256, share);
         assert carry.low = 0;
         assert carry.high = 0;
+        // doesn't include investors, the quorum is set with that in mind
         let (total_eligible_votes) = IERC20.totalSupply(contract_address=gov_token_addr);
     }
 

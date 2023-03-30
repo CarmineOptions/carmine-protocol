@@ -308,6 +308,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.2.1 attempt to upgrade to it with test of investor voting, proposal didn't meet quorum (only 1 voter)
     // 0.3 prop 3 really fix investor voting = 0x1205e5c9ecef26004ce6b416bcc6a17ab5839ad39bd9fcb4c183758122feb3e
     // 0.4 can upgrade stuff other than governance, deploy and init whole AMM
-    let version = '0.4';
+    // 0.5 proposal is considered passed as soon as 50 % of eligible voters voted for it
+    let version = '0.5';
     return (version = version);
 }
