@@ -7,7 +7,7 @@ from starkware.cairo.common.uint256 import Uint256
 from types import Math64x61_
 from openzeppelin.token.erc20.IERC20 import IERC20
 from constants import EMPIRIC_ORACLE_ADDRESS
-from tests.itest_specs.itest_utils import Stats, StatsInput, print_stats, get_stats
+from tests.itest_specs.itest_utils import Stats, StatsInput, get_stats
 
 from math64x61 import Math64x61
 
@@ -202,8 +202,6 @@ namespace SeriesOfTrades {
         // Assert pool position value
         assert stats_long_put_0.pool_position_val = 0;
         assert stats_long_call_0.pool_position_val = 0;
-        
-        
         
         %{
             # optional, but included for completeness and extensibility
@@ -577,11 +575,6 @@ namespace SeriesOfTrades {
         let (stats_short_call_0) = get_stats(short_call_input);
         let (stats_long_call_0) = get_stats(long_call_input);
 
-        // print_stats(stats_long_put_0);
-        // print_stats(stats_short_put_0);
-        // print_stats(stats_short_call_0);
-        // print_stats(stats_long_call_0);
-
         // Assert amount of unlocked capital
         assert stats_long_put_0.pool_unlocked_capital = 5009094143;
         assert stats_long_call_0.pool_unlocked_capital = 5000057169291651187;
@@ -792,8 +785,7 @@ namespace SeriesOfTrades {
         additional_setup(); //conducts some trades
         trade_settle_before_pool(); // Settles and option before the pool
         expire_options_for_pool(); // expires all the options for pool
-        // trade_settle_part(); // settles part of trade
-        // trade_settle_all(); // settles all of the trade
+        trade_settle_part(); // settles part of trade
         
         return ();
     }
@@ -897,32 +889,23 @@ namespace SeriesOfTrades {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_0.low = 3493922427;
+        assert admin_myUSD_balance_0.low = 3493917976;
         
         // Test amount of myETH on option-buyer's account
         let (admin_myETH_balance_0: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_0.low = 3999947508456065619;
+        assert admin_myETH_balance_0.low = 3999953077976492459;
 
         let (stats_long_put_0) = get_stats(long_put_input);
         let (stats_short_put_0) = get_stats(short_put_input);
         let (stats_short_call_0) = get_stats(short_call_input);
         let (stats_long_call_0) = get_stats(long_call_input);
-        
-        print_stats(stats_long_call_0);
-        print_stats(stats_short_call_0);
-        print_stats(stats_long_put_0);
-        print_stats(stats_short_put_0);
-        
-        %{
-            print(str(ids.admin_myUSD_balance_0.low), str(ids.admin_myETH_balance_0.low))
-        %}
 
         // Assert amount of unlocked capital
-        assert stats_long_put_0.pool_unlocked_capital = 5006077574;
-        assert stats_long_call_0.pool_unlocked_capital = 5000052491543934382;
+        assert stats_long_put_0.pool_unlocked_capital = 5006082024;
+        assert stats_long_call_0.pool_unlocked_capital = 5000046922023507541;
 
         // Assert position from pool's position
         assert stats_long_put_0.opt_long_pos = 0;
@@ -931,8 +914,8 @@ namespace SeriesOfTrades {
         assert stats_long_call_0.opt_long_pos = 0;
 
         // Assert lpool balance
-        assert stats_long_put_0.lpool_balance = 5006077574;
-        assert stats_long_call_0.lpool_balance = 5000052491543934382;
+        assert stats_long_put_0.lpool_balance = 5006082024;
+        assert stats_long_call_0.lpool_balance = 5000046922023507541;
 
         // Assert locked capital
         assert stats_long_put_0.pool_locked_capital = 0;
@@ -953,7 +936,6 @@ namespace SeriesOfTrades {
 
     func trade_settle_part{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
         alloc_locals;
-
 
         tempvar lpt_call_addr;
         tempvar lpt_put_addr;
@@ -997,7 +979,7 @@ namespace SeriesOfTrades {
                 ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+                ids.tmp_address, "get_last_spot_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
             )
         %}
 
@@ -1064,32 +1046,23 @@ namespace SeriesOfTrades {
             contract_address=myusd_addr,
             account=admin_addr
         );
-        assert admin_myUSD_balance_0.low = 3493922427;
+        assert admin_myUSD_balance_0.low = 4218917976;
         
         // Test amount of myETH on option-buyer's account
         let (admin_myETH_balance_0: Uint256) = IERC20.balanceOf(
             contract_address=myeth_addr,
             account=admin_addr
         );
-        assert admin_myETH_balance_0.low = 3999947508456065619;
+        assert admin_myETH_balance_0.low = 4499953077976492459;
 
         let (stats_long_put_0) = get_stats(long_put_input);
         let (stats_short_put_0) = get_stats(short_put_input);
         let (stats_short_call_0) = get_stats(short_call_input);
         let (stats_long_call_0) = get_stats(long_call_input);
         
-        print_stats(stats_long_call_0);
-        print_stats(stats_short_call_0);
-        print_stats(stats_long_put_0);
-        print_stats(stats_short_put_0);
-        
-        %{
-            print(str(ids.admin_myUSD_balance_0.low), str(ids.admin_myETH_balance_0.low))
-        %}
-
         // Assert amount of unlocked capital
-        assert stats_long_put_0.pool_unlocked_capital = 5006077574;
-        assert stats_long_call_0.pool_unlocked_capital = 5000052491543934382;
+        assert stats_long_put_0.pool_unlocked_capital = 5006082024;
+        assert stats_long_call_0.pool_unlocked_capital = 5000046922023507541;
 
         // Assert position from pool's position
         assert stats_long_put_0.opt_long_pos = 0;
@@ -1098,8 +1071,8 @@ namespace SeriesOfTrades {
         assert stats_long_call_0.opt_long_pos = 0;
 
         // Assert lpool balance
-        assert stats_long_put_0.lpool_balance = 5006077574;
-        assert stats_long_call_0.lpool_balance = 5000052491543934382;
+        assert stats_long_put_0.lpool_balance = 5006082024;
+        assert stats_long_call_0.lpool_balance = 5000046922023507541;
 
         // Assert locked capital
         assert stats_long_put_0.pool_locked_capital = 0;
@@ -1193,6 +1166,67 @@ namespace SeriesOfTrades {
             maturity=expiry,
         );
         
+        // Define inputs for get_stats function
+        let long_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_put_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_put_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_put_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let long_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_long_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+        let short_call_input = StatsInput (
+            user_addr = admin_addr,
+            lpt_addr = lpt_call_addr,
+            amm_addr = amm_addr,
+            opt_addr = opt_short_call_addr,
+            expiry = expiry,
+            strike_price = strike_price
+        );
+
+        let (stats_long_put_0) = get_stats(long_put_input);
+        let (stats_short_put_0) = get_stats(short_put_input);
+        let (stats_short_call_0) = get_stats(short_call_input);
+        let (stats_long_call_0) = get_stats(long_call_input);
+
+        // Assert amount of unlocked capital
+        assert stats_long_put_0.pool_unlocked_capital = 5006082024;
+        assert stats_long_call_0.pool_unlocked_capital = 5000046922023507541;
+
+        // Assert position from pool's position
+        assert stats_long_put_0.opt_long_pos = 0;
+        assert stats_long_put_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_short_pos = 0;
+        assert stats_long_call_0.opt_long_pos = 0;
+
+        // Assert lpool balance
+        assert stats_long_put_0.lpool_balance = 5006082024;
+        assert stats_long_call_0.lpool_balance = 5000046922023507541;
+
+        // Assert locked capital
+        assert stats_long_put_0.pool_locked_capital = 0;
+        assert stats_long_call_0.pool_locked_capital = 0;
+
+        // Assert pool position value
+        assert stats_long_put_0.pool_position_val = 0;
+        assert stats_long_call_0.pool_position_val = 0;
+
         %{
             stop_prank_amm()
             stop_mock_current_price()
