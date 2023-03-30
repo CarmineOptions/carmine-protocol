@@ -73,12 +73,11 @@ func test_trade_close{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     return ();
 }
 
-// FIXME: Broken somewhere in expire_option_token, overflowing or sth
-// @external
-// func test_trade_settle{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
-//     SeriesOfTrades.trade_settle();
-//     return ();
-// }
+@external
+func test_trade_settle{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    SeriesOfTrades.trade_settle();
+    return ();
+}
 
 
 @external
