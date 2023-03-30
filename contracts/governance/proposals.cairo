@@ -2,7 +2,7 @@
 
 from starkware.starknet.common.syscalls import get_block_number, get_caller_address
 from starkware.cairo.common.uint256 import Uint256, uint256_mul, assert_uint256_lt, uint256_lt, uint256_unsigned_div_rem
-from starkware.cairo.common.math import assert_not_zero, assert_le, assert_nn, unsigned_div_rem, assert_nn_le
+from starkware.cairo.common.math import assert_not_zero, assert_le, assert_le_felt, assert_nn, unsigned_div_rem, assert_nn_le
 from starkware.cairo.common.math_cmp import is_le, is_nn
 
 from types import Address, PropDetails, BlockNumber, VoteStatus, ContractType, VoteCounts
@@ -124,7 +124,7 @@ func submit_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     // this fails with one in approximately 10000 hashes, but a proposer can always do minor changes to the contract and get a new hash
     const IMPL_HASH_MIN_VALUE = 0x200000000000000000000000000000000000000000000000000000000000;
     with_attr error_message("impl_hash too small, is it really a class hash?"){
-        assert_le(IMPL_HASH_MIN_VALUE, impl_hash);
+        assert_le_felt(IMPL_HASH_MIN_VALUE, impl_hash);
     }
 
     assert_correct_contract_type(to_upgrade);
