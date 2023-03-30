@@ -37,9 +37,9 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
     let (optoken_addr) = deploy_via_proxy(
         proxy_class=proxy_class,
         impl_class=opt_class,
-        salt=salt
+        salt=custom_salt
     );
-    
+
     with_attr error_message("add_option: failed to initialize optoken"){
         IOptionToken.initializer(
             contract_address=optoken_addr,
@@ -87,13 +87,12 @@ func deploy_via_proxy{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
             assert [calldata] = impl_class;
             assert [calldata + 1] = 0;
             assert [calldata + 2] = 0;
-            assert [calldata + 3] = 0;
         }
         let curr_salt = salt + impl_class;
         let (contract_address) = deploy(
             class_hash=proxy_class,
             contract_address_salt=curr_salt,
-            constructor_calldata_size=4,
+            constructor_calldata_size=3,
             constructor_calldata=calldata,
             deploy_from_zero=FALSE
         );
