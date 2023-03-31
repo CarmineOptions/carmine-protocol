@@ -323,6 +323,9 @@ func vote_investor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     let total_supply_felt = total_supply.low;
     assert total_supply.high = 0;
     let real_investor_voting_power = total_supply_felt - TEAM_TOKEN_BALANCE;
+    with_attr error_message("real_investor_voting power negative, check TEAM_TOKEN_BALANCE"){
+        assert_nn(real_investor_voting_power);
+    }
 
     // doesn't work because it needs non-int math
     // real_vote_power = all_investor_real_voting_power * (this_investor_invpower / total_distributed_invpower)
