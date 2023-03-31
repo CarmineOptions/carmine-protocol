@@ -544,7 +544,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  FIXME: fails when spot median returns 0.05
+                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  
             ) 
         %}
         
@@ -830,7 +830,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [11000000, 8, 0, 0]  # mock current DOGE price at 0.1  FIXME: fails when spot median returns 0.05
+                ids.tmp_address, "get_spot_median", [11000000, 8, 0, 0]  # mock current DOGE price at 0.11
             ) 
         %}
         let (doge_short_premia_4) = IAMM.trade_open(
@@ -971,7 +971,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  FIXME: fails when spot median returns 0.05
+                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  
             ) 
         %}
         

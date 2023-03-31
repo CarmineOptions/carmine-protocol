@@ -723,5 +723,91 @@ namespace LPBasicViewFunctions {
         return();
     }
 
-    // FIXME: add all of the simple view functions that need setup
+    func get_option_info_from_addresses{syscall_ptr: felt*, range_check_ptr}() {
+        alloc_locals;
+
+        tempvar lpt_call_addr;
+        tempvar lpt_put_addr;
+        tempvar amm_addr;
+        tempvar opt_long_call_addr;
+        tempvar opt_short_call_addr;
+        tempvar opt_long_put_addr;
+        tempvar opt_short_put_addr;
+        tempvar myusd_addr;
+        tempvar myeth_addr;
+
+        let strike_price = Math64x61.fromFelt(1500);
+        %{
+            ids.amm_addr = context.amm_addr
+
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+
+            ids.opt_long_call_addr = context.opt_long_call_addr_0
+            ids.opt_short_call_addr = context.opt_short_call_addr_0
+            ids.opt_long_put_addr = context.opt_long_put_addr_0
+            ids.opt_short_put_addr = context.opt_short_put_addr_0
+                
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+
+            stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
+        %}
+
+        let (long_call_option) = IAMM.get_option_info_from_addresses(
+            amm_addr,
+            lpt_call_addr,
+            opt_long_call_addr
+        );
+
+        let (short_call_option) = IAMM.get_option_info_from_addresses(
+            amm_addr,
+            lpt_call_addr,
+            opt_short_call_addr
+        );
+
+        let (long_put_option) = IAMM.get_option_info_from_addresses(
+            amm_addr,
+            lpt_put_addr,
+            opt_long_put_addr
+        );
+
+        let (short_put_option) = IAMM.get_option_info_from_addresses(
+            amm_addr,
+            lpt_put_addr,
+            opt_short_put_addr
+        );
+        
+        assert long_call_option.option_side = 0;
+        assert long_call_option.maturity = 1000086400;
+        assert long_call_option.strike_price = strike_price;
+        assert long_call_option.quote_token_address = myusd_addr;
+        assert long_call_option.base_token_address = myeth_addr;
+        assert long_call_option.option_type =  0;
+
+        assert short_call_option.option_side = 1;
+        assert short_call_option.maturity = 1000086400;
+        assert short_call_option.strike_price = strike_price;
+        assert short_call_option.quote_token_address = myusd_addr;
+        assert short_call_option.base_token_address = myeth_addr;
+        assert short_call_option.option_type =  0;
+
+        assert long_put_option.option_side = 0;
+        assert long_put_option.maturity = 1000086400;
+        assert long_put_option.strike_price = strike_price;
+        assert long_put_option.quote_token_address = myusd_addr;
+        assert long_put_option.base_token_address = myeth_addr;
+        assert long_put_option.option_type =  1;
+
+        assert short_put_option.option_side = 1;
+        assert short_put_option.maturity = 1000086400;
+        assert short_put_option.strike_price = strike_price;
+        assert short_put_option.quote_token_address = myusd_addr;
+        assert short_put_option.base_token_address = myeth_addr;
+        assert short_put_option.option_type =  1;
+
+        return();
+    }
 }

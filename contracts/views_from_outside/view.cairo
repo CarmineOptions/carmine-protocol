@@ -497,7 +497,7 @@ func get_option_info_from_addresses{
     let (option) = _get_option_info_from_addresses(
         lptoken_address=lptoken_address,
         option_token_address=option_token_address,
-        starting_index=1
+        starting_index=0
     );
 
     return (option = option);
