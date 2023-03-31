@@ -250,3 +250,10 @@ func test_get_total_premia{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     LPBasicViewFunctions.get_total_premia();
     return ();
 }
+
+@external
+func test_get_option_info_from_addresses{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    LPBasicViewFunctions.get_option_info_from_addresses();
+    return ();
+}
+
