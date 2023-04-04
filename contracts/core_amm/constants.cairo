@@ -45,9 +45,11 @@ func get_opposite_side{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
 // Token addresses
 // ############################
 
-// FIXME: double check mainnet addresses here (used for empiric)
-const TOKEN_ETH_ADDRESS = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;  // goerli address
-const TOKEN_USD_ADDRESS = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426;  // goerli address
+//const TOKEN_ETH_ADDRESS = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;  // goerli address
+//const TOKEN_USD_ADDRESS = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426;  // goerli address
+
+const TOKEN_ETH_ADDRESS = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7; // mainnet, really the same
+const TOKEN_USD_ADDRESS = 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8; // mainnet
 
 
 // ############################
