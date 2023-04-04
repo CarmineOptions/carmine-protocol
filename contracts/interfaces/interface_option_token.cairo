@@ -13,6 +13,7 @@ namespace IOptionToken {
         name: felt,
         symbol: felt,
         proxy_admin: felt,
+        owner: felt,
         quote_token_address: Address,
         base_token_address: Address,
         option_type: OptionSide,
@@ -20,6 +21,12 @@ namespace IOptionToken {
         maturity: Int,
         side: OptionSide,
     ) {
+    }
+
+    func _set_owner_admin(owner: felt) {
+    }
+
+    func upgrade(new_implementation: felt) {
     }
 
     func name() -> (name: felt) {

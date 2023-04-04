@@ -13,17 +13,30 @@ from starkware.cairo.common.bool import TRUE
 
 from openzeppelin.upgrades.library import Proxy
 from openzeppelin.token.erc20.library import ERC20
+from openzeppelin.access.ownable.library import Ownable
 
 
-// owner should be main contract
+// owner should be AMM contract, proxy_admin should be governance
 @external
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     name: felt,
     symbol: felt,
     proxy_admin: felt,
+    owner: felt
 ) {
     ERC20.initializer(name, symbol, 18);
     Proxy.initializer(proxy_admin);
+    Ownable.initializer(owner);
+    return ();
+}
+
+// proxy_admin sets owner
+@external
+func _set_owner_admin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    owner: felt
+) {
+    Proxy.assert_only_admin();
+    Ownable._transfer_ownership(owner);
     return ();
 }
 
@@ -134,7 +147,7 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     to: felt, amount: Uint256
 ) {
-    Proxy.assert_only_admin();
+    Ownable.assert_only_owner();
     ERC20._mint(to, amount);
     return ();
 }
@@ -143,7 +156,7 @@ func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, amount: Uint256
 ) {
-    Proxy.assert_only_admin();
+    Ownable.assert_only_owner();
     ERC20._burn(account, amount);
     return ();
 }

@@ -6,6 +6,7 @@
 from interface_governance_token import IGovernanceToken
 from interface_amm import IAMM
 from interface_lptoken import ILPToken
+from interface_option_token import IOptionToken
 
 from proxy_library import Proxy
 from orchestration import deploy_via_proxy, add_option
@@ -134,7 +135,8 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
             contract_address=eth_lpt_addr,
             name='Carmine ETH/USDC call pool',
             symbol='C-ETHUSDC-C',
-            proxy_admin=governance_address
+            proxy_admin=governance_address,
+            owner=amm_addr
         );
         // initialize ETH call pool
         const ETH_volatility_adjustment_speed = 34587645138205409280; // 15*2**61 = 15 ETH
@@ -163,7 +165,8 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
             contract_address=usdc_lpt_addr,
             name='Carmine ETH/USDC put pool',
             symbol='C-ETHUSDC-P',
-            proxy_admin=governance_address
+            proxy_admin=governance_address,
+            owner=amm_addr
         );
         // initialize USDC put pool
         const USDC_volatility_adjustment_speed = 57646075230342348800000; // 25000*2**61 = 25k USDC
@@ -303,6 +306,39 @@ func apply_passed_proposal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     return ();
 }
 
+// fix lptoken and optoken being owned by governance, making amm unable to mint them
+@external
+func apply_prop_one{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    let lpt_1 = 0x8d7253c73fde5f8418a40cb66a09dc304bef463dc1e9d14004c9651554136b;
+    let lpt_2 = 0x1ea6feaa5823e9dc6a75b7afbd21342b77d69525106ea929a24f91649addd16;
+    let opt_1_1 = 0x236567776287676a6f64ea9b55bab079a7f2130cdfd7789ab7cc5d9b1166f02;
+    let opt_1_2 = 0x77c52975d074e0a7181c82c807fc9233a999831b066bb61b85048e3db809471;
+    let opt_2_1 = 0x5df48b57e1ad3e156a52d66d12dd8bb920e24701620c4272de6ea6ea2075316;
+    let opt_2_2 = 0x4be748a3ec4a71854491dd4d758cd24aa43ce62eb161ed8231c49843ed64bfc;
+
+    let new_lpt_class_hash = 0x596eb5c2b9e57c4a892174427f22261935822dbc819ae448584111d80cebbeb;
+    let new_opt_class_hash = 0x6a890ebc06e0832df06e1ebcc10510e1557b2c1c23d51dbe4704f761be2af40;
+
+    let (amm_addr) = amm_address.read();
+
+    ILPToken.upgrade(contract_address=lpt_1, new_implementation=new_lpt_class_hash);
+    ILPToken.upgrade(contract_address=lpt_2, new_implementation=new_lpt_class_hash);
+    IOptionToken.upgrade(contract_address=opt_1_1, new_implementation=new_opt_class_hash);
+    IOptionToken.upgrade(contract_address=opt_1_2, new_implementation=new_opt_class_hash);
+    IOptionToken.upgrade(contract_address=opt_2_1, new_implementation=new_opt_class_hash);
+    IOptionToken.upgrade(contract_address=opt_2_2, new_implementation=new_opt_class_hash);
+
+    ILPToken._set_owner_admin(contract_address=lpt_1, owner=amm_addr);
+    ILPToken._set_owner_admin(contract_address=lpt_2, owner=amm_addr);
+    IOptionToken._set_owner_admin(contract_address=opt_1_1, owner=amm_addr);
+    IOptionToken._set_owner_admin(contract_address=opt_1_2, owner=amm_addr);
+    IOptionToken._set_owner_admin(contract_address=opt_2_1, owner=amm_addr);
+    IOptionToken._set_owner_admin(contract_address=opt_2_2, owner=amm_addr);
+
+    return ();
+}
+
+
 @view
 func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
     version: felt
@@ -320,6 +356,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.4 can upgrade stuff other than governance, deploy and init whole AMM
     // 0.5 proposal is considered passed as soon as 50 % of eligible voters voted for it
     // 1.0 mainnet
-    let version = '1.0';
+    // 1.0.1 fix bug in lptoken and optoken ownership
+    let version = '1.0.1';
     return (version = version);
 }

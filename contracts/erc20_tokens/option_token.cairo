@@ -18,8 +18,10 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math_cmp import is_le
 from starkware.cairo.common.uint256 import Uint256
 from starkware.starknet.common.syscalls import get_block_timestamp
+
 from openzeppelin.upgrades.library import Proxy
 from openzeppelin.token.erc20.library import ERC20
+from openzeppelin.access.ownable.library import Ownable
 
 from constants import (
     OPTION_CALL,
@@ -62,6 +64,7 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     name: felt,
     symbol: felt,
     proxy_admin: felt,
+    owner: felt,
     quote_token_address: Address,
     base_token_address: Address,
     option_type: OptionSide,
@@ -72,6 +75,7 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     // inputs below admin are inputs needed for the option definition
     ERC20.initializer(name, symbol, 18);
     Proxy.initializer(proxy_admin);
+    Ownable.initializer(owner);
 
     option_token_quote_token_address.write(quote_token_address);
     option_token_base_token_address.write(base_token_address);
@@ -79,6 +83,16 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     option_token_strike_price.write(strike_price);
     option_token_maturity.write(maturity);
     option_token_side.write(side);
+    return ();
+}
+
+// proxy_admin sets owner
+@external
+func _set_owner_admin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    owner: felt
+) {
+    Proxy.assert_only_admin();
+    Ownable._transfer_ownership(owner);
     return ();
 }
 
@@ -233,7 +247,7 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     to: felt, amount: Uint256
 ) {
-    Proxy.assert_only_admin();
+    Ownable.assert_only_owner();
     ERC20._mint(to, amount);
     return ();
 }
@@ -242,7 +256,7 @@ func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func burn{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, amount: Uint256
 ) {
-    Proxy.assert_only_admin();
+    Ownable.assert_only_owner();
     ERC20._burn(account, amount);
     return ();
 }

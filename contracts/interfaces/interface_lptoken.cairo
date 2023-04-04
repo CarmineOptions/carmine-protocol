@@ -12,7 +12,14 @@ namespace ILPToken {
         name: felt,
         symbol: felt,
         proxy_admin: felt,
+        owner: felt
     ) {
+    }
+
+    func _set_owner_admin(owner: felt) {
+    }
+
+    func upgrade(new_implementation: felt) {
     }
 
     func name() -> (name: felt) {
