@@ -63,10 +63,13 @@ const STOP_TRADING_BEFORE_MATURITY_SECONDS = 60 * 60 * 2;
 
 
 // ############################
-// Contrants for Empiric oracle
+// Constants for Empiric oracle
 // ############################
 
-const EMPIRIC_ORACLE_ADDRESS = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
+// TESTNET
+// const EMPIRIC_ORACLE_ADDRESS = 0x446812bac98c08190dee8967180f4e3cdcd1db9373ca269904acb17f67f7093;
+// MAINNET
+const EMPIRIC_ORACLE_ADDRESS = 0x0346c57f094d641ad94e43468628d8e9c574dcb2803ec372576ccc60a40be2c4;
 const EMPIRIC_AGGREGATION_MODE = 0;  // 0 is default for median
 
 const EMPIRIC_BTC_USD_KEY = 18669995996566340;
