@@ -714,11 +714,31 @@ func set_trading_halt{
 }(
     new_status: Bool
 ) -> () {
-    Proxy.assert_only_admin();
+    alloc_locals;
+    let (caller_addr) = get_caller_address();
+    local syscall_ptr: felt* = syscall_ptr;
+    let (can_halt) = can_halt_trading(caller_addr);
+    with_attr error_message("Only emergency admins can halt trading."){
+        assert can_halt = 1;
+    }
     assert_nn(new_status);
     assert_le(new_status, 1);
     trading_halted.write(new_status);
     return ();
+}
+
+
+func can_halt_trading{range_check_ptr}(account_address: felt) -> (res: Bool) {
+    if (account_address == 0x0583a9d956d65628f806386ab5b12dccd74236a3c6b930ded9cf3c54efc722a1) {
+        return (res = TRUE); // Ondra
+    }
+    if (account_address == 0x06717eaf502baac2b6b2c6ee3ac39b34a52e726a73905ed586e757158270a0af) {
+        return (res = TRUE); // Andrej
+    }
+    if (account_address == 0x0011d341c6e841426448ff39aa443a6dbb428914e05ba2259463c18308b86233) {
+        return (res = TRUE); // Marek
+    }
+    return (res = FALSE);
 }
 
 
