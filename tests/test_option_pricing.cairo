@@ -107,11 +107,11 @@ func test_d1_d2{syscall_ptr: felt*, range_check_ptr, pedersen_ptr: HashBuiltin*}
         from math import log, isclose, sqrt
         Math64x61_FRACT_PART = 2**61
 
-        (sigma, ) = ids.sigma / Math64x61_FRACT_PART,
-        (ttm, ) = ids.ttm / Math64x61_FRACT_PART,
-        (strike_price, ) = ids.strike_price / Math64x61_FRACT_PART ,
-        (spot_price, ) = ids.underlying_price / Math64x61_FRACT_PART ,
-        (r, ) = ids.risk_free_rate_annualized / Math64x61_FRACT_PART,
+        sigma = ids.sigma / Math64x61_FRACT_PART
+        ttm = ids.ttm / Math64x61_FRACT_PART
+        strike_price = ids.strike_price / Math64x61_FRACT_PART 
+        spot_price = ids.underlying_price / Math64x61_FRACT_PART 
+        r = ids.risk_free_rate_annualized / Math64x61_FRACT_PART
 
         d1_num = log(spot_price / strike_price) + (r + (sigma ** 2)/2)*ttm
         d1_denom = sigma * sqrt(ttm)
