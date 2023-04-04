@@ -81,36 +81,46 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
 
     // Initialize gov token, mint the governance tokens
-
-    let initial_supply_per_teammember = Uint256(1000000000000000000, 0); // 10**18, 1 CARM
-    // TODO add all recipients and precise amts
-    let (governance_address) = get_contract_address();
-    const recipient_1 = 0x001dd8e12b10592676e109c85d6050bdc1e17adf1be0573a089e081c3c260ed9; // Ondra
-    IGovernanceToken.initializer(
-        contract_address=governance_token_addr,
-        name='Carmine dev gov token v1',
-        symbol='CARMDEV1',
-        decimals=18,
-        initial_supply=initial_supply_per_teammember,
-        recipient=recipient_1,
-        proxy_admin=governance_address
-    );
-    IGovernanceToken.mint(contract_address=governance_token_addr, to=0x028b14F588C3E68DD92067a9D8604709A002Bfd6d0C2c2e8D92a777967B6d2DF, amount=initial_supply_per_teammember); // Marek
-    IGovernanceToken.mint(contract_address=governance_token_addr, to=0x00CcAd7A3e7d1B16Db2aE10d069176f0BfB205DE68c4627D91afF59f0D0F9382, amount=initial_supply_per_teammember); // Andrej
-    IGovernanceToken.mint(contract_address=governance_token_addr, to=0x029AF9CF62C9d871453F3b033e514dc790ce578E0e07241d6a5feDF19cEEaF08, amount=initial_supply_per_teammember); // David
-    IGovernanceToken.mint(contract_address=governance_token_addr, to=0x04d2FE1Ff7c0181a4F473dCd982402D456385BAE3a0fc38C49C0A99A620d1abe, amount=initial_supply_per_teammember); // Filip
-
+    with_attr error_message("Unable to initialize governance token"){
+        let initial_supply_marek = Uint256(865003000000000000000000, 0); // 10**18, 1 CARM
+        // TODO add all recipients and precise amts
+        let (governance_address) = get_contract_address();
+        const recipient_1 = 0x0011d341c6e841426448ff39aa443a6dbb428914e05ba2259463c18308b86233; // Marek
+        IGovernanceToken.initializer(
+            contract_address=governance_token_addr,
+            name='Carmine token',
+            symbol='CARM',
+            decimals=18,
+            initial_supply=initial_supply_marek,
+            recipient=recipient_1,
+            proxy_admin=governance_address
+        );
+        let supply_ondra = Uint256(290992000000000000000000, 0);
+        IGovernanceToken.mint(contract_address=governance_token_addr, to=0x0583a9d956d65628f806386ab5b12dccd74236a3c6b930ded9cf3c54efc722a1, amount=supply_ondra); // Ondra
+        let supply_andrej = Uint256(149712000000000000000000, 0);
+        IGovernanceToken.mint(contract_address=governance_token_addr, to=0x06717eaf502baac2b6b2c6ee3ac39b34a52e726a73905ed586e757158270a0af, amount=supply_andrej); // Andrej
+        let supply_david = Uint256(141747000000000000000000, 0);
+        IGovernanceToken.mint(contract_address=governance_token_addr, to=0x03d1525605db970fa1724693404f5f64cba8af82ec4aab514e6ebd3dec4838ad, amount=supply_david); // David
+        let supply_katsu = Uint256(59311000000000000000000, 0);
+        IGovernanceToken.mint(contract_address=governance_token_addr, to=0x04d2FE1Ff7c0181a4F473dCd982402D456385BAE3a0fc38C49C0A99A620d1abe, amount=supply_katsu); // Katsu
+    }
     // set investor_voting_power, total_investor_distributed_power
-    investor_voting_power.write(0x001dd8e12b10592676e109c85d6050bdc1e17adf1be0573a089e081c3c260ed9, 10); // Ondra plays one investor here
-    investor_voting_power.write(0x028b14F588C3E68DD92067a9D8604709A002Bfd6d0C2c2e8D92a777967B6d2DF, 10); // Marek is another investor
-    total_investor_distributed_power.write(20);
+    //investor_voting_power.write(0x001dd8e12b10592676e109c85d6050bdc1e17adf1be0573a089e081c3c260ed9, 10); // Ondra plays one investor here
+    //investor_voting_power.write(0x028b14F588C3E68DD92067a9D8604709A002Bfd6d0C2c2e8D92a777967B6d2DF, 10); // Marek is another investor
+    //total_investor_distributed_power.write(0);
 
     // Initialize AMM
-    IAMM.initializer(contract_address=amm_addr, proxy_admin=governance_address);
+    with_attr error_message("Unable to initialize AMM"){
+        IAMM.initializer(contract_address=amm_addr, proxy_admin=governance_address);
+    }
 
-    // TODO adjust USDC/ETH addr for mainnet
-    const USDC_addr = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426; // TESTNET, quote token
-    const ETH_addr = 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;
+    // TESTNET
+    //const USDC_addr = 0x5a643907b9a4bc6a55e9069c4fd5fd1f5c79a22470690f75556c4736e34426; // TESTNET, quote token
+    //const ETH_addr = 0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;
+    // MAINNET
+    const USDC_addr = 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8;
+    const ETH_addr = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;
+
     let ZERO = Uint256(0, 0);
 
     // deploy call pool ETH lptoken
@@ -122,8 +132,8 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
         );
         ILPToken.initializer(
             contract_address=eth_lpt_addr,
-            name='Carmine ETH call pool',
-            symbol='C-ETH-CALL',
+            name='Carmine ETH/USDC call pool',
+            symbol='C-ETHUSDC-C',
             proxy_admin=governance_address
         );
         // initialize ETH call pool
@@ -151,8 +161,8 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
         );
         ILPToken.initializer(
             contract_address=usdc_lpt_addr,
-            name='Carmine USDC put pool',
-            symbol='C-USDC-PUT',
+            name='Carmine ETH/USDC put pool',
+            symbol='C-ETHUSDC-P',
             proxy_admin=governance_address
         );
         // initialize USDC put pool
@@ -309,6 +319,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.3 prop 3 really fix investor voting = 0x1205e5c9ecef26004ce6b416bcc6a17ab5839ad39bd9fcb4c183758122feb3e
     // 0.4 can upgrade stuff other than governance, deploy and init whole AMM
     // 0.5 proposal is considered passed as soon as 50 % of eligible voters voted for it
-    let version = '0.5';
+    // 1.0 mainnet
+    let version = '1.0';
     return (version = version);
 }

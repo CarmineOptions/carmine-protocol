@@ -2,6 +2,7 @@ import asyncio
 import json
 from os import getenv
 from typing import List, Any
+from time import sleep
 
 from starknet_py.contract import Contract
 from starknet_py.net import KeyPair
@@ -12,7 +13,14 @@ from starknet_py.contract import ContractFunction
 
 # This script deploys the governance contract to the StarkNet network.
 
-client = GatewayClient(net="testnet")
+TESTNET = False
+if not TESTNET:
+    print("You are NOT deploying to testnet. Are you sure? (Ctrl+C to cancel)")
+    sleep(5)
+    print("Continuing...")
+
+client = GatewayClient(net="testnet") if TESTNET else GatewayClient(net="mainnet")
+chain = StarknetChainId.TESTNET if TESTNET else StarknetChainId.MAINNET
 address = getenv("GOV_ADDRESS")
 privkey = getenv("GOV_PRIVKEY")
 pubkey = getenv("GOV_PUBKEY")
@@ -27,7 +35,7 @@ account = Account(
         private_key=int(privkey, 16),
         public_key=int(pubkey, 16),
     ),
-    chain=StarknetChainId.TESTNET,
+    chain=chain,
 )
 
 
@@ -36,7 +44,7 @@ async def declare_contract(filename: str):
         bytecode = file.read()
 
     declare_transaction = await account.sign_declare_transaction(
-        compiled_contract=bytecode, max_fee=int(1e16)
+        compiled_contract=bytecode, max_fee=int(5e16)
     )
     print(f'Prepared declare transaction for {filename}'.format())
     resp = await account.client.declare(transaction=declare_transaction)
@@ -110,15 +118,25 @@ async def deploy_everything(
 
 
 def main():
-    asyncio.run(deploy_everything(
-       governance_class_hash=0x4cf07b47c6b655a2b5634eeffba68eeb75f655f3c37c2e055b42c5c7f246af9,
-       governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
-       generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
-       governance_token_class_hash=0x1b555006a1646575886d7eb73b6939a5105c668bdbc4e9ed33ab120ca6b60b2,
-       amm_class_hash=0x59acc8f2965f512e45f48f29dc72efb7a601b799bc908751b94e82c53311f19,
-       lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
-       option_token_class_hash=0x84f58cb1bae6c71e3fa654b5cf56ee3203ec8bc85f4360ed1dfef651a0ae4c,
-    ))
+    if TESTNET:
+        asyncio.run(deploy_everything(
+        governance_class_hash=0xea323dfd569ed139b1eef9f18020810e944707fc3dc2fa41de3941b0724122,
+        governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
+        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
+        governance_token_class_hash=0x134b48f0cdd4aeb76ee8e54b63227a1865d36719beee284b1bbc2b1ffc82884,
+        amm_class_hash=0x69964b1e39b1c74de1f02967e0c063f0b2edf0d9d33eda6f917ea5ef21c03e9,
+        lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
+        option_token_class_hash=0x84f58cb1bae6c71e3fa654b5cf56ee3203ec8bc85f4360ed1dfef651a0ae4c,
+        ))
+
+    # MAINNET
+    else:
+        asyncio.run(deploy_everything(
+            #governance_class_hash=
+            generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
+            #governance_token_class_hash=0x134b48f0cdd4aeb76ee8e54b63227a1865d36719beee284b1bbc2b1ffc82884,
+            lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
+        ))
 
 if __name__ == "__main__":
     main()
