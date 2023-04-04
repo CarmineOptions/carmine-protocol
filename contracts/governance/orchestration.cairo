@@ -46,6 +46,7 @@ func add_option{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
             name=name,
             symbol='C-OPT',
             proxy_admin=governance_address,
+            owner=amm_address,
             quote_token_address=quote_token_address,
             base_token_address=base_token_address,
             option_type=option_type,
