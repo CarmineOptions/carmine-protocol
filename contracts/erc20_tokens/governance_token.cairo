@@ -96,12 +96,14 @@ func allowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func transfer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     recipient: felt, amount: Uint256
 ) -> (success: felt) {
+    return (success=0);
 }
 
 @external
 func transferFrom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     sender: felt, recipient: felt, amount: Uint256
 ) -> (success: felt) {
+    return (success=0);
 }
 
 @external
