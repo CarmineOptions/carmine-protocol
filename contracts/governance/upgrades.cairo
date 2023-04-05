@@ -338,6 +338,12 @@ func apply_prop_one{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
     return ();
 }
 
+@external
+func apply_prop_two{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    let (amm_addr) = amm_address.read();
+    IAMM.set_max_option_size_percent_of_voladjspd(contract_address=amm_addr, max_opt_size_as_perc_of_vol_adjspd=30);
+    return ();
+}
 
 @view
 func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
@@ -357,6 +363,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 0.5 proposal is considered passed as soon as 50 % of eligible voters voted for it
     // 1.0 mainnet
     // 1.0.1 fix bug in lptoken and optoken ownership
-    let version = '1.0.1';
+    // 1.0.2 set max option size as percent of voladjspd
+    let version = '1.0.2';
     return (version = version);
 }
