@@ -20,7 +20,7 @@ from option_pricing_helpers import (
     get_new_volatility
 )
 
-from types import Option, Math64x61_, Address, OptionType, Int, OptionSide
+from types import Option, Math64x61_, Address, OptionType, Int, OptionSide, Bool
 
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_nn, assert_not_zero, unsigned_div_rem, signed_div_rem, assert_le_felt, assert_le
