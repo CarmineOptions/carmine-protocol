@@ -1,0 +1,284 @@
+[
+    {
+        "members": [
+            {
+                "name": "impl_hash",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "to_upgrade",
+                "offset": 1,
+                "type": "felt"
+            }
+        ],
+        "name": "PropDetails",
+        "size": 2,
+        "type": "struct"
+    },
+    {
+        "members": [
+            {
+                "name": "yay",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "nay",
+                "offset": 1,
+                "type": "felt"
+            }
+        ],
+        "name": "VoteCounts",
+        "size": 2,
+        "type": "struct"
+    },
+    {
+        "data": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            },
+            {
+                "name": "impl_hash",
+                "type": "felt"
+            },
+            {
+                "name": "to_upgrade",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "Proposed",
+        "type": "event"
+    },
+    {
+        "data": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            },
+            {
+                "name": "voter",
+                "type": "felt"
+            },
+            {
+                "name": "opinion",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "Voted",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            }
+        ],
+        "name": "get_proposal_details",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "PropDetails"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            }
+        ],
+        "name": "get_vote_counts",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "VoteCounts"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "impl_hash",
+                "type": "felt"
+            },
+            {
+                "name": "to_upgrade",
+                "type": "felt"
+            }
+        ],
+        "name": "submit_proposal",
+        "outputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            },
+            {
+                "name": "opinion",
+                "type": "felt"
+            }
+        ],
+        "name": "vote",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            }
+        ],
+        "name": "get_proposal_status",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            },
+            {
+                "name": "opinion",
+                "type": "felt"
+            }
+        ],
+        "name": "vote_investor",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "data": [
+            {
+                "name": "implementation",
+                "type": "felt"
+            }
+        ],
+        "keys": [],
+        "name": "Upgraded",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "get_governance_token_address",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_amm_address",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "proxy_class",
+                "type": "felt"
+            },
+            {
+                "name": "govtoken_class",
+                "type": "felt"
+            },
+            {
+                "name": "amm_class",
+                "type": "felt"
+            },
+            {
+                "name": "lpt_class",
+                "type": "felt"
+            },
+            {
+                "name": "opt_class",
+                "type": "felt"
+            }
+        ],
+        "name": "initializer",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getImplementationHash",
+        "outputs": [
+            {
+                "name": "implementation_hash",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "prop_id",
+                "type": "felt"
+            }
+        ],
+        "name": "apply_passed_proposal",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "apply_prop_one",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "apply_prop_two",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "get_contract_version",
+        "outputs": [
+            {
+                "name": "version",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
