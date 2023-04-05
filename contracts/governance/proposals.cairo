@@ -216,17 +216,20 @@ func check_proposal_passed_express{syscall_ptr: felt*, pedersen_ptr: HashBuiltin
     let (gov_token_addr) = governance_token_address.read();
     let (yay_tally) = proposal_total_yay.read(prop_id);
 
-    // not only tokenholders are eligible, but investors as well, they hold 1/4th of the voting power.
+    // Not only tokenholders are eligible, but investors as well, they hold 1/4th of the voting power
+    // However, their votes are currently stored in storage_var, not tokens
+    // So we must calculate 4/3 of the total supply (additional supply will be 1/4th of new total)
+    // and from that 1/2, because that's 50%, So (1/2) * (4/3) = 4/6 of the total supply
     let (total_eligible_votes_from_tokenholders) = IERC20.totalSupply(contract_address=gov_token_addr);
-    // so we must calculate 4/3 of the total supply
-    // and from that 1/2, because that's 50 %. so 4/6 of the total supply
     let FOUR = Uint256(low = 4, high = 0);
+    // Multiply total votes by four
     let (intermediate, carry) = uint256_mul(total_eligible_votes_from_tokenholders, FOUR);
     with_attr error_message("check_proposal_passed_express: overflow"){ 
         assert carry.low = 0;
         assert carry.high = 0;
     }
     let SIX = Uint256(low = 6, high = 0);
+    // Now divide by 6 -> half of new total supply
     let (minimum_for_express, _) = uint256_unsigned_div_rem(intermediate, SIX);
 
     let yay_tally_uint256 = intToUint256(yay_tally);
