@@ -1,6 +1,7 @@
 %lang starknet
 
 from interfaces.interface_lptoken import ILPToken
+from interfaces.interface_option_token import IOptionToken
 from interfaces.interface_amm import IAMM
 
 from openzeppelin.token.erc20.IERC20 import IERC20
@@ -49,8 +50,8 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         context.myusd_address = deploy_contract("lib/cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20Mintable.cairo", [2, 2, 6, 10000 * 10**6, 0, admin_address, admin_address]).contract_address
 
         # todo find out whether dict notation in attr is required to pass strings
-        context.lpt_call_addr = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [111, 11, 18, 0, 0, admin_address, context.amm_addr]).contract_address # here we can use strings and not only felts yay
-        context.lpt_put_addr = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [112, 12, 18, 0, 0, admin_address, context.amm_addr]).contract_address # here we can use strings and not only felts yay
+        context.lpt_call_addr = deploy_contract("./contracts/erc20_tokens/lptoken.cairo").contract_address # here we can use strings and not only felts yay
+        context.lpt_put_addr = deploy_contract("./contracts/erc20_tokens/lptoken.cairo").contract_address # here we can use strings and not only felts yay
 
         # current time plus 24 hours
         expiry = int(1000000000 + 60*60*24)
@@ -64,10 +65,10 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         PUT = 1
         optype_put = PUT
 
-        context.opt_long_call_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_call, ids.strike_price, expiry, side_long]).contract_address
-        context.opt_short_call_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_call, ids.strike_price, expiry, side_short]).contract_address
-        context.opt_long_put_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_put, ids.strike_price, expiry, side_long]).contract_address
-        context.opt_short_put_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_put, ids.strike_price, expiry, side_short]).contract_address
+        context.opt_long_call_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
+        context.opt_short_call_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
+        context.opt_long_put_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
+        context.opt_short_put_addr_0 = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
         #stop_prank_amm = start_prank(admin_address, context.amm_addr)  # sets caller addr to admin addr
         #stop_prank_lpt0 = start_prank(admin_address, context.lpt_call_addr)
         #stop_prank_opt0 = start_prank(admin_address, context.opt_long_call_addr_0)
@@ -91,6 +92,17 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
         ids.myeth_addr = context.myeth_address
         ids.admin_addr = context.admin_address
     %}
+
+    // Run initializer of lptokens
+    ILPToken.initializer(contract_address=lpt_call_addr, name=111, symbol=11, proxy_admin=admin_addr, owner=amm_addr);
+    ILPToken.initializer(contract_address=lpt_put_addr, name=111, symbol=11, proxy_admin=admin_addr, owner=amm_addr);
+
+    // Run initializer of option tokens
+    //[1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_call, ids.strike_price, expiry, side_long]
+    IOptionToken.initializer(contract_address=opt_long_call_addr, name='Option Long Call', symbol='OLC', proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=optype_call, strike_price=strike_price, maturity=expiry, side=side_long);
+    IOptionToken.initializer(contract_address=opt_short_call_addr, name='Option Short Call', symbol='OSC', proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=optype_call, strike_price=strike_price, maturity=expiry, side=side_short);
+    IOptionToken.initializer(contract_address=opt_long_put_addr, name='Option Long Put', symbol='OLP', proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=optype_put, strike_price=strike_price, maturity=expiry, side=side_long);
+    IOptionToken.initializer(contract_address=opt_short_put_addr, name='Option Short Put', symbol='OSP', proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=myeth_addr, option_type=optype_put, strike_price=strike_price, maturity=expiry, side=side_short);
 
     // Sanity checks on minted tokens
     
