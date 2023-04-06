@@ -79,7 +79,7 @@ func test_eco_bugs{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     %{
         stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
         stop_mock_current_price = mock_call(
-            ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000, 0]  # mock current ETH price at 1400
         )
         stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
     %}

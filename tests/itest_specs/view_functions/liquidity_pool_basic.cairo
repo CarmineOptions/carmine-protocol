@@ -314,7 +314,7 @@ namespace LPBasicViewFunctions {
             stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
 
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
         %}
 
@@ -437,7 +437,7 @@ namespace LPBasicViewFunctions {
             stop_warp_add_user_position_1 = warp(1000000000 - 60*60*36, target_contract_address=ids.amm_addr)
 
             stop_mock_current_price_add_user_position = mock_call(
-                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
         %}
 
@@ -536,7 +536,7 @@ namespace LPBasicViewFunctions {
             stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
 
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [1400000000000000000000, 18, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
 
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
@@ -620,7 +620,7 @@ namespace LPBasicViewFunctions {
             stop_warp_1 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr)
 
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
         %}
 
