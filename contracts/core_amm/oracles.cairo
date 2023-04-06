@@ -5,7 +5,8 @@
 //
 
 from starkware.cairo.common.math_cmp import is_le
-from starkware.cairo.common.math import unsigned_div_rem, assert_not_zero
+from starkware.cairo.common.math import unsigned_div_rem, assert_not_zero, assert_le
+from starkware.starknet.common.syscalls import get_block_timestamp
 from starkware.cairo.common.bool import TRUE, FALSE
 
 from math64x61 import Math64x61
@@ -104,6 +105,12 @@ func empiric_median_price{syscall_ptr: felt*, range_check_ptr}(key: felt) -> (pr
         let (
             value, decimals, last_updated_timestamp, num_sources_aggregated
         ) = IEmpiricOracle.get_spot_median(EMPIRIC_ORACLE_ADDRESS, key);
+    }
+
+    // Assert that the price has been updated at least within last hour
+    with_attr error_message("Received price which is over an hour old") {
+        let (current_time) = get_block_timestamp();
+        assert_le(current_time - last_updated_timestamp, 3600);
     }
 
     with_attr error_message("Received zero median price from Empiric Oracle") {
