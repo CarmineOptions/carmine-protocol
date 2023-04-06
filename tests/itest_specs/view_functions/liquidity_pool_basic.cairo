@@ -3,6 +3,7 @@
 from constants import EMPIRIC_ORACLE_ADDRESS
 from interfaces.interface_lptoken import ILPToken
 from interfaces.interface_amm import IAMM
+from interfaces.interface_option_token import IOptionToken
 from types import Option
 
 from math64x61 import Math64x61
@@ -105,7 +106,7 @@ namespace LPBasicViewFunctions {
         local side_long;
         local expiry;
         local myusd_address;
-        local myusd_address;
+        local myeth_address;
         local optype_call;
         local lpt_call_addr;
         local opt_long_call_addr;
@@ -119,23 +120,19 @@ namespace LPBasicViewFunctions {
             ids.side_long = side_long
             ids.expiry = expiry
             ids.myusd_address = context.myusd_address
-            ids.myusd_address = context.myusd_address
+            ids.myeth_address = context.myeth_address
             ids.optype_call = optype_call
             ids.lpt_call_addr = context.lpt_call_addr
             ids.opt_long_call_addr = context.opt_long_call_addr_0
 
             stop_warp = warp(1000000000 - 60*60*96, target_contract_address=ids.amm_addr)
 
-            context.opt_long_call_addr_1 = deploy_contract(
-                "./contracts/erc20_tokens/option_token.cairo",
-                [
-                    12345, 14, 18, 0, 0, context.admin_address, context.amm_addr, context.myusd_address,
-                    context.myeth_address, optype_call, ids.strike_price, expiry, side_long
-                ]
-            ).contract_address
+            context.opt_long_call_addr_1 = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
 
             ids.opt_long_call_addr_1 = context.opt_long_call_addr_1
         %}
+
+        IOptionToken.initializer(contract_address=opt_long_call_addr_1, name=12345, symbol=14, owner=amm_addr, quote_token_address=myusd_address, base_token_address=myeth_address, option_type=optype_call, strike_price=strike_price, maturity=expiry, side=side_long);
 
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
