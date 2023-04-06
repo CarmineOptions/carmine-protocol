@@ -132,7 +132,7 @@ namespace LPBasicViewFunctions {
             ids.opt_long_call_addr_1 = context.opt_long_call_addr_1
         %}
 
-        IOptionToken.initializer(contract_address=opt_long_call_addr_1, name=12345, symbol=14, owner=amm_addr, proxy_admin=amm_addr, quote_token_address=myusd_address, base_token_address=myeth_address, option_type=optype_call, strike_price=strike_price, maturity=expiry, side=side_long);
+        IOptionToken.initializer(contract_address=opt_long_call_addr_1, name=12345, symbol=14, proxy_admin=amm_addr, owner=amm_addr, quote_token_address=myusd_address, base_token_address=myeth_address, option_type=optype_call, strike_price=strike_price, maturity=expiry, side=side_long);
 
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
