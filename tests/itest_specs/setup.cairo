@@ -95,7 +95,7 @@ func deploy_setup{syscall_ptr: felt*, range_check_ptr}(){
 
     // Run initializer of lptokens
     ILPToken.initializer(contract_address=lpt_call_addr, name=111, symbol=11, proxy_admin=admin_addr, owner=amm_addr);
-    ILPToken.initializer(contract_address=lpt_put_addr, name=111, symbol=11, proxy_admin=admin_addr, owner=amm_addr);
+    ILPToken.initializer(contract_address=lpt_put_addr, name=112, symbol=12, proxy_admin=admin_addr, owner=amm_addr);
 
     // Run initializer of option tokens
     //[1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.myeth_address, optype_call, ids.strike_price, expiry, side_long]
