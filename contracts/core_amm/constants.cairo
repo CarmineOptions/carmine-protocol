@@ -85,6 +85,27 @@ const EMPIRIC_ADA_USD_KEY = 18370920243876676;
 const EMPIRIC_XRP_USD_KEY = 24860302295520068;
 const EMPIRIC_MATIC_USD_KEY = 1425106761739050242884;
 
+const EMPIRIC_USDT_USD_KEY = 6148333044652921668;
+const EMPIRIC_DAI_USD_KEY = 19212080998863684;
+const EMPIRIC_USDC_USD_KEY = 6148332971638477636;
+
+// @notice Get Empiric stablecoin key based on used quote tokend
+// @param quote_token_addr: Address of the quote token, USDC for ETH/USDC
+// @return empiric_key: Key for the Empiric oracle if quote_token is stablecoin, else zero 
+func get_empiric_stablecoin_key{syscall_ptr: felt*, range_check_ptr}(
+    quote_token_addr: Address
+) -> (empiric_key: felt) {
+    if (quote_token_addr == TOKEN_USD_ADDRESS) {
+        return (EMPIRIC_USDC_USD_KEY,);
+    }
+    // if (quote_token_addr == TOKEN_USDT_ADDRESS) {
+    //     return (EMPIRIC_USDT_USD_KEY,);
+    // }
+    // if (quote_token_addr == TOKEN_DAI_ADDRESS) {
+    //     return (EMPIRIC_DAI_USD_KEY,);
+    // }
+    return (0, );
+}
 
 // @notice Get Empiric key based on used tokens
 // @param quote_token_addr: Address of the quote token, USDC for ETH/USDC

@@ -36,7 +36,7 @@ from events import (
 )
 from fees import get_fees
 from option_pricing import black_scholes
-from oracles import empiric_median_price, get_terminal_price
+from oracles import empiric_median_price, get_terminal_price, account_for_stablecoin_divergence
 from types import (
     Bool, Math64x61_, OptionType, OptionSide, Int, Address, Option, Pool, PoolInfo,
     OptionWithPremia, UserPoolInfo
@@ -119,7 +119,8 @@ func do_trade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         // 2) Get price of underlying asset
         with_attr error_message("do_trade: error while getting current price from Empiric") {
             let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-            let (underlying_price) = empiric_median_price(empiric_key);
+            let (_underlying_price) = empiric_median_price(empiric_key);
+            let (underlying_price) = account_for_stablecoin_divergence(_underlying_price, quote_token_address, 0);
         }
 
         // 3) Calculate new volatility, calculate trade volatility
@@ -276,7 +277,8 @@ func close_position{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
 
     // 2) Get price of underlying asset
     let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (underlying_price) = empiric_median_price(empiric_key);
+    let (_underlying_price) = empiric_median_price(empiric_key);
+    let (underlying_price) = account_for_stablecoin_divergence(_underlying_price, quote_token_address, 0);
 
     // 3) Calculate new volatility, calculate trade volatility
     let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(
@@ -672,7 +674,8 @@ func trade_settle{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
 
     with_attr error_message("trade_settle failed when fetching terminal price") {
         let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+        let (_terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+        let (terminal_price: Math64x61_) = account_for_stablecoin_divergence(_terminal_price, quote_token_address, maturity);
     }
 
     with_attr error_message("trade_settle failed when expirying option token") {

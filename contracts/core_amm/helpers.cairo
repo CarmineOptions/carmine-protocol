@@ -12,7 +12,7 @@ from constants import (
 )
 from fees import get_fees
 from option_pricing import black_scholes
-from oracles import empiric_median_price, get_terminal_price
+from oracles import empiric_median_price, get_terminal_price, account_for_stablecoin_divergence
 from option_pricing_helpers import (
     select_and_adjust_premia,
     get_time_till_maturity,
@@ -131,7 +131,8 @@ func _get_premia_before_fees{
     // 1) Get price of underlying asset
     with_attr error_message("helpers._get_premia_before_fees getting undrelying price FAILED"){
         let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-        let (underlying_price) = empiric_median_price(empiric_key);
+        let (_underlying_price) = empiric_median_price(empiric_key);
+        let (underlying_price) = account_for_stablecoin_divergence(_underlying_price, quote_token_address, 0);
     }
 
     // 2) Calculate new volatility, calculate trade volatility
@@ -288,7 +289,8 @@ func _get_value_of_position{
             let quote_token_address = option.quote_token_address;
             let base_token_address = option.base_token_address;
             let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-            let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+            let (_terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+            let (terminal_price: Math64x61_) = account_for_stablecoin_divergence(_terminal_price, quote_token_address, option.maturity);
 
             let (long_value, short_value) = split_option_locked_capital(
                 option.option_type, option.option_side, position_size, option.strike_price, terminal_price

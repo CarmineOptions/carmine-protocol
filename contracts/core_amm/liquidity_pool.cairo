@@ -697,7 +697,8 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
 
     // Get terminal price of the option.
     let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-    let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    let (_terminal_price: Math64x61_) = get_terminal_price(empiric_key, maturity);
+    let (terminal_price: Math64x61_) = account_for_stablecoin_divergence(_terminal_price, quote_token_address, maturity);
 
     local optsize = option_size;
     let option_size_m64x61 = fromInt_balance(option_size, base_token_address);

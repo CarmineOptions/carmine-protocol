@@ -11,7 +11,7 @@ from starkware.cairo.common.bool import TRUE, FALSE
 
 from math64x61 import Math64x61
 
-from constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE
+from constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_AGGREGATION_MODE, get_empiric_stablecoin_key
 from types import Int, Math64x61_
 from lib.math_64x61_extended import Math64x61_div_imprecise
 from lib.pow import pow10
@@ -169,6 +169,37 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
 
         assert_not_zero(res);
     }
+
+    return (res,);
+}
+
+// @notice Accounts for divergence of stablecoin price, ie ETH/USDC != ETH/USD
+// @param price: Price of the asset in question
+// @param quote_token_addr: Address of the quote token, USDC for ETH/USDC
+// @param maturity: Maturity if the function is used for historical prices, else 0
+// @return Adjusted price, or the same price if quote token isn't a stablecoin
+func account_for_stablecoin_divergence{syscall_ptr: felt*, range_check_ptr}(price: Math64x61_, quote_token_addr: felt, maturity: Int) -> (
+    price: Math64x61_
+){
+   alloc_locals;
+
+    let (key) = get_empiric_stablecoin_key(quote_token_addr);
+    
+    // If key is zero, it means that quote_token isn't stablecoin(or at least one we use)
+    if (key == 0) {
+        return (price,);
+    } 
+
+    // Maturity = 0 means it's used for current price
+    if (maturity == 0) {
+        let (stablecoin_price) = empiric_median_price(key);
+    } else {
+        let (stablecoin_price) = get_terminal_price(key, maturity);
+    }
+
+    with_attr error_message("Failed when calculating stablecoin adjusted price of asset"){
+        let res = Math64x61.div(price, stablecoin_price);
+    }   
 
     return (res,);
 }
