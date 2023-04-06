@@ -397,7 +397,7 @@ namespace NonEthRoundTrip {
 
         %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [2100000000000, 8, 0, 0]  # mock current BTC price at 21_000
+                ids.tmp_address, "get_spot_median", [2100000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 21_000
             )
         %}
 
@@ -421,7 +421,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [10000000, 8, 0, 0]  # mock current DOGE price at 0.1  
+                ids.tmp_address, "get_spot_median", [10000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.1  
             ) 
         %}
         let (doge_long_premia) = IAMM.trade_open(
@@ -543,7 +543,7 @@ namespace NonEthRoundTrip {
         %}
          %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [1900000000000, 8, 0, 0]  # mock current BTC price at 19_000
+                ids.tmp_address, "get_spot_median", [1900000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 19_000
             )
         %}
         let tenth_btc = Uint256(low = 10000000, high = 0);
@@ -561,7 +561,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  
+                ids.tmp_address, "get_spot_median", [9000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.09  
             ) 
         %}
         
@@ -680,7 +680,7 @@ namespace NonEthRoundTrip {
         
         %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [2100000000000, 8, 0, 0]  # mock current BTC price at 21_000
+                ids.tmp_address, "get_spot_median", [2100000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 21_000
             )
         %}
 
@@ -704,7 +704,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [10000000, 8, 0, 0]  # mock current DOGE price at 0.1  
+                ids.tmp_address, "get_spot_median", [10000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.1  
             ) 
         %}
         let (doge_long_premia_3) = IAMM.trade_close(
@@ -823,7 +823,7 @@ namespace NonEthRoundTrip {
         %}
         %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [2100000000000, 8, 0, 0]  # mock current BTC price at 21_000
+                ids.tmp_address, "get_spot_median", [2100000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 21_000
             )
         %}
 
@@ -847,7 +847,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [11000000, 8, 0, 0]  # mock current DOGE price at 0.11
+                ids.tmp_address, "get_spot_median", [11000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.11
             ) 
         %}
         let (doge_short_premia_4) = IAMM.trade_open(
@@ -970,7 +970,7 @@ namespace NonEthRoundTrip {
         %}
          %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [1900000000000, 8, 0, 0]  # mock current BTC price at 19_000
+                ids.tmp_address, "get_spot_median", [1900000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 19_000
             )
         %}
         let tenth_btc = Uint256(low = 10000000, high = 0);
@@ -988,7 +988,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [9000000, 8, 0, 0]  # mock current DOGE price at 0.09  
+                ids.tmp_address, "get_spot_median", [9000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.09  
             ) 
         %}
         
@@ -1065,7 +1065,7 @@ namespace NonEthRoundTrip {
         
         %{
             stop_mock_current_price_btc = mock_call(
-                ids.tmp_address, "get_spot_median", [2100000000000, 8, 0, 0]  # mock current BTC price at 21_000
+                ids.tmp_address, "get_spot_median", [2100000000000, 8, 1000000000 + 60*60*12, 0]  # mock current BTC price at 21_000
             )
         %}
         let (btc_long_premia_5: Math64x61_) = IAMM.trade_close(
@@ -1088,7 +1088,7 @@ namespace NonEthRoundTrip {
         %{
             stop_mock_current_price_btc()
             stop_mock_current_price_doge = mock_call(
-                ids.tmp_address, "get_spot_median", [11000000, 8, 0, 0]  # mock current DOGE price at 0.1  
+                ids.tmp_address, "get_spot_median", [11000000, 8, 1000000000 + 60*60*12, 0]  # mock current DOGE price at 0.1  
             ) 
         %}
         let (doge_long_premia_5) = IAMM.trade_close(

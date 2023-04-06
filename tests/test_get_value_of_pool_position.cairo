@@ -50,7 +50,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
         stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
         stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
         stop_mock_current_price_1 = mock_call(
-            ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+            ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000, 0]  # mock current ETH price at 1400
         )
     %}
 
@@ -489,7 +489,7 @@ func test_get_value_of_pool_position{syscall_ptr: felt*, range_check_ptr}(){
 
         stop_warp_2 = warp(1000000000 + 60*60*12, target_contract_address=ids.amm_addr) # Go forward in time by half a day -> 12 hours left till expiry
         stop_mock_current_price_2 = mock_call(
-            ids.tmp_address, "get_spot_median", [155000000000, 8, 0, 0]  # mock current ETH price at 1550
+            ids.tmp_address, "get_spot_median", [155000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1550
         )
     %}
 

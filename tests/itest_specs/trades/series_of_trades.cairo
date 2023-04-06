@@ -58,7 +58,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_spot_checkpoint_before", [145000000000, 0, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -273,7 +273,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_checkpoint_before", [145000000000, 0, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -515,7 +515,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_checkpoint_before", [145000000000, 0, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -754,7 +754,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
         %}
 
@@ -829,7 +829,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_spot_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -976,7 +976,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_spot_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -1128,7 +1128,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_checkpoint_before", [0 ,145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
@@ -1268,7 +1268,7 @@ namespace SeriesOfTrades {
         %{
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
             stop_mock_current_price = mock_call(
-                ids.tmp_address, "get_spot_median", [140000000000, 8, 0, 0]  # mock current ETH price at 1400
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000 + 60*60*12, 0]  # mock current ETH price at 1400
             )
             stop_mock_terminal_price = mock_call(
                 ids.tmp_address, "get_last_checkpoint_before", [145000000000, 0, 0, 0, 0]  # mock terminal ETH price at 1450

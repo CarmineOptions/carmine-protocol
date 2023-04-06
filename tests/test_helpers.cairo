@@ -23,7 +23,7 @@ func test_get_value_of_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, 
     %{
         # Not all returned values are used atm, hence the 0s
         stop_mock = mock_call(
-            ids.tmp_address, "get_spot_median", [145000000000, 8, 0, 0]
+            ids.tmp_address, "get_spot_median", [145000000000, 8, 1000000000, 0]
         )
         admin_address = 123 # doesnt matter in this test
         ids.myeth_address = deploy_contract("lib/cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20Mintable.cairo", [1, 1, 18, 10 * 10**18, 0, admin_address, admin_address]).contract_address
