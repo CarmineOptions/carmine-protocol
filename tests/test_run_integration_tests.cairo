@@ -134,12 +134,6 @@ func test_non_eth_round_trip{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 @external
-func test_deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
-    DepositLiquidity.test_deposit();
-    return ();
-}
-
-@external
 func test_expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
     ExpireOptionTokenForPool.test_expire_option_token_for_pool();
     return ();

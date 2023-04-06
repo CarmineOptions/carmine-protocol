@@ -37,8 +37,8 @@ namespace NonEthRoundTrip {
         let strike_price_doge = 230584300921369408; // 0.1 * 2**61
         %{
             admin_address = 123456
-            context.lpt_call_addr_doge = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [112, 12, 18, 0, 0, admin_address, context.amm_addr]).contract_address
-            context.lpt_call_addr_btc = deploy_contract("./contracts/erc20_tokens/lptoken.cairo", [113, 13, 18, 0, 0, admin_address, context.amm_addr]).contract_address 
+            context.lpt_call_addr_doge = deploy_contract("./contracts/erc20_tokens/lptoken.cairo").contract_address
+            context.lpt_call_addr_btc = deploy_contract("./contracts/erc20_tokens/lptoken.cairo").contract_address 
             
             # doge has 8 decimals
             # mints 100k myDoge to admin address
@@ -57,13 +57,13 @@ namespace NonEthRoundTrip {
             PUT = 1
             optype_put = PUT
             
-            context.opt_long_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_long]).contract_address
+            context.opt_long_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
             
-            context.opt_short_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_short]).contract_address
+            context.opt_short_call_addr_doge = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
             
-            context.opt_long_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_long]).contract_address
+            context.opt_long_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
 
-            context.opt_short_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo", [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_short]).contract_address
+            context.opt_short_call_addr_btc = deploy_contract("./contracts/erc20_tokens/option_token.cairo").contract_address
             
             ids.expiry = expiry
             ids.optype_call = optype_call
@@ -86,6 +86,23 @@ namespace NonEthRoundTrip {
             ids.opt_long_call_addr_btc = context.opt_long_call_addr_btc
             ids.opt_short_call_addr_btc = context.opt_short_call_addr_btc
         %}
+        //[112, 12, 18, 0, 0, admin_address, context.amm_addr]
+        ILPToken.initializer(contract_address=lpt_call_addr_doge, name=112, symbol=12, proxy_admin=admin_addr, owner=amm_addr);
+        //[113, 13, 18, 0, 0, admin_address, context.amm_addr]
+        ILPToken.initializer(contract_address=lpt_call_addr_btc, name=113, symbol=13, proxy_admin=admin_addr, owner=amm_addr);
+
+        //[1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_long]
+        // opt_long_call_addr_doge
+        IOptionToken.initializer(contract_address=opt_long_call_addr_doge, name=1234, symbol=14, proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=mydoge_addr, option_type=optype_call, strike_price=strike_price_doge, maturity=expiry, side=side_long);
+        // , [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mydoge_address, optype_call, ids.strike_price_doge, expiry, side_short]
+        // opt_short_call_addr_doge
+        IOptionToken.initializer(contract_address=opt_short_call_addr_doge, name=1234, symbol=14, proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=mydoge_addr, option_type=optype_call, strike_price=strike_price_doge, maturity=expiry, side=side_short);
+        //, [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_long]
+        // opt_long_call_addr_btc
+        IOptionToken.initializer(contract_address=opt_long_call_addr_btc, name=1234, symbol=14, proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=mybtc_addr, option_type=optype_call, strike_price=strike_price_btc, maturity=expiry, side=side_long);
+        // [1234, 14, 18, 0, 0, admin_address, context.amm_addr, context.myusd_address, context.mybtc_address, optype_call, ids.strike_price_btc, expiry, side_short]
+        // opt_short_call_addr_btc
+        IOptionToken.initializer(contract_address=opt_short_call_addr_btc, name=1234, symbol=14, proxy_admin=admin_addr, owner=amm_addr, quote_token_address=myusd_addr, base_token_address=mybtc_addr, option_type=optype_call, strike_price=strike_price_btc, maturity=expiry, side=side_short);
         
         let (balbtc) = IERC20.balanceOf(contract_address=mybtc_addr, account=admin_addr);
         assert balbtc.low = 100000000;
