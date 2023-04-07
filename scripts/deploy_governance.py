@@ -120,22 +120,25 @@ async def deploy_everything(
 def main():
     if TESTNET:
         asyncio.run(deploy_everything(
-        governance_class_hash=0xea323dfd569ed139b1eef9f18020810e944707fc3dc2fa41de3941b0724122,
-        governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
-        generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
-        governance_token_class_hash=0x134b48f0cdd4aeb76ee8e54b63227a1865d36719beee284b1bbc2b1ffc82884,
-        amm_class_hash=0x69964b1e39b1c74de1f02967e0c063f0b2edf0d9d33eda6f917ea5ef21c03e9,
-        lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
-        option_token_class_hash=0x84f58cb1bae6c71e3fa654b5cf56ee3203ec8bc85f4360ed1dfef651a0ae4c,
+            #governance_class_hash=0x61ca66326e7f04027d1b4276b303b3aa1483f655ea80e5ab9adc26e717f5fdd
+            governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
+            generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
+            governance_token_class_hash=0x61ca66326e7f04027d1b4276b303b3aa1483f655ea80e5ab9adc26e717f5fdd,
+            amm_class_hash=0x2a673a43e56c67dbd5dada9794a59c5dc9b14ba6c58f1c97de824f3d835e3e1,
+            lptoken_class_hash=0x596eb5c2b9e57c4a892174427f22261935822dbc819ae448584111d80cebbeb,
+            option_token_class_hash=0x5ce3a80daeb5b7a766df9b41ca8d9e52b6b0a045a0d2ced72f43d4dd2f93b10
         ))
 
     # MAINNET
     else:
         asyncio.run(deploy_everything(
-            #governance_class_hash=
+            governance_class_hash=0x1dd1dc8a5aa08cee679d74070aac1fec3b5e551a5acac7a210e66a3dcfdffb3,
+            governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
             generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
-            #governance_token_class_hash=0x134b48f0cdd4aeb76ee8e54b63227a1865d36719beee284b1bbc2b1ffc82884,
-            lptoken_class_hash=0x26715c5e831414ddbd5d362582729d550e455876c3bef14342259d21e8d2404,
+            governance_token_class_hash=0x61ca66326e7f04027d1b4276b303b3aa1483f655ea80e5ab9adc26e717f5fdd,
+            amm_class_hash=0x2a673a43e56c67dbd5dada9794a59c5dc9b14ba6c58f1c97de824f3d835e3e1,
+            lptoken_class_hash=0x596eb5c2b9e57c4a892174427f22261935822dbc819ae448584111d80cebbeb,
+            option_token_class_hash=0x5ce3a80daeb5b7a766df9b41ca8d9e52b6b0a045a0d2ced72f43d4dd2f93b10
         ))
 
 if __name__ == "__main__":
