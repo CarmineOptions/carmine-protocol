@@ -127,31 +127,37 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
     // deploy call pool ETH lptoken
     with_attr error_message("Unable to deploy call pool"){
-        let (eth_lpt_addr) = deploy_via_proxy(
-            proxy_class=proxy_class,
-            impl_class=lpt_class,
-            salt=salt
-        );
-        ILPToken.initializer(
-            contract_address=eth_lpt_addr,
-            name='Carmine ETH/USDC call pool',
-            symbol='C-ETHUSDC-C',
-            proxy_admin=governance_address,
-            owner=amm_addr
-        );
+        with_attr error_message("Unable to deploy lptoken via generic proxy"){
+            let (eth_lpt_addr) = deploy_via_proxy(
+                proxy_class=proxy_class,
+                impl_class=lpt_class,
+                salt=salt
+            );
+        }
+        with_attr error_message("Unable to initialize lptoken"){
+            ILPToken.initializer(
+                contract_address=eth_lpt_addr,
+                name='Carmine ETH/USDC call pool',
+                symbol='C-ETHUSDC-C',
+                proxy_admin=governance_address,
+                owner=amm_addr
+            );
+        }
         // initialize ETH call pool
         const ETH_volatility_adjustment_speed = 34587645138205409280; // 15*2**61 = 15 ETH
         let ETH_max_lpool_balance = Uint256(low=30000000000000000000,high=0); // 30 ETH 
-        IAMM.add_lptoken(
-            contract_address=amm_addr,
-            quote_token_address=USDC_addr,
-            base_token_address=ETH_addr,
-            option_type=0, // call pool
-            lptoken_address=eth_lpt_addr,
-            pooled_token_addr=ETH_addr,
-            volatility_adjustment_speed=ETH_volatility_adjustment_speed,
-            max_lpool_bal=ETH_max_lpool_balance
-        );
+        with_attr error_message("Unable to add lptoken"){
+            IAMM.add_lptoken(
+                contract_address=amm_addr,
+                quote_token_address=USDC_addr,
+                base_token_address=ETH_addr,
+                option_type=0, // call pool
+                lptoken_address=eth_lpt_addr,
+                pooled_token_addr=ETH_addr,
+                volatility_adjustment_speed=ETH_volatility_adjustment_speed,
+                max_lpool_bal=ETH_max_lpool_balance
+            );
+        }
     }
 
     // deploy put pool USDC lptoken
