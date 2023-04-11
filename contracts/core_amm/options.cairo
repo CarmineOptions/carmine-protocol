@@ -334,8 +334,7 @@ func _mint_option_token_long{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 
         // Check that there is enough capital to be locked.
         with_attr error_message("Not enough unlocked capital in pool") {
-            let (assert_res) = uint256_sub(new_balance, new_locked_capital);
-            assert_uint256_le(Uint256(0, 0), assert_res);
+            assert_uint256_le(new_locked_capital, new_balance);
         }
 
         with_attr error_message("Failed to update pool_locked_capital in _mint_option_token_long") {

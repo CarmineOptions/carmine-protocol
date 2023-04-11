@@ -493,10 +493,6 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     ){
         let (free_capital_uint256: Uint256) = get_unlocked_capital(lptoken_address);
 
-        let assert_res: Uint256 = uint256_sub(free_capital_uint256, underlying_amount_uint256);
-        let ZERO = Uint256(0, 0);
-        assert_uint256_le(ZERO, assert_res);
-
         // One additional check
         assert_uint256_le(underlying_amount_uint256, free_capital_uint256);
         assert_not_zero(free_capital_uint256.low);
