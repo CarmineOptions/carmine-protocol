@@ -21,13 +21,16 @@ func test_unlocked_capital_limit{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     let new_balance = Uint256(10029961000000000000, 0);
     let new_locked_capital = Uint256(10029961000000000001, 0); // new_balance + 1
     // Check that there is enough capital to be locked.
+    %{  
+        expect_revert(error_message="Not enough unlocked capital in pool")
+    %}
     with_attr error_message("Not enough unlocked capital in pool") {
         assert_uint256_le(new_locked_capital, new_balance);
+
+        // this below wouldn't work and would pass
         //let (assert_res) = uint256_sub(new_balance, new_locked_capital);
         //assert_uint256_le(Uint256(0, 0), assert_res);
     }
-
-    // MUST FAIL
 
     return ();
 }
