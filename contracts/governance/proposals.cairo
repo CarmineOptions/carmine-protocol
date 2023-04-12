@@ -207,7 +207,7 @@ func vote{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return ();
 }
 
-// @notice returns 0 if the proposal is still being voted on, 1 if it passed due to yay by >60 % of votes
+// @notice returns 0 if the proposal is still being voted on, 1 if it passed due to yay by >50 % of votes
 // @dev assumes (doesn't check!) that voting is still in progress
 func check_proposal_passed_express{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     prop_id: felt
@@ -228,7 +228,7 @@ func check_proposal_passed_express{syscall_ptr: felt*, pedersen_ptr: HashBuiltin
         assert carry.low = 0;
         assert carry.high = 0;
     }
-    let FIFTEEN = Uint256(low = 6, high = 0);
+    let FIFTEEN = Uint256(low = 15, high = 0);
     // Now divide by 15 -> half of new total supply
     let (minimum_for_express, _) = uint256_unsigned_div_rem(intermediate, FIFTEEN);
 
