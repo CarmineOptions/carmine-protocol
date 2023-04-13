@@ -887,15 +887,17 @@ func _burn_option_token_short{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ra
         //      -> there might not be enough unlocked capital to be locked
         let (current_unlocked_capital_uint256: Uint256) = get_unlocked_capital(lptoken_address);
 
-        with_attr error_message("Not enough unlocked capital."){
-            assert_uint256_le(option_size_in_pool_currency, current_unlocked_capital_uint256);
-        }
-
         // Update locked capital
         let (new_locked_capital: Uint256, carry: felt) = uint256_add(
             current_locked_capital_uint256, option_size_in_pool_currency
         );
         assert carry = 0;
+
+        with_attr error_message("Not enough unlocked capital."){
+            assert_uint256_le(option_size_in_pool_currency, current_unlocked_capital_uint256);
+            assert_uint256_le(new_locked_capital, new_balance);
+        }
+        
         // checking that new_locked_capital is non negative is done in the set_pool_locked_capital
         set_pool_locked_capital(lptoken_address, new_locked_capital);
 
