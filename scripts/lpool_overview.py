@@ -71,7 +71,6 @@ async def main():
         if position_human > 0.01:
             print(f'Pool option position in {side} call {option.get_strike_price()} {formatted_date} is {position_human}'.format())
     
-    # now the same but for put, put pool is usdc so we need to divide by 10**6
     for option in options_put:
         get_option_position_call = Call(
             to_addr=AMM_ADDR,
@@ -80,7 +79,7 @@ async def main():
         )
         res = await client.call_contract(get_option_position_call)
         formatted_date = datetime.utcfromtimestamp(option.maturity).strftime('%m%d')
-        position_human = res[0] / 10**6
+        position_human = res[0] / 10**18
         side = 'long' if option.option_side == 0 else 'short'
         if position_human > 0.01:
             print(f'Pool option position in {side} put {option.get_strike_price()} {formatted_date} is {position_human}'.format())
