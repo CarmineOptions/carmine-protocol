@@ -18,7 +18,7 @@ contract_address = (
 
 
 testnet = "testnet"
-MAX_FEE=int(1e16)
+MAX_FEE=int(1e17)
 QUOTE_TOKEN_ADDRESS=159707947995249021625440365289670166666892266109381225273086299925265990694 # testnet 1
 BASE_TOKEN_ADDRESS=2087021424722619777119509474943472645767659996348769578120564519014510906823 # testnets both
 LPTOKENS = {
@@ -47,6 +47,7 @@ strike_2000 = 4611686018427387904000
 # maturity = 1678406399
 # maturity = 1679615999
 maturity = 1680825599 # Thu Apr 06 2023 23:59:59 GMT+0000
+maturity = 1682035199 # Thu Apr 20 2023 23:59:59 GMT+0000)
 options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
@@ -58,17 +59,17 @@ options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
-    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
-    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
+    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
+    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
 
-    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 0},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 0},
@@ -156,7 +157,7 @@ async def main():
     # Executes only one transaction with prepared calls
     print('Starting to execute the multicall')
 
-    transaction_response = await account.execute(calls=calls, max_fee=int(1e16))
+    transaction_response = await account.execute(calls=calls, max_fee=MAX_FEE)
     await account.client.wait_for_tx(transaction_response.transaction_hash)
 
     print(transaction_response)
