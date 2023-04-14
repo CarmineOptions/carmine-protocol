@@ -21,7 +21,6 @@ from starknet_py.transaction_exceptions import TransactionRejectedError
 
 
 MAX_FEE = int(1e16)
-# MAX_FEE = int(1e3)
 SUPPORTED_NETWORKS = ['testnet', 'mainnet']
 
 @dataclass
@@ -177,8 +176,9 @@ async def main():
         else: 
             alert(f"Update successfull: {tx_status} \n {call}", enVars.tg_chat_id, enVars.tg_key)
 
-    except Exception as e:
+    except Exception as err:
         err_msg = "".join(traceback.format_exception(err, value=err, tb=err.__traceback__))
+        logging.error(f"Execution failed: {err}")
         alert(f"COMPLETE FAIL: {err_msg}", enVars.tg_chat_id, enVars.tg_key)
 
 if __name__ == '__main__':
