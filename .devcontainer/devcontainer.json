@@ -41,7 +41,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	"postCreateCommand": "git submodule update --init && curl -L https://raw.githubusercontent.com/software-mansion/protostar/master/install.sh | bash",
+	"postCreateCommand": "git submodule update --init && curl -L https://raw.githubusercontent.com/software-mansion/protostar/master/install.sh | bash; pip install starknet-py",
 
 	// Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
