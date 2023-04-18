@@ -722,8 +722,7 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let new_pool_position = current_pool_position - option_size;
     with_attr error_message("new_pool_position is negative in expire_option_token_for_pool") {
         assert_nn(new_pool_position);
-        // New pool position should be zero
-        // assert_nn(0 - new_pool_position);
+        assert_le(option_size, current_pool_position);
     }
     // We have to adjust the pools option position too.
     set_option_position(lptoken_address, option_side, maturity, strike_price, 0);
