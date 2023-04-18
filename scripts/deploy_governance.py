@@ -5,7 +5,7 @@ from typing import List, Any
 from time import sleep
 
 from starknet_py.contract import Contract
-from starknet_py.net import KeyPair
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models.chains import StarknetChainId
@@ -13,7 +13,7 @@ from starknet_py.contract import ContractFunction
 
 # This script deploys the governance contract to the StarkNet network.
 
-TESTNET = False
+TESTNET = True
 if not TESTNET:
     print("You are NOT deploying to testnet. Are you sure? (Ctrl+C to cancel)")
     sleep(5)

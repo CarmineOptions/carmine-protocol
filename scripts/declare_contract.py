@@ -4,7 +4,7 @@ from os import getenv
 import sys
 
 from starknet_py.contract import Contract
-from starknet_py.net import KeyPair
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models.chains import StarknetChainId
