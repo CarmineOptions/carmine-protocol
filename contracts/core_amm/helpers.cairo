@@ -241,7 +241,7 @@ func split_option_locked_capital{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
     }
 
     // For Put option
-    // User receives option_size * max(0, (strike_price - terminal_price)) in base token for long
+    // User receives option_size * max(0, (strike_price - terminal_price)) in quote quote for long
     // User receives option_size * min(strike_price, terminal_price) for short
     // Summing the two equals option_size * strike_price (=locked capital
     let price_diff = Math64x61.sub(strike_price, terminal_price);
