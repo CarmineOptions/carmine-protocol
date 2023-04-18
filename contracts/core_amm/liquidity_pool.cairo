@@ -698,9 +698,9 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     local term = terminal_price;
     with_attr error_message("unable to split_option_locked_capital in expire_option_token_for_pool optsize {optsize}, optsize64 {optisize64} strike {str} term {term}"){
     let (long_value, short_value)  = split_option_locked_capital(
-            option_type, option_side, option_size_m64x61, strike_price, terminal_price
-        );
-    }
+        option_type, option_side, option_size_m64x61, strike_price, terminal_price
+    );
+}
 
     // Adjusts only the lpool_balance and pool_locked_capital storage_vars
     with_attr error_message("unable to adjust_lpool_balance_and_pool_locked_capital_expired_options in expire_option_token_for_pool"){
