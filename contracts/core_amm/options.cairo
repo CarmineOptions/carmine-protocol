@@ -1027,9 +1027,6 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         let short_value_uint256 = toUint256_balance(short_value, currency_address);
     }
     
-    // Validate that the user is not burning more than he/she has.
-    let (pool_definition) = get_pool_definition_from_lptoken_address(lptoken_address);
-    let base_address = pool_definition.base_token_address;
     with_attr error_message("expire_option_token failed when converting option_size to uint") {
         let option_size_uint256 = intToUint256(option_size);
     }
