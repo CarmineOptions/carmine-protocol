@@ -986,7 +986,7 @@ func expire_option_token{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_c
         );
     }
     // Check that the pool's position was expired correctly
-    let (current_pool_position_2) = get_option_position(
+    let (current_pool_position_2) = get_option_position( // FIXME this is called twice in the happy case
         lptoken_address,TRADE_SIDE_SHORT, maturity, strike_price
     );
     with_attr error_message(
