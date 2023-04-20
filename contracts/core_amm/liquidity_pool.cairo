@@ -561,16 +561,6 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
 
     let (current_lpool_balance: Uint256) = get_lpool_balance(lptoken_address);
     let (current_locked_balance: Uint256) = get_pool_locked_capital(lptoken_address);
-    let (current_pool_position) = get_option_position(
-        lptoken_address, option_side, maturity, strike_price
-    );
-    let current_pool_position_uint256: Uint256 = toUint256_balance(current_pool_position, lpool_underlying_token);
-
-    let new_pool_position = current_pool_position - option_size;
-    with_attr error_message("new_pool_position is negative in adjust_lpool_balance_and_pool_locked_capital_expired_options") {
-        assert_nn(new_pool_position);
-    }
-    set_option_position(lptoken_address, option_side, maturity, strike_price, new_pool_position);
 
     if (option_side == TRADE_SIDE_LONG) {
         // Pool is LONG
@@ -610,6 +600,10 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         // The long value is left in the pool for the long owner to collect it.
 
         let (new_lpool_balance: Uint256) = uint256_sub(current_lpool_balance, long_value_uint256);
+        with_attr error_message("Not enough capital in the pool - new_lpool_balance negative") {
+            let (res1: felt) = uint256_signed_le(long_value_uint256, current_lpool_balance);
+            assert res1 = 1;
+        }
 
         // Substracting the combination of long and short rather than separately because of rounding error
         // More specifically transfering the combo to uint256 rather than separate values because
@@ -619,6 +613,10 @@ func adjust_lpool_balance_and_pool_locked_capital_expired_options{
         assert carry = 0;
 
         let (new_locked_balance: Uint256) = uint256_sub(current_locked_balance, long_plus_short_value);
+        with_attr error_message("Not enough capital in the pool - new_locked_balance negative") {
+            let (res2: felt) = uint256_signed_le(long_plus_short_value, current_locked_balance);
+            assert res2 = 1;
+        }
 
         with_attr error_message("Not enough capital in the pool") {
             // This will never happen since the capital to pay the users is always locked.
@@ -702,21 +700,30 @@ func expire_option_token_for_pool{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*
     let (long_value, short_value)  = split_option_locked_capital(
         option_type, option_side, option_size_m64x61, strike_price, terminal_price
     );
-    }
+}
 
     // Adjusts only the lpool_balance and pool_locked_capital storage_vars
     with_attr error_message("unable to adjust_lpool_balance_and_pool_locked_capital_expired_options in expire_option_token_for_pool"){
-    adjust_lpool_balance_and_pool_locked_capital_expired_options(
-        lptoken_address=lptoken_address,
-        long_value=long_value,
-        short_value=short_value,
-        option_size=option_size,
-        option_side=option_side,
-        maturity=maturity,
-        strike_price=strike_price
-    );
+        adjust_lpool_balance_and_pool_locked_capital_expired_options(
+            lptoken_address=lptoken_address,
+            long_value=long_value,
+            short_value=short_value,
+            option_size=option_size,
+            option_side=option_side,
+            maturity=maturity,
+            strike_price=strike_price
+        );
     }
 
+    let (current_pool_position) = get_option_position(
+        lptoken_address, option_side, maturity, strike_price
+    );
+
+    let new_pool_position = current_pool_position - option_size;
+    with_attr error_message("new_pool_position is negative in expire_option_token_for_pool") {
+        assert_nn(new_pool_position);
+        assert_le(option_size, current_pool_position);
+    }
     // We have to adjust the pools option position too.
     set_option_position(lptoken_address, option_side, maturity, strike_price, 0);
 
