@@ -45,6 +45,10 @@ func proposal_total_nay(prop_id: felt) -> (res: felt) {
 func proposal_applied(prop_id: felt) -> (res: felt) {
 }
 
+@storage_var
+func proposal_initializer_run(prop_id: felt) -> (res: felt) {
+}
+
 
 // One investors voting power RELATIVE to other investors, not absolute.
 // Absolute voting power depends on totalSupply - TEAM_TOKEN_BALANCE, see vote_investor

@@ -1,4 +1,4 @@
-build: contracts/*
+build: contracts/core_amm/* contracts/governance/* contracts/erc20_tokens/* contracts/interfaces/* contracts/proxy_contract/*
 	protostar build
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy

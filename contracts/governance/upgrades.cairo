@@ -341,6 +341,183 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     return ();
 }
 
+
+@external
+func add_0504_options{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
+    alloc_locals;
+
+    let (added_already) = proposal_initializer_run.read(prop_id=3);
+    with_attr error_message("Options added already") {
+        assert added_already = FALSE;
+    }
+    proposal_initializer_run.write(prop_id=1, value=1);
+
+    const proxy_class = 0x00eafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82;
+    const opt_class = 0x5ce3a80daeb5b7a766df9b41ca8d9e52b6b0a045a0d2ced72f43d4dd2f93b10;
+
+    let (governance_address_here) = governance_token_address.read();
+    local governance_address = governance_address_here;
+    let (amm_addr_here) = amm_address.read();
+    local amm_addr = amm_addr_here;
+    let eth_lpt_addr = 0x7aba50fdb4e024c1ba63e2c60565d0fd32566ff4b18aa5818fc80c30e749024;
+    let usdc_lpt_addr = 0x18a6abca394bd5f822cfa5f88783c01b13e593d1603e7b41b00d31d2ea4827a;
+
+    const salt = 050423420420420;
+
+    const STRIKE_1800 = 4150517416584649113600; // 1800*2**61
+    const STRIKE_1900 = 4381101717506018508800; // 1900*2**61
+    const STRIKE_2000 = 4611686018427387904000; // 2000*2**61
+    const STRIKE_2100 = 4842270319348757299200; // 2100*2**61
+
+    const EXPIRY_04MAY23 = 1683244799; // 2023-05-04 23:59:59 UTC
+
+    const VOLATILITY_54_5 = 125668444002146320384;
+    const VOLATILITY_55_5 = 127974287011360014336;
+    const VOLATILITY_58_5 = 134891816039001096192;
+
+    // MAINNET
+    const USDC_addr = 0x053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8;
+    const ETH_addr = 0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7;
+
+    add_option(
+        name='ETHUSDC-04MAY23-2000-LONG-CALL',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_LONG,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_2000,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_CALL,
+        lptoken_address=eth_lpt_addr,
+        initial_volatility=VOLATILITY_54_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-2000-SHORT-CALL',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_SHORT,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_2000,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_CALL,
+        lptoken_address=eth_lpt_addr,
+        initial_volatility=VOLATILITY_54_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-2100-LONG-CALL',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_LONG,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_2100,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_CALL,
+        lptoken_address=eth_lpt_addr,
+        initial_volatility=VOLATILITY_54_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-2100-SHORT-CALL',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_SHORT,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_2100,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_CALL,
+        lptoken_address=eth_lpt_addr,
+        initial_volatility=VOLATILITY_54_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-1900-LONG-PUT',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_LONG,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_1900,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_PUT,
+        lptoken_address=usdc_lpt_addr,
+        initial_volatility=VOLATILITY_55_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-1900-SHORT-PUT',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_SHORT,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_1900,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_PUT,
+        lptoken_address=usdc_lpt_addr,
+        initial_volatility=VOLATILITY_55_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-1800-LONG-PUT',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_LONG,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_1800,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_PUT,
+        lptoken_address=usdc_lpt_addr,
+        initial_volatility=VOLATILITY_58_5,
+    );
+
+    add_option(
+        name='ETHUSDC-04MAY23-1800-SHORT-PUT',
+        proxy_class=proxy_class,
+        opt_class=opt_class,
+        salt=salt,
+        governance_address=governance_address,
+        amm_address=amm_addr,
+        option_side=TRADE_SIDE_SHORT,
+        maturity=EXPIRY_04MAY23,
+        strike_price=STRIKE_1800,
+        quote_token_address=USDC_addr,
+        base_token_address=ETH_addr,
+        option_type=OPTION_PUT,
+        lptoken_address=usdc_lpt_addr,
+        initial_volatility=VOLATILITY_58_5,
+    );
+
+    return ();
+}
+
 // Other utils
 
 @view
@@ -406,6 +583,7 @@ func get_contract_version{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     // 1.0.1 fix bug in lptoken and optoken ownership
     // 1.0.2 set max option size as percent of voladjspd
     // 1.1 redeploy with mainnet launch imminent
-    let version = '1.1';
+    // 1.2 add options expiring 
+    let version = '1.2';
     return (version = version);
 }
