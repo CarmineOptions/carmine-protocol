@@ -3,7 +3,8 @@ import json
 import time
 
 from starknet_py.contract import Contract
-from starknet_py.net import AccountClient, KeyPair
+# from starknet_py.net import KeyPair
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models.chains import StarknetChainId
@@ -42,12 +43,14 @@ strike_1700 = 3919933115663279718400
 strike_1800 = 4150517416584649113600
 strike_1900 = 4381101717506018508800
 strike_2000 = 4611686018427387904000
+strike_2100 = 4842270319348757299200
 # maturity = 1675987199
 # maturity = 1677196799
 # maturity = 1678406399
 # maturity = 1679615999
 maturity = 1680825599 # Thu Apr 06 2023 23:59:59 GMT+0000
-maturity = 1682035199 # Thu Apr 20 2023 23:59:59 GMT+0000)
+maturity = 1682035199 # Thu Apr 20 2023 23:59:59 GMT+0000
+maturity = 1683244799 # Thu May 04 2023 23:59:59 GMT+0000
 options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
@@ -59,17 +62,21 @@ options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
-    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
-    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
+    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
+    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
+    {'option_type': 0, 'strike_price': strike_2100, 'maturity': maturity, 'side': 0},
+    {'option_type': 0, 'strike_price': strike_2100, 'maturity': maturity, 'side': 1},
 
-    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 0},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 0},
