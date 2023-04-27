@@ -359,6 +359,8 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 ) {
     alloc_locals;
 
+    ReentrancyGuard.start();
+
     with_attr error_message("Amount must be > 0"){
         assert_uint256_le(Uint256(0, 0), amount);
     }
@@ -433,6 +435,8 @@ func deposit_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
         );
     }
 
+    ReentrancyGuard.end();
+
     return ();
 }
 
@@ -455,6 +459,8 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     lp_token_amount: Uint256
 ) {
     alloc_locals;
+
+    ReentrancyGuard.start();
 
     let (caller_addr_) = get_caller_address();
     local caller_addr = caller_addr_;
@@ -528,6 +534,8 @@ func withdraw_liquidity{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
         // Burn LP tokens
         ILPToken.burn(contract_address=lptoken_address, account=caller_addr, amount=lp_token_amount);
     }
+
+    ReentrancyGuard.end();
 
     return ();
 }
