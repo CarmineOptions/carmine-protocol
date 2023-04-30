@@ -542,7 +542,7 @@ namespace LPBasicViewFunctions {
             stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
 
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_spot_checkpoint_before", [0, 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+                ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000 + 60*60*12, 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
             )
         %}
 

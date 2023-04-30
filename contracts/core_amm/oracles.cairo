@@ -153,6 +153,10 @@ func get_terminal_price{syscall_ptr: felt*, range_check_ptr}(key: felt, maturity
         assert_not_zero(last_checkpoint.value);
     }
 
+    with_attr error_message("Terminal price is over five hours old") {
+        assert_le(maturity - last_checkpoint.timestamp, 18000);
+    }
+
     with_attr error_message("Failed when converting Empiric Oracle terminal price to Math64x61 format"){
         // Taken from the Empiric Docs, since Checkpoint does not
         // store this information, SHOULD not change in the future
