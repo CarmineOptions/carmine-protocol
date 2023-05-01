@@ -6,7 +6,7 @@ from starkware.cairo.common.math_cmp import is_le
 from math64x61 import Math64x61
 from lib.math_64x61_extended import Math64x61_div_imprecise
 
-from oracles import convert_price, empiric_median_price
+from oracles import convert_price, empiric_median_price, get_terminal_price
 from constants import EMPIRIC_ORACLE_ADDRESS, EMPIRIC_ETH_USD_KEY, EMPIRIC_AGGREGATION_MODE
 
 
@@ -68,4 +68,31 @@ func test_empiric_median_price{range_check_ptr, syscall_ptr: felt*}() {
     // Same test values as in test_convert_price
     assert res = 3413177997528386198568;
     return ();
+}
+
+
+@external 
+func test_stale_checkpoint{range_check_ptr, syscall_ptr: felt*}(){
+    tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
+    %{
+        stop_mock_terminal_price_1 = mock_call(
+            ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000, 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+        )
+    %}
+    // Should pass
+    let (_) = get_terminal_price(EMPIRIC_ETH_USD_KEY, 1000000000);
+
+    tempvar tmp_address = EMPIRIC_ORACLE_ADDRESS;
+    %{
+        stop_mock_terminal_price_1()
+        stop_mock_terminal_price_2 = mock_call(
+            ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000 - (5*3600 + 1), 145000000000, 0, 0, 0]  # mock terminal ETH price at 1450
+        )
+        expect_revert(error_message = "Terminal price is over five hours old")
+    %}
+
+    // Should fail
+    let (_) = get_terminal_price(EMPIRIC_ETH_USD_KEY, 1000000000);
+
+    return();
 }

@@ -1212,7 +1212,7 @@ namespace NonEthRoundTrip {
 
             # Mock the terminal price for BTC
             stop_mock_terminal_price_btc = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0, 2100000000000, 0, 0, 0]  # mock terminal BTC price at 21_000
+                ids.tmp_address, "get_last_checkpoint_before", [1000000000 + 60*60*24, 2100000000000, 0, 0, 0]  # mock terminal BTC price at 21_000
             )
         %}
 
@@ -1238,7 +1238,7 @@ namespace NonEthRoundTrip {
             stop_mock_terminal_price_btc() 
             # Mock the terminal price for DOGE
             stop_mock_terminal_price_doge = mock_call(
-                ids.tmp_address, "get_last_checkpoint_before", [0, 15000000, 0, 0, 0]  # mock terminal DOGE at 0.15
+                ids.tmp_address, "get_last_checkpoint_before", [1000000000 + 60*60*24, 15000000, 0, 0, 0]  # mock terminal DOGE at 0.15
             )
         %}
         
@@ -1324,7 +1324,7 @@ namespace NonEthRoundTrip {
 
             # Mock the terminal price for BTC
             stop_mock_terminal_price_btc = mock_call(
-                ids.tmp_address, "get_last_spot_checkpoint_before", [0, 2100000000000, 0, 0, 0]  # mock terminal BTC price at 21_000
+                ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000 + 60*60*24, 2100000000000, 0, 0, 0]  # mock terminal BTC price at 21_000
             )
         %}
 
@@ -1356,7 +1356,7 @@ namespace NonEthRoundTrip {
             stop_mock_terminal_price_btc() 
             # Mock the terminal price for DOGE
             stop_mock_terminal_price_doge = mock_call(
-                ids.tmp_address, "get_last_spot_checkpoint_before", [0, 15000000, 0, 0, 0]  # mock terminal DOGE at 0.15
+                ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000 + 60*60*24, 15000000, 0, 0, 0]  # mock terminal DOGE at 0.15
             )
         %}
         

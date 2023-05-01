@@ -187,7 +187,7 @@ namespace ExpireOptionTokenForPool {
             stop_mock_current_price()
             stop_warp_1 = warp(1000000000 + 24*60*60 + 1, target_contract_address=ids.amm_addr) 
             stop_mock_terminal_price = mock_call(
-                ids.tmp_address, "get_last_spot_checkpoint_before", [0, 155000000000, 0, 0, 0]  # mock terminal ETH price at 1550
+                ids.tmp_address, "get_last_spot_checkpoint_before", [1000000000 + 24*60*60, 155000000000, 0, 0, 0]  # mock terminal ETH price at 1550
             )
         %}
         IAMM.expire_option_token_for_pool(
