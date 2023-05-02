@@ -160,7 +160,8 @@ func _get_premia_for_get_option_with_position_of_user{syscall_ptr: felt*, peders
         let quote_token_address = option.quote_token_address;
         let base_token_address = option.base_token_address;
         let (empiric_key) = get_empiric_key(quote_token_address, base_token_address);
-        let (terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+        let (_terminal_price: Math64x61_) = get_terminal_price(empiric_key, option.maturity);
+        let (terminal_price: Math64x61_) = account_for_stablecoin_divergence(_terminal_price, quote_token_address, option.maturity);
 
         let (long_value, short_value) = split_option_locked_capital(
             option.option_type, option.option_side, position_size, option.strike_price, terminal_price
