@@ -26,7 +26,8 @@ option_token = ["contracts/erc20_tokens/option_token.cairo"]
 proxy = ["contracts/proxy_contract/proxy.cairo"]
 governance = [
     "contracts/governance/proposals.cairo",
-    "contracts/governance/upgrades.cairo"
+    "contracts/governance/upgrades.cairo",
+    "contracts/governance/airdrop.cairo"
 ]
 governance_proxy = ["contracts/governance/proxy_contract_custom.cairo"]
 governance_token = ["contracts/erc20_tokens/governance_token.cairo"]
