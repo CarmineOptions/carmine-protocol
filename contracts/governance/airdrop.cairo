@@ -10,13 +10,13 @@ func claim{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(clai
 
     let (governance_token_addr) = governance_token_address.read();
 
-    let claimed_already = airdrop_claimed.read(claimee);
+    let (claimed_already) = airdrop_claimed.read(claimee);
     with_attr error_message("claimee claimed already") {
         assert claimed_already = 0;
     }
     let amt = get_eligible_amount(claimee);
     let amt_u = Uint256(amt, 0);
-    claimed_already.write(claimee, amt);
+    airdrop_claimed.write(claimee, amt);
     IGovernanceToken.mint(contract_address=governance_token_addr, to=claimee, amount=amt_u);
 
     return ();
