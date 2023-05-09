@@ -85,7 +85,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
     // If option is non_expired append it, else keep going
     let (current_block_time) = get_block_timestamp();
     if (is_le(current_block_time, option.maturity) == TRUE) {
-        let one = Math64x61.fromFelt(1);
+        let one_tenth = 230584300921369395; // 0.1 ** 2**61
         let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
         let (pool_volatility_adjustment_speed) = get_pool_volatility_adjustment_speed(lptoken_address);
         with_attr error_message(
@@ -93,7 +93,7 @@ func save_all_non_expired_options_with_premia_to_array{syscall_ptr: felt*, peder
         ){
             let (premia) = _get_premia_with_fees(
                 option=option,
-                position_size=one,
+                position_size=one_tenth,
                 option_type=option.option_type,
                 current_volatility=current_volatility,
                 pool_volatility_adjustment_speed=pool_volatility_adjustment_speed

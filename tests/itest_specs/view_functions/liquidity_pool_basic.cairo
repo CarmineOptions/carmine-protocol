@@ -338,7 +338,7 @@ namespace LPBasicViewFunctions {
         let option_call_strike_0 = get_array_element(2, option_call_len, option_call_array);
         let option_call_premia_0 = get_array_element(6, option_call_len, option_call_array);
 
-        assert option_call_premia_0 = 1857344407991927;
+        assert option_call_premia_0 = 116904024424443;
 
         let (call_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
@@ -354,7 +354,7 @@ namespace LPBasicViewFunctions {
         let option_call_strike_1 = get_array_element(9, option_call_len, option_call_array);
         let option_call_premia_1 = get_array_element(13, option_call_len, option_call_array);
 
-        assert option_call_premia_1 = 539159896455322;
+        assert option_call_premia_1 = 98028062292272;
 
         
         let (call_option_token_address_1) = IAMM.get_option_token_address(
@@ -372,7 +372,7 @@ namespace LPBasicViewFunctions {
         let option_put_strike_0 = get_array_element(2, option_put_len, option_put_array);
         let option_put_premia_0 = get_array_element(6, option_put_len, option_put_array);
 
-        assert option_put_premia_0 = 240748633495885851168;
+        assert option_put_premia_0 = 23918528951461624519;
 
         let (put_option_token_address_0) = IAMM.get_option_token_address(
             contract_address=amm_addr,
@@ -388,7 +388,7 @@ namespace LPBasicViewFunctions {
         let option_put_strike_1 = get_array_element(9, option_put_len, option_put_array);
         let option_put_premia_1 = get_array_element(13, option_put_len, option_put_array);
 
-        assert option_put_premia_1 = 224173826281861372371;     
+        assert option_put_premia_1 = 22499877150927774264;     
 
         let (put_option_token_address_1) = IAMM.get_option_token_address(
             contract_address=amm_addr,
