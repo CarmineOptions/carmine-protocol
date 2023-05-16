@@ -2,7 +2,7 @@ build: contracts/core_amm/* contracts/governance/* contracts/erc20_tokens/* cont
 	protostar build-cairo0
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
-	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests
+	~/.protostar/dist/protostar/protostar test-cairo0 --seed 18000000 ./tests
 
 # Takes 0 time relative to protostar, let's steer clear of this potential error src
 .PHONY: build/ammcontract.cairo
