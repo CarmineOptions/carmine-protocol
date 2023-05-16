@@ -19,6 +19,6 @@ jobs:
         uses: sambarnes/protostar-toolchain@main
 
       - name: Build
-        run: protostar build
+        run: protostar build-cairo0
       - name: Test
         run: make test
