@@ -1,5 +1,5 @@
 build: contracts/core_amm/* contracts/governance/* contracts/erc20_tokens/* contracts/interfaces/* contracts/proxy_contract/*
-	protostar build
+	protostar build-cairo0
 
 test: contracts/* tests/*.cairo build/ammcontract.cairo #testpy
 	~/.protostar/dist/protostar/protostar test --seed 18000000 ./tests
