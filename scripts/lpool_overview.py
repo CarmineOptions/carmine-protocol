@@ -1,7 +1,9 @@
 import asyncio
+from os import getenv
 
 from starknet_py.contract import Contract
 from starknet_py.net.gateway_client import GatewayClient
+from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.hash.selector import get_selector_from_name
 from starknet_py.net.client_models import Call
 
@@ -9,7 +11,11 @@ from datetime import datetime
 
 TESTNET = False
 AMM_ADDR = 0x076dbabc4293db346b0a56b29b6ea9fe18e93742c73f12348c8747ecfc1050aa # mainnet
-client = GatewayClient(net="testnet") if TESTNET else GatewayClient(net="mainnet")
+rpc_url = getenv('starknet_rpc')
+assert(rpc_url is not None)
+m = FullNodeClient(node_url=rpc_url)
+client = GatewayClient(net="testnet") if TESTNET else m
+
 
 class Option:
     def __init__(self, option_side, maturity, strike_price, quote_token_address, base_token_address, option_type):
