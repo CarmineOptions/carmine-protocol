@@ -1,5 +1,7 @@
 %lang starknet
 
+from starkware.cairo.common.math import assert_lt_felt
+
 @storage_var
 func airdrop_claimed(claimee: Address) -> (res: felt) {
 }
@@ -20,7 +22,7 @@ func claim{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(clai
 
     with_attr error_message("Claimee already claimed everything there is to claim.") {
         assert_nn(diff); // This should NOT happen
-        assert_le_felt(claimed_already, eligible_amount); // For certainty around 'diff' var overflow
+        assert_lt_felt(claimed_already, eligible_amount); // For certainty around 'diff' var overflow
         assert_not_zero(diff); 
     }
 
