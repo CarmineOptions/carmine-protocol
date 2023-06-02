@@ -1,5 +1,7 @@
 %lang starknet
 
+from starkware.cairo.common.math import assert_lt_felt
+
 @storage_var
 func airdrop_claimed(claimee: Address) -> (res: felt) {
 }
@@ -8,15 +10,29 @@ func airdrop_claimed(claimee: Address) -> (res: felt) {
 func claim{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(claimee: Address) {
     alloc_locals;
 
+    // Get address of gov token
     let (governance_token_addr) = governance_token_address.read();
 
+    // Read eligible amount
+    let eligible_amount = get_eligible_amount(claimee);
+
+    // Read how much the claimee has already claimed
     let (claimed_already) = airdrop_claimed.read(claimee);
-    with_attr error_message("claimee claimed already") {
-        assert claimed_already = 0;
+    let diff = eligible_amount - claimed_already;
+
+    with_attr error_message("Claimee already claimed everything there is to claim.") {
+        assert_nn(diff); // This should NOT happen
+        assert_lt_felt(claimed_already, eligible_amount); // For certainty around 'diff' var overflow
+        assert_not_zero(diff); 
     }
-    let amt = get_eligible_amount(claimee);
-    let amt_u = Uint256(amt, 0);
-    airdrop_claimed.write(claimee, amt);
+
+    // By now the user has claimed everything there is
+    airdrop_claimed.write(claimee, eligible_amount);
+
+    // Send the diff only
+    //   - The diff is whole eligible amount if no previous airdrops were claimed
+    //   - If some previous airdrops were claimed then the diff is only whatever is not yet claimed
+    let amt_u = Uint256(diff, 0);
     IGovernanceToken.mint(contract_address=governance_token_addr, to=claimee, amount=amt_u);
 
     return ();
