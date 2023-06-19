@@ -7,6 +7,7 @@ from starknet_py.contract import Contract
 from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
+from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models.chains import StarknetChainId
 from starknet_py.contract import ContractFunction
 
@@ -14,9 +15,14 @@ if len(sys.argv) != 2:
     raise Exception("Usage: python declare_contract.py PATH_TO_CONTRACT")
 path_to_contract = sys.argv[1]
 
-TESTNET = False
+TESTNET = True
 
-client = GatewayClient(net="testnet") if TESTNET else GatewayClient(net="mainnet")
+rpc_url = getenv('STARKNET_RPC')
+if rpc_url is not None and TESTNET == False:
+    print("using rpc")
+    client = FullNodeClient(node_url=rpc_url)
+else:
+    client = GatewayClient(net="testnet") if TESTNET else GatewayClient(net="mainnet")
 chain = StarknetChainId.TESTNET if TESTNET else StarknetChainId.MAINNET
 address = getenv("GOV_ADDRESS")
 privkey = getenv("GOV_PRIVKEY")

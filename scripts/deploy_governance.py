@@ -110,7 +110,7 @@ async def deploy_everything(
         option_token_class_hash = await declare_contract("build/option_token.json")
         print(f'Declared option token contract {hex(option_token_class_hash)}'.format())
 
-    # deploy gov token
+    # deploy governance
 
     governance_init_calldata = [generic_proxy_class_hash, governance_token_class_hash, amm_class_hash, lptoken_class_hash, option_token_class_hash]
     governance_contract = await deploy_new_proxy(governance_proxy_class_hash, governance_class_hash, "build/governance_proxy_abi.json", calldata=governance_init_calldata)
@@ -120,7 +120,7 @@ async def deploy_everything(
 def main():
     if TESTNET:
         asyncio.run(deploy_everything(
-            #governance_class_hash=0x61ca66326e7f04027d1b4276b303b3aa1483f655ea80e5ab9adc26e717f5fdd
+            governance_class_hash=0x7a251e9411eadbd2f804cb774692feccbfc04d681a3624cbbf8f7adddd08b41,
             governance_proxy_class_hash=0x1336739e87e88374bfd22b51d3ada3b93ca0b8e329f184c062981afb0ee8f3a,
             generic_proxy_class_hash=0xeafb0413e759430def79539db681f8a4eb98cf4196fe457077d694c6aeeb82,
             governance_token_class_hash=0x61ca66326e7f04027d1b4276b303b3aa1483f655ea80e5ab9adc26e717f5fdd,

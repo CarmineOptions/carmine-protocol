@@ -1,12 +1,14 @@
 import asyncio
 import json
-import time
+from os import getenv
+from time import sleep
 
 from starknet_py.contract import Contract
-from starknet_py.net import AccountClient, KeyPair
+from starknet_py.net.signer.stark_curve_signer import KeyPair
 from starknet_py.net.account.account import Account
 from starknet_py.net.gateway_client import GatewayClient
 from starknet_py.net.models.chains import StarknetChainId
+from starknet_py.net.client_errors import ClientError
 
 
 
@@ -14,6 +16,12 @@ contract_address = (
     0x042a7d485171a01b8c38b6b37e0092f0f096e9d3f945c50c77799171916f5a54  # testnet production contract
     # 0x05cade694670f80dca1195c77766b643dce01f511eca2b7250ef113b57b994ec  # testnet "testdev" contract - staging
 )
+address = getenv("GOV_ADDRESS")
+privkey = getenv("GOV_PRIVKEY")
+pubkey = getenv("GOV_PUBKEY")
+if address is None or privkey is None or pubkey is None:
+    # user should load them from an .env file (or anyway else)
+    raise Exception("Missing GOV_ADDRESS, GOV_PRIVKEY, or GOV_PUBKEY environment variables.")
 testnet = "testnet"
 # MATURITY_TO_BE_SETTLED = 1675987199
 # MATURITY_TO_BE_SETTLED = 1674777599
@@ -21,21 +29,20 @@ MATURITY_TO_BE_SETTLED = 1677196799
 MATURITY_TO_BE_SETTLED = 1678406399  # Thu Mar 09 2023 23:59:59 GMT+0000
 
 # testdev
-MATURITY_TO_BE_SETTLED = 1675987199
+#MATURITY_TO_BE_SETTLED = 1675987199
 # MATURITY_TO_BE_SETTLED = 1679615999
-
+MATURITY_TO_BE_SETTLED = 1686873599
 
 async def main():
-
-    client = GatewayClient(net=testnet)
+    client = GatewayClient(net="mainnet")
     account = Account(
         client=client,
-        address=...,
+        address=address,
         key_pair=KeyPair(
-            private_key=...,
-            public_key=...
+            private_key=int(privkey, 16),
+            public_key=int(pubkey, 16)
         ),
-        chain=StarknetChainId.TESTNET,
+        chain=StarknetChainId.MAINNET,
     )
 
     with open("build/amm_abi.json") as f:
@@ -82,7 +89,12 @@ async def main():
     # Executes only one transaction with prepared calls
     print('Starting to execute the multicall')
 
-    transaction_response = await account.execute(calls=calls, max_fee=int(1e16))
+    try:
+        transaction_response = await account.execute(calls=calls, max_fee=int(1e16))
+    except ClientError as e:
+        print(f'got {e}'.format())
+        sleep(2)
+    print(transaction_response)
     await account.client.wait_for_tx(transaction_response.transaction_hash)
 
     print(transaction_response)
