@@ -48,9 +48,19 @@ strike_2100 = 4842270319348757299200
 # maturity = 1677196799
 # maturity = 1678406399
 # maturity = 1679615999
-maturity = 1680825599 # Thu Apr 06 2023 23:59:59 GMT+0000
-maturity = 1682035199 # Thu Apr 20 2023 23:59:59 GMT+0000
-maturity = 1683244799 # Thu May 04 2023 23:59:59 GMT+0000
+maturity = 1680825599  # Thu Apr 06 2023 23:59:59 GMT+0000
+maturity = 1682035199  # Thu Apr 20 2023 23:59:59 GMT+0000
+maturity = 1683244799  # Thu May 04 2023 23:59:59 GMT+0000
+maturity = 1685663999  # Thu Jun 01 2023 23:59:59 GMT+0000
+maturity = 1686873599  # Thu Jun 15 2023 23:59:59 GMT+0000
+maturity = 1688083199  # Thu Jun 29 2023 23:59:59 GMT+0000
+
+maturity = 1691107199  # Thu Aug 03 2023 23:59:59 GMT+0000
+maturity = 1691711999  # Thu Aug 10 2023 23:59:59 GMT+0000
+maturity = 1692316799  # Thu Aug 17 2023 23:59:59 GMT+0000
+maturity = 1692921599  # Thu Aug 24 2023 23:59:59 GMT+0000
+maturity = 1693526399  # Thu Aug 31 2023 23:59:59 GMT+0000
+
 options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
@@ -58,25 +68,25 @@ options_to_be_deployed = [
     # {'option_type': 0, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
     # {'option_type': 0, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
     # {'option_type': 0, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
-    # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
-    # {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
-    # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
-    # {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
-    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
-    # {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
+    {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
+    {'option_type': 0, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
+    {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
+    {'option_type': 0, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
+    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 0},
+    {'option_type': 0, 'strike_price': strike_2000, 'maturity': maturity, 'side': 1},
     {'option_type': 0, 'strike_price': strike_2100, 'maturity': maturity, 'side': 0},
     {'option_type': 0, 'strike_price': strike_2100, 'maturity': maturity, 'side': 1},
 
-    # {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
-    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
-    # {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1900, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1800, 'maturity': maturity, 'side': 1},
+    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 0},
+    {'option_type': 1, 'strike_price': strike_1700, 'maturity': maturity, 'side': 1},
     {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 0},
     {'option_type': 1, 'strike_price': strike_1600, 'maturity': maturity, 'side': 1},
-    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
-    {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
+    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 0},
+    # {'option_type': 1, 'strike_price': strike_1500, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 0},
     # {'option_type': 1, 'strike_price': strike_1400, 'maturity': maturity, 'side': 1},
     # {'option_type': 1, 'strike_price': strike_1300, 'maturity': maturity, 'side': 0},
@@ -88,10 +98,10 @@ async def main():
     client = GatewayClient(net=testnet)
     account = Account(
         client=client,
-        address=...,
+        address=0x3f47b0187bcdde504e83f39a31900207712e0383ee1ac3687eea5af4a02252,
         key_pair=KeyPair(
-            private_key=...,
-            public_key=...
+            private_key=0x54f4835fde151093c06c984902f329bbdc8ee3b92b13a0a8ee0d51c17df6987,
+            public_key=0x1ac9be179ab4618a7199e7a82c0ad2d1a93aaaa252d32109656bc87c7f4fbe0
         ),
         chain=StarknetChainId.TESTNET,
     )
@@ -171,5 +181,6 @@ async def main():
 
     print('Multicall executed')
 
+t = time.time()
 asyncio.run(main())
-print('Everything is done')
+print(f'Everything is done in {time.time() - t}')
