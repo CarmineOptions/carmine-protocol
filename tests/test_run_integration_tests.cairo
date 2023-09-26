@@ -88,6 +88,20 @@ func test_withdraw_liquidity{syscall_ptr: felt*, range_check_ptr}() {
 }
 
 @external
+func test_withdraw_liquidity_failing{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    // test withdraw half of the liquidity that was originally deposited (from both pools)
+    WithdrawLiquidity.test_withdraw_failing();
+    return ();
+}
+
+@external
+func test_deposit_liquidity_failing{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    // test withdraw half of the liquidity that was originally deposited (from both pools)
+    DepositLiquidity.test_deposit_failing();
+    return ();
+}
+
+@external
 func test_withdraw_liquidity_not_enough_unlocked{syscall_ptr: felt*, range_check_ptr}() {
     // test what happens when more capital is withdrawn than there is unlocked
     WithdrawLiquidity.withdraw_liquidity_not_enough_unlocked();

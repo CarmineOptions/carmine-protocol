@@ -585,5 +585,108 @@ namespace DepositLiquidity {
         
         return ();
     }
+
+    func test_deposit_failing{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+       // scenarios
+            // deposit to pool with no position
+            // deposit to pool with both long and short positon (different options)
+            // watchout for value of pool and that premia is correctly adjusted for fees 
+        alloc_locals;
+        local lpt_call_addr;
+        local lpt_put_addr;
+        local amm_addr;
+        local myusd_addr;
+        local myeth_addr;
+        local admin_addr;
+        local expiry;
+        local opt_long_put_addr;
+        local opt_short_put_addr;
+        local opt_long_call_addr;
+        local opt_short_call_addr;
+
+        let strike_price = Math64x61.fromFelt(1500);
+
+        %{
+            ids.lpt_call_addr = context.lpt_call_addr
+            ids.lpt_put_addr = context.lpt_put_addr
+            ids.amm_addr = context.amm_addr
+            ids.myusd_addr = context.myusd_address
+            ids.myeth_addr = context.myeth_address
+            ids.admin_addr = context.admin_address
+            ids.expiry = context.expiry_0
+            ids.opt_long_put_addr = context.opt_long_put_addr_0
+            ids.opt_short_put_addr = context.opt_short_put_addr_0
+            ids.opt_long_call_addr = context.opt_long_call_addr_0
+            ids.opt_short_call_addr = context.opt_short_call_addr_0
+        %}
+        local tmp_address = EMPIRIC_ORACLE_ADDRESS;
+        %{
+            stop_prank_amm = start_prank(context.admin_address, context.amm_addr)
+            stop_warp_1 = warp(1000000000, target_contract_address=ids.amm_addr)
+            stop_mock_current_price = mock_call(
+                ids.tmp_address, "get_spot_median", [140000000000, 8, 1000000000, 0]  # mock current ETH price at 1400
+            )
+        %}
+
+        // Conduct some trades
+        // let one_math = Math64x61.fromFelt(1);
+        let one_int = 1000000000000000000; // 1 * 10**18
+        let one_k_math = Math64x61.fromFelt(1000);
+        
+        let x = IAMM.trade_open(
+            contract_address = amm_addr,
+            option_type = 0,
+            strike_price = strike_price,
+            maturity = expiry,
+            option_side = 0,
+            option_size = one_int,
+            quote_token_address = myusd_addr,
+            base_token_address = myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
+        ); 
+        let x = IAMM.trade_open(
+            contract_address = amm_addr,
+            option_type = 1,
+            strike_price = strike_price,
+            maturity = expiry,
+            option_side = 0,
+            option_size = one_int,
+            quote_token_address = myusd_addr,
+            base_token_address = myeth_addr,
+            limit_total_premia=230584300921369395200000, // 100_000
+            tx_deadline=99999999999, // Disable deadline
+        ); 
+        %{  
+            stop_warp_1()
+            # Warp after maturity
+            stop_warp_2 = warp(1000000000 + 60 * 60 * 24 + 1, target_contract_address=ids.amm_addr)
+
+            # Expect fail
+            expect_revert(error_message = "Option is not yet settled, please wait")
+        %}
+
+        let one_eth = Uint256(low = 1000000000000000000, high = 0);
+        let one_thousand_usd = Uint256(low = 1000000000, high = 0);
+        IAMM.deposit_liquidity(
+            contract_address=amm_addr,
+            pooled_token_addr=myeth_addr,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            option_type=0,
+            amount=one_eth
+        );
+        IAMM.deposit_liquidity(
+            contract_address=amm_addr,
+            pooled_token_addr=myusd_addr,
+            quote_token_address=myusd_addr,
+            base_token_address=myeth_addr,
+            option_type=1,
+            amount=one_thousand_usd
+        );
+
+        return ();
+    }   
+    
 }
 
