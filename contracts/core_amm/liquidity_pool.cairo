@@ -126,6 +126,11 @@ func _get_value_of_pool_position{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*,
         return (res = value_of_rest_of_the_pool_);
     }
 
+    let (current_block_time) = get_block_timestamp();
+    with_attr error_message("Option is not yet settled, please wait") {
+        assert_le_felt(current_block_time, option.maturity);
+    }
+
     let (current_volatility) = get_pool_volatility_auto(lptoken_address, option.maturity, option.strike_price);
 
     with_attr error_message("Failed getting value of position in _get_value_of_pool_position"){
