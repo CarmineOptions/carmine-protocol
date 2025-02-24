@@ -39,7 +39,7 @@ The easiest way to get up and running is to use Github Codespaces or VSCode with
 - [Cairo quickstart](https://www.cairo-lang.org/docs/quickstart.html)
     - On a M1 Macbook, fastecdsa build might fail; [this](https://github.com/OpenZeppelin/nile/issues/22) might help.
     - note that Cairo requires Python 3.9
-- [Install Protostar](https://docs.swmansion.com/protostar/docs/tutorials/installation)
+- [Install Protostar](https://docs.swmansion.com/protostar/docs/legacy/installation)
 - setup a virtualenv, install requirements.txt...
 - `make build`; `make test`
 - nice to have: `echo $'\a'` plays a beep so you know to get back to work
